@@ -1,0 +1,5 @@
+{
+  "name": "智慧管理平台",
+  "description": "A comprehensive dashboard for managing hospital indicators, permissions, and roles, replicating the provided enterprise UI design.",
+  "requestFramePermissions": []
+}

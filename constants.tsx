@@ -57,7 +57,7 @@ export const INDICATORS: Indicator[] = [
     fillPermission: false,
     displayEntry: false,
     children: [
-      { id: '1', name: '自定义统计方式指标 (基础指标二)', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
+      { id: '1', name: '自定义统计方式指标 (基础指标二)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false, tag: 'main' },
       { id: '2', name: '自定义统计方式指标 (手动转自动)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
       { id: '3', name: '自定义统计方式指标 (手动转自动)', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true },
       { id: '4', name: '自定义统计方式指标 (复合指标一)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
@@ -73,7 +73,7 @@ export const INDICATORS: Indicator[] = [
     children: [
       { id: '5', name: '自定义统计方式指标 (基础指标一)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
       { id: '6', name: '自定义统计方式指标 (基础指标二)', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
-      { id: '7', name: '自定义统计方式指标 (基础指标一)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '7', name: '自定义统计方式指标 (基础指标三)', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
     ]
   },
   {

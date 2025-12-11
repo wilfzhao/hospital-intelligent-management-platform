@@ -118,32 +118,43 @@ const PermissionTable: React.FC = () => {
         ? 'fillPermission'
         : 'displayEntry';
 
-    // Step 1: Find the target node to determine the Next Value
+    // Step 1: Find the target node to determine Name and Next Value
     let nextValue = true;
+    let targetName = '';
     
-    const findAndDetermineValue = (nodes: Indicator[]) => {
+    const findTargetInfo = (nodes: Indicator[]) => {
       for (const node of nodes) {
         if (node.id === targetId) {
           nextValue = !node[targetKey];
+          targetName = node.name;
           return;
         }
-        if (node.children) findAndDetermineValue(node.children);
+        if (node.children) findTargetInfo(node.children);
       }
     };
-    findAndDetermineValue(indicators);
+    findTargetInfo(indicators);
+
+    if (!targetName) return; // Should not happen
 
     // Step 2: Update the tree (Cascade Down)
+    // We update matching nodes (by ID or Name) and their children
     const updateTargetAndCascade = (nodes: Indicator[]): Indicator[] => {
       return nodes.map((node) => {
-        if (node.id === targetId) {
+        // Check if this node matches the target ID OR matches the target Name
+        // We sync across same-named indicators
+        if (node.id === targetId || node.name === targetName) {
           // Apply to self
           let updatedNode = applyDependencies(node, targetKey, nextValue);
-          // Apply to children (Cascade)
+          
+          // Apply to children (Cascade) - if a directory is toggled, its children update
+          // If a leaf is toggled (by name sync), it just updates itself (no children)
           if (hasChildren(updatedNode)) {
              updatedNode.children = cascadeUpdate(updatedNode.children!, targetKey, nextValue);
           }
           return updatedNode;
         }
+        
+        // Continue recursion
         if (node.children) {
           return { ...node, children: updateTargetAndCascade(node.children) };
         }
@@ -255,8 +266,8 @@ const PermissionTable: React.FC = () => {
                  <span className="text-sm text-gray-600">指标权限:</span>
                  <select className="border border-gray-200 rounded px-2 py-1.5 text-sm text-gray-600 bg-white outline-none focus:border-blue-500 w-32">
                      <option>请选择</option>
-                     <option>已开启</option>
-                     <option>已关闭</option>
+                     <option>有查阅权限</option>
+                     <option>无查阅权限</option>
                  </select>
              </div>
 

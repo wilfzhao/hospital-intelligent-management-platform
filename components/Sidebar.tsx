@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 import { SidebarItem } from '../types';
-import { SIDEBAR_ITEMS } from '../constants';
 
 interface SidebarProps {
+  items: SidebarItem[];
   activeId: string;
   onNavigate: (id: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeId, onNavigate }) => {
-  const [items, setItems] = useState<SidebarItem[]>(SIDEBAR_ITEMS);
+const Sidebar: React.FC<SidebarProps> = ({ items: initialItems, activeId, onNavigate }) => {
+  const [items, setItems] = useState<SidebarItem[]>(initialItems);
+
+  // Sync internal state if props change (e.g., switching modules)
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const toggleExpand = (id: string) => {
     setItems(items.map(item => 

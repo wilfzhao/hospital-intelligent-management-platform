@@ -187,9 +187,9 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({ settings, onOpenSetting
   const step = data.length > 0 ? chartWidth / data.length : 0;
 
   return (
-    <div className="my-6 flex flex-col items-center select-none relative group/chartWrapper" contentEditable={false}>
+    <div className="my-6 flex flex-col items-center select-none relative group/chartWrapper p-4 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200" contentEditable={false}>
       {/* Chart Visualization */}
-      <svg width={width} height={height} className="overflow-visible font-sans bg-white">
+      <svg width={width} height={height} className="overflow-visible font-sans">
         {/* Grid lines */}
         {[0, 20, 40, 60, 80, 100].map((tick) => {
            const y = padding.top + chartHeight - (tick / maxValue) * chartHeight;
@@ -226,10 +226,10 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({ settings, onOpenSetting
       </svg>
       <div className="mt-2 text-xl font-medium text-gray-700">{settings.title}</div>
 
-      {/* Hover Overlay Buttons */}
-      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] opacity-0 group-hover/chartWrapper:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4 border-2 border-blue-400 rounded-lg shadow-sm">
-         <button className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg shadow-sm border border-blue-100 hover:bg-blue-50 font-medium text-sm transition-transform hover:scale-105">
-            <Info size={16} />
+      {/* Action Toolbar - Top Left, No Blur */}
+      <div className="absolute top-2 left-2 flex items-center gap-2 opacity-0 group-hover/chartWrapper:opacity-100 transition-opacity duration-200 z-20">
+         <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-600 rounded-md shadow-sm border border-gray-200 hover:bg-blue-50 font-medium text-xs transition-colors">
+            <Info size={14} />
             指标信息
          </button>
          <button 
@@ -237,23 +237,24 @@ const SimpleBarChart: React.FC<SimpleBarChartProps> = ({ settings, onOpenSetting
                 e.stopPropagation();
                 onOpenSettings();
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 font-medium text-sm transition-transform hover:scale-105"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 font-medium text-xs transition-colors"
          >
-            <Settings size={16} />
+            <Settings size={14} />
             设置
          </button>
-         
-         <button 
-            className="absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50 border border-gray-100"
-            onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-            }}
-            title="删除图表"
-         >
-            <Trash2 size={16} />
-         </button>
       </div>
+      
+      {/* Delete Button - Top Right, No Blur */}
+      <button 
+        className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-500 bg-white rounded-md shadow-sm border border-gray-200 hover:bg-red-50 opacity-0 group-hover/chartWrapper:opacity-100 transition-opacity duration-200 z-20"
+        onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+        }}
+        title="删除图表"
+      >
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 };
@@ -324,6 +325,10 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [modalSettings, setModalSettings] = useState<ChartSettings>({ title: '', periods: 6 });
 
+  // Global Time Parameter Dropdown State
+  const [timeParam, setTimeParam] = useState<string | null>(null);
+  const [isTimeParamOpen, setIsTimeParamOpen] = useState(false);
+
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(id)) {
@@ -358,7 +363,10 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
       const currentIndex = blocks.findIndex(b => b.id === id);
       const currentBlock = blocks[currentIndex];
       
-      if (currentBlock.content === '' && blocks.length > 1) {
+      // Fix: robustly check for empty content (handling <br> from contentEditable)
+      const isContentEmpty = !currentBlock.content || currentBlock.content === '<br>' || currentBlock.content.trim() === '';
+
+      if (isContentEmpty && blocks.length > 1) {
         e.preventDefault();
         const newBlocks = blocks.filter(b => b.id !== id);
         setBlocks(newBlocks);
@@ -428,9 +436,43 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
         
         <div className="flex items-center gap-3">
           <div className="flex items-center border border-gray-200 rounded px-3 py-1.5 bg-white w-40 justify-between">
-            <span className="text-sm text-gray-700">2022年第3季度</span>
+            <span className="text-sm text-gray-700">2025年第三季度</span>
             <Calendar size={14} className="text-gray-400" />
           </div>
+
+          {/* Global Time Parameter Dropdown */}
+          <div className="relative">
+             <button
+                onClick={() => setIsTimeParamOpen(!isTimeParamOpen)}
+                className="flex items-center justify-between border border-gray-200 rounded px-3 py-1.5 bg-white min-w-[160px] gap-2 text-sm hover:bg-gray-50 transition-colors"
+             >
+                <span className={timeParam ? 'text-gray-700' : 'text-gray-400'}>
+                    {timeParam || '全局时间参数'}
+                </span>
+                <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTimeParamOpen ? 'rotate-180' : ''}`} />
+             </button>
+             
+             {isTimeParamOpen && (
+                 <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsTimeParamOpen(false)}></div>
+                    <div className="absolute top-full right-0 mt-1 w-[200px] bg-white border border-gray-100 rounded-lg shadow-lg z-30 py-1 animate-in fade-in zoom-in-95 duration-100">
+                        {['报告周期', '本年度累计至报告周期'].map((opt) => (
+                            <div
+                                key={opt}
+                                className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors ${timeParam === opt ? 'text-blue-600 bg-blue-50' : 'text-gray-700'}`}
+                                onClick={() => {
+                                    setTimeParam(opt);
+                                    setIsTimeParamOpen(false);
+                                }}
+                            >
+                                {opt}
+                            </div>
+                        ))}
+                    </div>
+                 </>
+             )}
+          </div>
+
           <button className="flex items-center gap-1 border border-gray-200 px-3 py-1.5 rounded bg-white hover:bg-gray-50 text-gray-700 text-sm">
              <Eye size={14} />
              预览
@@ -476,12 +518,13 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
                              <span className="truncate">目录下的指标...</span>
                           </div>
                           <div className="pl-6 space-y-1">
+                             <div className="text-sm text-gray-500 py-1 hover:text-blue-600 cursor-pointer">指标值</div>
                              <div 
-                                className="text-sm text-gray-500 py-1 hover:text-blue-600 cursor-pointer select-none font-medium"
+                                className="text-sm text-gray-500 py-1 hover:text-blue-600 cursor-pointer select-none"
                                 onDoubleClick={handleInsertChart}
                                 title="双击插入图表"
                              >
-                                时间分析趋势图 (双击插入)
+                                时间分析趋势图
                              </div>
                              <div className="text-sm text-gray-500 py-1 hover:text-blue-600 cursor-pointer">科室分析趋势图</div>
                           </div>

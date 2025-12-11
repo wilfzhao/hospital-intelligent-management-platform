@@ -3,9 +3,11 @@ import { Grid, Settings, Activity, MoreHorizontal, ChevronDown } from 'lucide-re
 
 interface HeaderProps {
   items: string[];
+  activeItem?: string;
+  onSelectItem?: (item: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ items }) => {
+const Header: React.FC<HeaderProps> = ({ items, activeItem, onSelectItem }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -42,10 +44,13 @@ const Header: React.FC<HeaderProps> = ({ items }) => {
           {visibleItems.map((item, index) => (
             <button 
               key={index}
+              onClick={() => onSelectItem && onSelectItem(item)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                item === '管理配置' 
-                  ? 'bg-blue-700/50 text-white' 
-                  : 'text-blue-100 hover:bg-blue-500/50 hover:text-white'
+                activeItem === item
+                  ? 'bg-blue-700/80 text-white shadow-inner' 
+                  : item === '管理配置'
+                    ? 'bg-blue-700/50 text-white'
+                    : 'text-blue-100 hover:bg-blue-500/50 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -72,6 +77,10 @@ const Header: React.FC<HeaderProps> = ({ items }) => {
                   {overflowItems.map((item, index) => (
                     <button
                       key={index}
+                      onClick={() => {
+                        onSelectItem && onSelectItem(item);
+                        setIsMenuOpen(false);
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                     >
                       {item}

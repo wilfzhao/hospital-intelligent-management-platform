@@ -3,13 +3,14 @@ import { TabType, Indicator } from '../types';
 import { INDICATORS } from '../constants';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
-import { Search, Info, ChevronLeft, ChevronRight, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { Search, Info, ChevronRight, ChevronDown } from 'lucide-react';
 
 const PermissionTable: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.INDICATOR_PERMISSION);
   const [superAdmin, setSuperAdmin] = useState(false);
   const [indicators, setIndicators] = useState<Indicator[]>(INDICATORS);
-  const [selectAll, setSelectAll] = useState(false);
+  // Row selection state
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['g1', 'g2', 'g3', '9']));
 
   const toggleExpand = (id: string) => {
@@ -24,6 +25,74 @@ const PermissionTable: React.FC = () => {
 
   // Helper to check if a node has children
   const hasChildren = (node: Indicator) => node.children && node.children.length > 0;
+
+  // Helper to get all IDs recursively for Select All
+  const getAllIds = (nodes: Indicator[]): string[] => {
+    let ids: string[] = [];
+    nodes.forEach(node => {
+      ids.push(node.id);
+      if (node.children) {
+        ids = ids.concat(getAllIds(node.children));
+      }
+    });
+    return ids;
+  };
+
+  const allIds = getAllIds(indicators);
+  const isAllSelected = allIds.length > 0 && selectedRowIds.size === allIds.length;
+  const isIndeterminateSelection = selectedRowIds.size > 0 && selectedRowIds.size < allIds.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedRowIds(new Set());
+    } else {
+      setSelectedRowIds(new Set(allIds));
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    // Helper to find node by ID
+    const findNode = (nodes: Indicator[], targetId: string): Indicator | undefined => {
+      for (const node of nodes) {
+        if (node.id === targetId) return node;
+        if (node.children) {
+          const found = findNode(node.children, targetId);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+
+    // Helper to get all descendant IDs
+    const getSubtreeIds = (node: Indicator): string[] => {
+      let ids = [node.id];
+      if (node.children) {
+        node.children.forEach(child => {
+          ids = ids.concat(getSubtreeIds(child));
+        });
+      }
+      return ids;
+    };
+
+    const targetNode = findNode(indicators, id);
+    if (!targetNode) return;
+
+    const idsToToggle = getSubtreeIds(targetNode);
+    const newSet = new Set(selectedRowIds);
+    
+    // Check if we are selecting or deselecting based on the clicked node's current state
+    const isSelecting = !newSet.has(id);
+
+    idsToToggle.forEach(nodeId => {
+      if (isSelecting) {
+        newSet.add(nodeId);
+      } else {
+        newSet.delete(nodeId);
+      }
+    });
+
+    setSelectedRowIds(newSet);
+  };
 
   // 1. Dependency Logic (Single Node)
   // Ensures: Fill -> Read -> Display
@@ -283,7 +352,14 @@ const PermissionTable: React.FC = () => {
              </div>
           </div>
 
-          <button className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors shadow-sm">
+          <button 
+            disabled={selectedRowIds.size === 0}
+            className={`px-4 py-1.5 rounded text-sm transition-colors shadow-sm ${
+              selectedRowIds.size > 0 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+          >
             批量操作
           </button>
         </div>
@@ -295,8 +371,9 @@ const PermissionTable: React.FC = () => {
               <tr>
                 <th className="p-3 w-10 border-b border-gray-100">
                     <Checkbox 
-                        checked={selectAll}
-                        onChange={() => setSelectAll(!selectAll)}
+                        checked={isAllSelected}
+                        indeterminate={isIndeterminateSelection}
+                        onChange={handleSelectAll}
                     />
                 </th>
                 <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100">指标名称</th>
@@ -322,7 +399,10 @@ const PermissionTable: React.FC = () => {
                 return (
                   <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                     <td className="p-3">
-                       <Checkbox />
+                       <Checkbox 
+                          checked={selectedRowIds.has(item.id)}
+                          onChange={() => handleSelectRow(item.id)}
+                       />
                     </td>
                     <td className={`p-3 text-sm ${isSub ? 'text-gray-500' : 'text-blue-600'}`}>
                       <div className="flex items-center" style={{ paddingLeft: `${item.level * 24}px` }}>
@@ -374,32 +454,6 @@ const PermissionTable: React.FC = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-end gap-2 mt-4 text-xs text-gray-500">
-           <span>共53页, 524条</span>
-           <span>每页 
-             <select className="mx-1 border border-gray-200 rounded px-1 py-0.5 outline-none bg-white">
-                <option>10</option>
-                <option>20</option>
-                <option>50</option>
-             </select> 
-             条
-           </span>
-           <div className="flex items-center gap-1 ml-2">
-               <button className="p-1 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50"><ChevronLeft size={14}/></button>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">1</button>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">2</button>
-               <button className="w-6 h-6 flex items-center justify-center bg-blue-600 text-white rounded">3</button>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">4</button>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">5</button>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">6</button>
-               <span className="px-1"><MoreHorizontal size={12}/></span>
-               <button className="w-6 h-6 flex items-center justify-center border border-gray-200 rounded hover:bg-gray-50">53</button>
-               <button className="p-1 border border-gray-200 rounded hover:bg-gray-50"><ChevronRight size={14}/></button>
-           </div>
-        </div>
-
       </div>
     </div>
   );

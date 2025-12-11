@@ -43,6 +43,15 @@ export interface ReportTemplate {
   creator: string;
 }
 
+export interface ReportDocument {
+  id: string;
+  title: string;
+  date: string;
+  department: string;
+  status: 'editing' | 'published';
+  type: 'annual' | 'quarterly' | 'monthly';
+}
+
 export enum TabType {
   INDICATOR_PERMISSION = 'INDICATOR_PERMISSION',
   PERSONNEL = 'PERSONNEL',

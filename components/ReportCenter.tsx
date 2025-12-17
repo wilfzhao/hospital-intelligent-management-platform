@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, ChevronRight, ChevronLeft, PieChart, Layers, FileBarChart } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, PieChart, Layers, FileBarChart, Sparkles } from 'lucide-react';
 import { MOCK_REPORTS } from '../constants';
 import { ReportDocument } from '../types';
 import CreateReportModal from './CreateReportModal';
@@ -34,9 +34,12 @@ const SectionIcon = ({ type }: { type: 'annual' | 'quarterly' | 'monthly' }) => 
   return <FileBarChart size={24} className="text-orange-500" />;
 };
 
-const ReportCard: React.FC<{ report: ReportDocument }> = ({ report }) => {
+const ReportCard: React.FC<{ report: ReportDocument; onClick?: () => void }> = ({ report, onClick }) => {
   return (
-    <div className="w-[260px] bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] border border-gray-100 p-5 flex flex-col items-center flex-shrink-0 relative group transition-all duration-300 cursor-pointer hover:-translate-y-1">
+    <div 
+      onClick={onClick}
+      className="w-[260px] bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)] border border-gray-100 p-5 flex flex-col items-center flex-shrink-0 relative group transition-all duration-300 cursor-pointer hover:-translate-y-1"
+    >
       {/* Status Badge */}
       <div 
         className={`absolute top-4 right-4 px-2 py-0.5 text-[10px] font-medium text-white rounded-full shadow-sm ${
@@ -62,7 +65,12 @@ const ReportCard: React.FC<{ report: ReportDocument }> = ({ report }) => {
   );
 };
 
-const ReportSection: React.FC<{ title: string; type: 'annual' | 'quarterly' | 'monthly'; reports: ReportDocument[] }> = ({ title, type, reports }) => {
+const ReportSection: React.FC<{ 
+  title: string; 
+  type: 'annual' | 'quarterly' | 'monthly'; 
+  reports: ReportDocument[];
+  onReportClick: (report: ReportDocument) => void;
+}> = ({ title, type, reports, onReportClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -121,7 +129,7 @@ const ReportSection: React.FC<{ title: string; type: 'annual' | 'quarterly' | 'm
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Ensure scrollbar is hidden
         >
           {reports.map((report) => (
-            <ReportCard key={report.id} report={report} />
+            <ReportCard key={report.id} report={report} onClick={() => onReportClick(report)} />
           ))}
           
           {reports.length === 0 && (
@@ -146,7 +154,11 @@ const ReportSection: React.FC<{ title: string; type: 'annual' | 'quarterly' | 'm
   );
 };
 
-const ReportCenter: React.FC = () => {
+interface ReportCenterProps {
+  onOpenEditor?: () => void;
+}
+
+const ReportCenter: React.FC<ReportCenterProps> = ({ onOpenEditor }) => {
   const [reports, setReports] = useState<ReportDocument[]>(MOCK_REPORTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -166,6 +178,15 @@ const ReportCenter: React.FC = () => {
       status: 'editing',
     };
     setReports([newReport, ...reports]);
+    if (onOpenEditor) {
+      onOpenEditor();
+    }
+  };
+
+  const handleReportClick = (report: ReportDocument) => {
+    if (report.status === 'editing' && onOpenEditor) {
+      onOpenEditor();
+    }
   };
 
   return (
@@ -176,20 +197,29 @@ const ReportCenter: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-800">报告中心</h1>
             <p className="text-sm text-gray-500 mt-1">管理和查看所有质量控制与评审报告</p>
          </div>
-         <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md flex items-center gap-2 text-sm font-medium transition-all transform hover:-translate-y-0.5"
-         >
-            <Plus size={18} />
-            新建报告
-         </button>
+         <div className="flex items-center gap-3">
+             <button 
+                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2 text-sm font-medium transition-all transform hover:-translate-y-0.5 border border-white/20 group"
+             >
+                <Sparkles size={18} className="text-white/90 group-hover:scale-110 transition-transform" />
+                <span>智能创建</span>
+             </button>
+
+             <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm hover:shadow-md flex items-center gap-2 text-sm font-medium transition-all transform hover:-translate-y-0.5"
+             >
+                <Plus size={18} />
+                新建报告
+             </button>
+         </div>
        </div>
 
        {/* Content Area */}
        <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
-          <ReportSection title="年度质量简报" type="annual" reports={annualReports} />
-          <ReportSection title="季度质量监测" type="quarterly" reports={quarterlyReports} />
-          <ReportSection title="月度数据分析" type="monthly" reports={monthlyReports} />
+          <ReportSection title="年度质量简报" type="annual" reports={annualReports} onReportClick={handleReportClick} />
+          <ReportSection title="季度质量监测" type="quarterly" reports={quarterlyReports} onReportClick={handleReportClick} />
+          <ReportSection title="月度数据分析" type="monthly" reports={monthlyReports} onReportClick={handleReportClick} />
        </div>
 
        <CreateReportModal 

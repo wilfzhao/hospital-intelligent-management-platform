@@ -8,7 +8,7 @@ import {
   Wand2, Undo, Redo,
   LayoutGrid, ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
   Database, FileCode, Activity,
-  Loader2, Check
+  Loader2, Check, Send, Sparkles, Bell
 } from 'lucide-react';
 import { PLANS } from '../constants';
 
@@ -632,10 +632,13 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
           >
              <Eye size={14} /> 预览
           </button>
+          <button className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm transition-colors shadow-sm">
+             <Send size={14} /> 发布
+          </button>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Sidebar */}
         <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 z-10">
           <div className="flex border-b border-gray-100">
@@ -747,7 +750,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col min-w-0 bg-gray-50">
+        <main className="flex-1 flex flex-col min-w-0 bg-gray-50 relative">
            {/* Editor Toolbar */}
            <div className="h-12 bg-white border-b border-gray-200 flex items-center px-4 justify-between flex-shrink-0 shadow-sm z-10">
               <div className="flex items-center gap-2">
@@ -805,6 +808,25 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
               </div>
            </div>
         </main>
+
+        {/* Right Sidebar - Tools */}
+        <aside className="w-[48px] bg-white border-l border-gray-200 flex flex-col items-center py-6 gap-6 z-10 flex-shrink-0">
+            {/* Chat Item */}
+            <button className="flex flex-col items-center gap-1.5 group">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Sparkles size={20} />
+                </div>
+                <span className="text-xs font-medium text-gray-600 group-hover:text-blue-600">对话</span>
+            </button>
+
+            {/* Reminder Item */}
+            <button className="flex flex-col items-center gap-1.5 group">
+                <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                    <Bell size={20} />
+                </div>
+                <span className="text-xs font-medium text-gray-600 group-hover:text-orange-500">提醒</span>
+            </button>
+        </aside>
       </div>
 
       {/* Loading Overlay */}

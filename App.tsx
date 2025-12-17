@@ -77,7 +77,7 @@ const App: React.FC = () => {
 
       // --- Hospital Review Views ---
       case 'report_center':
-        return <ReportCenter />;
+        return <ReportCenter onOpenEditor={() => setCurrentView('report_editor')} />;
 
       case 'review_overview':
       case 'resource_config':

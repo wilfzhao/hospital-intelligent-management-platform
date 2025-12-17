@@ -97,7 +97,7 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({ isOpen, onClose, 
                         onChange={(e) => setTemplateId(e.target.value)}
                         className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-gray-700 bg-white appearance-none"
                     >
-                        <option value="" disabled>请选择内容</option>
+                        <option value="" disabled>请选择报告模版</option>
                         {REPORT_TEMPLATES.map(t => (
                             <option key={t.id} value={t.id}>{t.name}</option>
                         ))}

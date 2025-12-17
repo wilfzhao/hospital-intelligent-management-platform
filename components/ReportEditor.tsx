@@ -7,7 +7,8 @@ import {
   Trash2, Info, X, Minus, Plus, BarChart as BarChartIcon,
   Wand2, Undo, Redo,
   LayoutGrid, ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
-  Database, FileCode, Activity
+  Database, FileCode, Activity,
+  Loader2, Check
 } from 'lucide-react';
 import { PLANS } from '../constants';
 
@@ -43,6 +44,19 @@ interface ChartSettings {
   title: string;
   periods: number;
 }
+
+// Mock Data for Charts (Shared between Component and Settings)
+const MOCK_CHART_DATA = [
+   { label: ['2023年', '三季度'], value: 45 },
+   { label: ['2023年', '四季度'], value: 50 },
+   { label: ['2024年', '一季度'], value: 55 },
+   { label: ['2024年', '二季度'], value: 40 },
+   { label: ['2024年', '三季度'], value: 62 },
+   { label: ['2024年', '四季度'], value: 5 },
+   { label: ['2025年', '一季度'], value: 38 },
+   { label: ['2025年', '二季度'], value: 90 },
+   { label: ['2025年', '三季度'], value: 61 },
+];
 
 // ----------------------------------------------------------------------
 // 0. INDICATOR INFO MODAL
@@ -168,7 +182,7 @@ const DataTagComponent = ({ node }: any) => {
     // Add delay to prevent flickering when moving to the tooltip across the gap
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
-    }, 300);
+    }, 200);
   };
 
   return (
@@ -276,21 +290,11 @@ const DataTag = Node.create({
 const ChartComponent = (props: any) => {
   const settings: ChartSettings = props.node.attrs.settings;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
-  // Mock Data Logic
+  // Use the shared Mock Data logic
   const generateData = (periods: number) => {
-    const fullData = [
-       { label: ['2023年', '三季度'], value: 45 },
-       { label: ['2023年', '四季度'], value: 50 },
-       { label: ['2024年', '一季度'], value: 55 },
-       { label: ['2024年', '二季度'], value: 40 },
-       { label: ['2024年', '三季度'], value: 62 },
-       { label: ['2024年', '四季度'], value: 5 },
-       { label: ['2025年', '一季度'], value: 38 },
-       { label: ['2025年', '二季度'], value: 90 },
-       { label: ['2025年', '三季度'], value: 61 },
-    ];
-    return fullData.slice(Math.max(0, fullData.length - periods));
+    return MOCK_CHART_DATA.slice(Math.max(0, MOCK_CHART_DATA.length - periods));
   };
 
   const data = generateData(settings.periods);
@@ -343,7 +347,10 @@ const ChartComponent = (props: any) => {
 
       {/* Toolbar */}
       <div className="absolute top-2 left-2 flex items-center gap-2 opacity-0 group-hover/chartWrapper:opacity-100 transition-opacity duration-200 z-20">
-         <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-blue-600 rounded-md shadow-sm border border-gray-200 hover:bg-blue-50 font-medium text-xs transition-colors">
+         <button 
+            onClick={() => setShowInfoModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 rounded-md shadow-sm border border-gray-200 hover:bg-gray-50 font-medium text-xs transition-colors"
+         >
             <Info size={14} />
             指标信息
          </button>
@@ -372,6 +379,7 @@ const ChartComponent = (props: any) => {
         initialSettings={settings}
         onSave={updateSettings}
       />
+      <IndicatorInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </NodeViewWrapper>
   );
 };
@@ -413,6 +421,19 @@ const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose
 
   if (!isOpen) return null;
 
+  // Calculate dynamic range for preview
+  const dataLength = MOCK_CHART_DATA.length;
+  // ChartComponent uses fullData.slice(Math.max(0, fullData.length - periods))
+  // We mirror that logic
+  const startIndex = Math.max(0, dataLength - periods);
+  const actualPeriods = dataLength - startIndex;
+  
+  const startItem = MOCK_CHART_DATA[startIndex];
+  const endItem = MOCK_CHART_DATA[dataLength - 1];
+
+  const startDateStr = startItem ? `${startItem.label[0]}${startItem.label[1]}` : '无数据';
+  const endDateStr = endItem ? `${endItem.label[0]}${endItem.label[1]}` : '无数据';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-lg shadow-xl w-[500px] overflow-hidden">
@@ -444,6 +465,23 @@ const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose
               <span className="text-sm text-gray-600">个周期</span>
             </div>
           </div>
+
+          {/* Dynamic Preview Description */}
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-4">
+             <div className="flex items-center gap-2 mb-2">
+                 <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                 <h4 className="text-xs font-bold text-blue-800">预期结果预览：</h4>
+             </div>
+             <div className="text-xs text-blue-700 leading-relaxed space-y-1">
+                <p>
+                  图表将展示从 <span className="font-bold bg-white/50 px-1 rounded">{startDateStr}</span> 到 <span className="font-bold bg-white/50 px-1 rounded">{endDateStr}</span> 期间的数据。
+                </p>
+                <p>
+                  共计 <span className="font-bold">{actualPeriods}</span> 个周期的数据点。
+                </p>
+             </div>
+          </div>
+
         </div>
         <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
           <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 font-medium">取消</button>
@@ -459,11 +497,14 @@ const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose
 // ----------------------------------------------------------------------
 
 const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<'dataset' | 'indicator'>('dataset');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['p4']));
   const [timeParam, setTimeParam] = useState<string | null>(null);
   const [isTimeParamOpen, setIsTimeParamOpen] = useState(false);
   const [indicatorExpanded, setIndicatorExpanded] = useState(true); // Default expand the sample indicator
+
+  // Preview State
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [showPreviewSuccess, setShowPreviewSuccess] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -528,6 +569,21 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
     }).run();
   }
 
+  const handlePreview = () => {
+    setIsPreviewLoading(true);
+    
+    // Simulate data processing delay (e.g., 1.5s)
+    setTimeout(() => {
+      setIsPreviewLoading(false);
+      setShowPreviewSuccess(true);
+
+      // Auto hide success message after 2s
+      setTimeout(() => {
+        setShowPreviewSuccess(false);
+      }, 2000);
+    }, 1500);
+  };
+
   if (!editor) {
     return null;
   }
@@ -569,7 +625,11 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
              )}
           </div>
 
-          <button className="flex items-center gap-1 border border-gray-200 px-3 py-1.5 rounded bg-white hover:bg-gray-50 text-gray-700 text-sm">
+          <button 
+            onClick={handlePreview}
+            disabled={isPreviewLoading}
+            className="flex items-center gap-1 border border-gray-200 px-3 py-1.5 rounded bg-white hover:bg-gray-50 text-gray-700 text-sm active:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
              <Eye size={14} /> 预览
           </button>
         </div>
@@ -579,11 +639,10 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
         {/* Sidebar */}
         <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 z-10">
           <div className="flex border-b border-gray-100">
-             <button className={`flex-1 py-3 text-sm font-medium relative ${activeTab === 'dataset' ? 'text-blue-600' : 'text-gray-600'}`} onClick={() => setActiveTab('dataset')}>
-               数据集
-               {activeTab === 'dataset' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
-             </button>
-             <button className="flex-1 py-3 text-sm font-medium text-gray-600">指标</button>
+             <div className="flex-1 py-3 text-sm font-medium text-center text-blue-600 relative cursor-default">
+               指标
+               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
+             </div>
           </div>
           <div className="p-3 border-b border-gray-50">
              <div className="relative">
@@ -747,6 +806,35 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
            </div>
         </main>
       </div>
+
+      {/* Loading Overlay */}
+      {isPreviewLoading && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-150">
+           <div className="bg-white px-8 py-6 rounded-xl shadow-2xl flex flex-col items-center gap-4">
+              <div className="animate-spin text-blue-600">
+                <Loader2 size={32} />
+              </div>
+              <span className="text-gray-700 font-medium">正在更新数据...</span>
+           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Success Toast */}
+      {showPreviewSuccess && createPortal(
+        <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-4 duration-300">
+           <div className="bg-white border border-green-100 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[200px]">
+              <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                  <Check size={16} className="text-green-600" />
+              </div>
+              <div className="flex flex-col">
+                  <span className="font-bold text-gray-800 text-sm">数据更新成功</span>
+                  <span className="text-xs text-gray-500">预览模式已就绪</span>
+              </div>
+           </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

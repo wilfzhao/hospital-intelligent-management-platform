@@ -8,7 +8,7 @@ import {
   Wand2, Undo, Redo,
   LayoutGrid, ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
   Database, FileCode, Activity,
-  Loader2, Check, Send, Sparkles, Bell
+  Loader2, Check, Send, Sparkles, Bell, Clock, Globe, FileText as FileIcon, CalendarDays
 } from 'lucide-react';
 import { PLANS } from '../constants';
 
@@ -162,12 +162,160 @@ const IndicatorInfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 };
 
 // ----------------------------------------------------------------------
+// 0.5 LOCAL PARAM MODAL
+// ----------------------------------------------------------------------
+
+const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => void }) => {
+  const [paramType, setParamType] = useState<'global' | 'document' | 'custom'>('global');
+  const [globalValue, setGlobalValue] = useState('报告周期');
+  const [documentParam, setDocumentParam] = useState('');
+  const [customDimension, setCustomDimension] = useState<'year' | 'quarter' | 'month'>('year');
+  const [customValue, setCustomValue] = useState('');
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl w-[500px] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100 text-blue-600 rounded-md">
+              <Clock size={18} />
+            </div>
+            <h3 className="font-bold text-gray-800">设置局部时间参数</h3>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 p-1 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Type Selector */}
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">参数类型</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'global', label: '全局时间参数', icon: Globe },
+                { id: 'document', label: '文档中的时间参数', icon: FileIcon },
+                { id: 'custom', label: '自定义时间参数', icon: CalendarDays },
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setParamType(type.id as any)}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                    paramType === type.id 
+                    ? 'bg-blue-50 border-blue-500 text-blue-600 ring-2 ring-blue-100' 
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <type.icon size={20} />
+                  <span className="text-xs font-medium text-center leading-tight">{type.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sub Options Based on Type */}
+          <div className="min-h-[120px] bg-gray-50/50 rounded-xl p-4 border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
+            {paramType === 'global' && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">参数选择</label>
+                <div className="space-y-2">
+                  {['报告周期', '本年度累计至报告周期'].map((opt) => (
+                    <label key={opt} className="flex items-center gap-3 p-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 group transition-all">
+                      <input 
+                        type="radio" 
+                        name="globalOpt" 
+                        checked={globalValue === opt} 
+                        onChange={() => setGlobalValue(opt)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className={`text-sm ${globalValue === opt ? 'text-blue-600 font-medium' : 'text-gray-600'}`}>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {paramType === 'document' && (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">关联文档中的日期控件</label>
+                <select 
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+                  value={documentParam}
+                  onChange={(e) => setDocumentParam(e.target.value)}
+                >
+                  <option value="">请选择文档中的日期控件</option>
+                  <option value="ctrl1">日期控件 1 (2025-01-01)</option>
+                  <option value="ctrl2">日期控件 2 (2024-12-31)</option>
+                  <option value="ctrl3">统计截止日期</option>
+                </select>
+                <p className="text-[10px] text-gray-400">若文档中尚未插入日期控件，请先在工具栏选择“日期控件”插入。</p>
+              </div>
+            )}
+
+            {paramType === 'custom' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">时间维度</label>
+                  <div className="flex bg-white rounded-lg p-1 border border-gray-200">
+                    {['year', 'quarter', 'month'].map((dim) => (
+                      <button
+                        key={dim}
+                        onClick={() => setCustomDimension(dim as any)}
+                        className={`flex-1 py-1 text-xs rounded transition-colors ${
+                          customDimension === dim ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {dim === 'year' ? '年' : dim === 'quarter' ? '季' : '月'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">选择时间</label>
+                  <div className="relative">
+                    <input 
+                      type={customDimension === 'month' ? 'month' : 'text'}
+                      placeholder={customDimension === 'year' ? '如: 2024' : customDimension === 'quarter' ? '如: 2024-Q3' : ''}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+                      value={customValue}
+                      onChange={(e) => setCustomValue(e.target.value)}
+                    />
+                    <Calendar size={14} className="absolute right-3 top-2.5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 font-medium">取消</button>
+          <button 
+            onClick={() => { onSave({ type: paramType, value: globalValue }); onClose(); }} 
+            className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 font-medium shadow-sm active:scale-95 transition-all"
+          >
+            确定
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// ----------------------------------------------------------------------
 // 1. DATA TAG EXTENSION (Custom Node for [Value])
 // ----------------------------------------------------------------------
 
 const DataTagComponent = ({ node }: any) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showParamModal, setShowParamModal] = useState(false);
   const hoverTimeoutRef = useRef<any>(null);
 
   const handleMouseEnter = () => {
@@ -179,7 +327,6 @@ const DataTagComponent = ({ node }: any) => {
   };
 
   const handleMouseLeave = () => {
-    // Add delay to prevent flickering when moving to the tooltip across the gap
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
     }, 200);
@@ -224,7 +371,7 @@ const DataTagComponent = ({ node }: any) => {
               </button>
               <div className="w-px h-3 bg-gray-200"></div>
               <button 
-                onClick={(e) => { e.stopPropagation(); /* Handle Param Logic */ }}
+                onClick={(e) => { e.stopPropagation(); setShowParamModal(true); }}
                 className="flex items-center gap-1 px-2 py-1 hover:bg-blue-50 text-xs text-gray-700 hover:text-blue-600 rounded transition-colors"
               >
                 <Settings size={12} />
@@ -235,8 +382,13 @@ const DataTagComponent = ({ node }: any) => {
         )}
       </NodeViewWrapper>
 
-      {/* Modal - Rendered via Portal inside the component logic */}
+      {/* Modals */}
       <IndicatorInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
+      <LocalParamModal 
+        isOpen={showParamModal} 
+        onClose={() => setShowParamModal(false)} 
+        onSave={(data) => console.log('Saved Param:', data)} 
+      />
     </>
   );
 };
@@ -810,10 +962,10 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
         </main>
 
         {/* Right Sidebar - Tools */}
-        <aside className="w-[48px] bg-white border-l border-gray-200 flex flex-col items-center py-6 gap-6 z-10 flex-shrink-0">
+        <aside className="w-[80px] bg-white border-l border-gray-200 flex flex-col items-center py-6 gap-6 z-10 flex-shrink-0">
             {/* Chat Item */}
             <button className="flex flex-col items-center gap-1.5 group">
-                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                     <Sparkles size={20} />
                 </div>
                 <span className="text-xs font-medium text-gray-600 group-hover:text-blue-600">对话</span>
@@ -821,7 +973,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
 
             {/* Reminder Item */}
             <button className="flex flex-col items-center gap-1.5 group">
-                <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                     <Bell size={20} />
                 </div>
                 <span className="text-xs font-medium text-gray-600 group-hover:text-orange-500">提醒</span>

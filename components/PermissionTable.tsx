@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { TabType, Indicator } from '../types';
 import { INDICATORS } from '../constants';
@@ -127,7 +128,6 @@ const PermissionTable: React.FC = () => {
     }
 
     // Global Invariant: If Read is false, Display must be false.
-    // This catches edge cases and ensures consistency.
     if (!newNode.readPermission) {
        newNode.displayEntry = false;
     }
@@ -141,7 +141,6 @@ const PermissionTable: React.FC = () => {
   };
 
   // 2. Cascade Logic (Top-Down)
-  // Applies the value and dependencies to a node and all its descendants recursively
   const cascadeUpdate = (nodes: Indicator[], key: keyof Indicator, value: boolean): Indicator[] => {
     return nodes.map((node) => {
       let newNode = applyDependencies(node, key, value);
@@ -153,15 +152,11 @@ const PermissionTable: React.FC = () => {
   };
 
   // 3. Synchronization Logic (Bottom-Up)
-  // Updates parents based on children's state.
-  // Parent is True only if ALL children are True.
   const syncParents = (nodes: Indicator[]): Indicator[] => {
     return nodes.map((node) => {
       if (hasChildren(node)) {
-        // First, sync children recursively
         const syncedChildren = syncParents(node.children!);
         
-        // Then calculate parent state based on new children state
         const allRead = syncedChildren.every(c => c.readPermission);
         const allFill = syncedChildren.every(c => c.fillPermission);
         const allDisplay = syncedChildren.every(c => c.displayEntry);
@@ -187,7 +182,6 @@ const PermissionTable: React.FC = () => {
         ? 'fillPermission'
         : 'displayEntry';
 
-    // Step 1: Find the target node to determine Name and Next Value
     let nextValue = true;
     let targetName = '';
     
@@ -203,27 +197,31 @@ const PermissionTable: React.FC = () => {
     };
     findTargetInfo(indicators);
 
-    if (!targetName) return; // Should not happen
+    if (!targetName) return;
 
-    // Step 2: Update the tree (Cascade Down)
-    // We update matching nodes (by ID or Name) and their children
     const updateTargetAndCascade = (nodes: Indicator[]): Indicator[] => {
       return nodes.map((node) => {
-        // Check if this node matches the target ID OR matches the target Name
-        // We sync across same-named indicators
-        if (node.id === targetId || node.name === targetName) {
+        /**
+         * SPECIAL RULE: 
+         * If type is 'display', only match by ID (isolate to current row/subtree).
+         * For other types (read, fill), continue to match by Name as well (global sync).
+         */
+        const isTargetMatch = type === 'display' 
+          ? node.id === targetId 
+          : (node.id === targetId || node.name === targetName);
+
+        if (isTargetMatch) {
           // Apply to self
           let updatedNode = applyDependencies(node, targetKey, nextValue);
           
-          // Apply to children (Cascade) - if a directory is toggled, its children update
-          // If a leaf is toggled (by name sync), it just updates itself (no children)
+          // Apply to subtree (Cascade Down)
           if (hasChildren(updatedNode)) {
              updatedNode.children = cascadeUpdate(updatedNode.children!, targetKey, nextValue);
           }
           return updatedNode;
         }
         
-        // Continue recursion
+        // Recurse to find the node
         if (node.children) {
           return { ...node, children: updateTargetAndCascade(node.children) };
         }
@@ -233,7 +231,7 @@ const PermissionTable: React.FC = () => {
 
     let newIndicators = updateTargetAndCascade(indicators);
 
-    // Step 3: Sync Parents (Bubble Up)
+    // Sync Parents (Bubble Up)
     newIndicators = syncParents(newIndicators);
 
     setIndicators(newIndicators);
@@ -270,7 +268,6 @@ const PermissionTable: React.FC = () => {
     };
   };
 
-  // Flatten the tree for rendering, respecting expanded state
   const getVisibleRows = (nodes: Indicator[], level = 0): Array<Indicator & { level: number }> => {
     let rows: Array<Indicator & { level: number }> = [];
     nodes.forEach(node => {
@@ -391,8 +388,6 @@ const PermissionTable: React.FC = () => {
 
                 const isSub = item.tag === 'sub';
 
-                // Disable Display Entry if Read Permission is completely missing (not checked and not indeterminate)
-                // OR if it is a 'sub' tag
                 const isReadDisabled = !readState.checked && !readState.indeterminate;
                 const isDisplayDisabled = isReadDisabled || isSub;
 

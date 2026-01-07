@@ -153,7 +153,7 @@ export const INDICATORS: Indicator[] = [
         fillPermission: false,
         displayEntry: true,
         children: [
-          { id: '10', name: '填报配置测试四', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true }, 
+          { id: '10', name: '填报配置测试十一', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true }, 
         ]
       },
     ]

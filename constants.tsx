@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { 
   LayoutDashboard, FileText, Database, Settings, BarChart, Users, ClipboardList, Layout,
   Activity, Target, Zap, ClipboardCheck, ListTodo, TrendingUp, PieChart
 } from 'lucide-react';
-import { Indicator, Role, SidebarItem, Plan, ReportTemplate, ReportDocument } from './types';
+import { Indicator, Role, SidebarItem, Plan, ReportTemplate, ReportDocument, Department } from './types';
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
@@ -187,4 +188,35 @@ export const MOCK_REPORTS: ReportDocument[] = [
   { id: 'r10', title: '医院质量简报（2024年）', date: '2025年12月8日', department: '医疗质量管理科', status: 'published', type: 'monthly' },
   { id: 'r11', title: '医院质量简报（2024年）', date: '2025年12月8日', department: '医疗质量管理科', status: 'editing', type: 'monthly' },
   { id: 'r12', title: '医院质量简报（2024年）', date: '2025年12月8日', department: '医疗质量管理科', status: 'published', type: 'monthly' },
+];
+
+export const DEPARTMENTS: Department[] = [
+  {
+    id: 'd1', name: '职能科室', children: [
+      { id: 'd1-1', name: '医务处' },
+      { id: 'd1-2', name: '护理部' },
+      { id: 'd1-3', name: '院感科' },
+      { id: 'd1-4', name: '质管科' },
+      { id: 'd1-5', name: '病案室' },
+    ]
+  },
+  {
+    id: 'd2', name: '临床科室', children: [
+      { id: 'd2-1', name: '心血管内科' },
+      { id: 'd2-2', name: '呼吸内科' },
+      { id: 'd2-3', name: '消化内科' },
+      { id: 'd2-4', name: '普通外科' },
+      { id: 'd2-5', name: '骨科' },
+      { id: 'd2-6', name: '神经内科' },
+      { id: 'd2-7', name: '妇产科' },
+    ]
+  },
+  {
+    id: 'd3', name: '医技科室', children: [
+      { id: 'd3-1', name: '放射科' },
+      { id: 'd3-2', name: '检验科' },
+      { id: 'd3-3', name: '药剂科' },
+      { id: 'd3-4', name: '超声科' },
+    ]
+  }
 ];

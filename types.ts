@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface SidebarItem {
@@ -52,7 +53,14 @@ export interface ReportDocument {
   type: 'annual' | 'quarterly' | 'monthly';
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  children?: Department[];
+}
+
 export enum TabType {
   INDICATOR_PERMISSION = 'INDICATOR_PERMISSION',
+  DATA_PERMISSION = 'DATA_PERMISSION',
   PERSONNEL = 'PERSONNEL',
 }

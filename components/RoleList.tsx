@@ -1,11 +1,16 @@
+
 import React, { useState } from 'react';
 import { Search, User } from 'lucide-react';
 import { ROLES } from '../constants';
 import { Role } from '../types';
 
-const RoleList: React.FC = () => {
+interface RoleListProps {
+  activeRoleId: string;
+  onSelectRole: (id: string) => void;
+}
+
+const RoleList: React.FC<RoleListProps> = ({ activeRoleId, onSelectRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeRole, setActiveRole] = useState<string>('r4');
 
   return (
     <div className="w-[260px] bg-white rounded-lg shadow-sm flex flex-col h-full overflow-hidden flex-shrink-0">
@@ -26,16 +31,16 @@ const RoleList: React.FC = () => {
         {ROLES.map((role: Role) => (
           <div
             key={role.id}
-            onClick={() => setActiveRole(role.id)}
+            onClick={() => onSelectRole(role.id)}
             className={`
               flex items-center gap-2 px-3 py-2.5 rounded mb-1 cursor-pointer text-sm transition-colors
-              ${activeRole === role.id 
+              ${activeRoleId === role.id 
                 ? 'bg-blue-50 text-blue-600 font-medium' 
                 : 'text-gray-600 hover:bg-gray-50'}
             `}
           >
-            <div className={`p-1 rounded ${activeRole === role.id ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                <User size={14} className={activeRole === role.id ? 'text-blue-600' : 'text-gray-500'} />
+            <div className={`p-1 rounded ${activeRoleId === role.id ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                <User size={14} className={activeRoleId === role.id ? 'text-blue-600' : 'text-gray-500'} />
             </div>
             <span className="truncate">{role.name}</span>
           </div>

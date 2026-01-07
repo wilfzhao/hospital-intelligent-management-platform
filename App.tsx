@@ -15,6 +15,9 @@ const App: React.FC = () => {
   const [activeModule, setActiveModule] = useState('指标管理中心');
   const [currentView, setCurrentView] = useState('indicator_auth');
 
+  // Role Management State
+  const [activeRoleId, setActiveRoleId] = useState('r4');
+
   // Header Items State
   const [headerItems, setHeaderItems] = useState<string[]>([
     '医院等级评审', 
@@ -70,8 +73,8 @@ const App: React.FC = () => {
       case 'indicator_auth':
         return (
           <>
-            <RoleList />
-            <PermissionTable />
+            <RoleList activeRoleId={activeRoleId} onSelectRole={setActiveRoleId} />
+            <PermissionTable activeRoleId={activeRoleId} />
           </>
         );
 

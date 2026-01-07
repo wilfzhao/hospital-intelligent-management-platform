@@ -1,16 +1,41 @@
 
-import React, { useState } from 'react';
-import { TabType, Indicator } from '../types';
-import { INDICATORS } from '../constants';
+import React, { useState, useMemo } from 'react';
+import { TabType, Indicator, Department } from '../types';
+import { INDICATORS, ROLES, DEPARTMENTS } from '../constants';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
-import { Search, Info, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, Info, ChevronRight, ChevronDown, Shield, Users, Building, AlertCircle, Edit2, RotateCcw, CheckCircle2, LayoutGrid, Check, FolderTree } from 'lucide-react';
 
-const PermissionTable: React.FC = () => {
+type DataScope = 'department' | 'hospital' | 'custom';
+
+interface PermissionTableProps {
+  activeRoleId: string;
+}
+
+const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.INDICATOR_PERMISSION);
   const [superAdmin, setSuperAdmin] = useState(false);
   const [indicators, setIndicators] = useState<Indicator[]>(INDICATORS);
-  // Row selection state
+  
+  // Data Permission State: Role Defaults
+  const [roleScopeDefaults, setRoleScopeDefaults] = useState<Record<string, DataScope>>({
+    'r1': 'hospital',
+    'r2': 'hospital',
+    'r3': 'hospital',
+    'r4': 'custom', 
+  });
+
+  // Data Permission State: Custom Scope Data { key: departmentIds[] }
+  // Keys: "role-{roleId}"
+  // Default mock data for r4 custom scope
+  const [customScopeData, setCustomScopeData] = useState<Record<string, string[]>>({
+    'role-r4': ['d1-1', 'd1-2', 'd2-1', 'd2-2'] 
+  });
+
+  // Tree View State for Departments
+  const [expandedDeptIds, setExpandedDeptIds] = useState<Set<string>>(new Set(['d1', 'd2', 'd3']));
+
+  // Row selection state (for indicator tab)
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['g1', 'g2', 'g3', '9']));
 
@@ -22,6 +47,16 @@ const PermissionTable: React.FC = () => {
       newExpanded.add(id);
     }
     setExpandedIds(newExpanded);
+  };
+
+  const toggleDeptExpand = (id: string) => {
+    const newExpanded = new Set(expandedDeptIds);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedDeptIds(newExpanded);
   };
 
   // Helper to check if a node has children
@@ -95,52 +130,203 @@ const PermissionTable: React.FC = () => {
     setSelectedRowIds(newSet);
   };
 
-  // 1. Dependency Logic (Single Node)
-  // Ensures: Fill -> Read -> Display
-  //          !Read -> !Fill, !Display
+  // --- Data Permission Logic ---
+
+  const currentRoleName = ROLES.find(r => r.id === activeRoleId)?.name || '未知角色';
+  const currentRoleDefaultScope = roleScopeDefaults[activeRoleId] || 'department';
+
+  const updateRoleDefaultScope = (scope: DataScope) => {
+    setRoleScopeDefaults(prev => ({
+      ...prev,
+      [activeRoleId]: scope
+    }));
+  };
+
+  const handleToggleDepartment = (deptId: string) => {
+    const key = `role-${activeRoleId}`;
+    const currentList = customScopeData[key] || [];
+    let newList = [...currentList];
+    
+    if (newList.includes(deptId)) {
+        newList = newList.filter(id => id !== deptId);
+    } else {
+        newList.push(deptId);
+    }
+    
+    setCustomScopeData(prev => ({ ...prev, [key]: newList }));
+  };
+
+  const handleToggleGroup = (group: Department) => {
+    const key = `role-${activeRoleId}`;
+    const currentList = customScopeData[key] || [];
+    const childrenIds = group.children?.map(c => c.id) || [];
+    
+    // Check if all children are currently selected
+    const allSelected = childrenIds.length > 0 && childrenIds.every(id => currentList.includes(id));
+    
+    let newList = [...currentList];
+    
+    if (allSelected) {
+        // Deselect all children
+        newList = newList.filter(id => !childrenIds.includes(id));
+    } else {
+        // Select all children
+        childrenIds.forEach(id => {
+            if (!newList.includes(id)) newList.push(id);
+        });
+    }
+    
+    setCustomScopeData(prev => ({ ...prev, [key]: newList }));
+  };
+
+  // Helper to render the visible departments based on current scope
+  const renderVisibleDepartments = () => {
+     // Mock Data for "Department" scope simulation (Assuming current logged in user is Zhao Weifeng)
+     const mockUser = { name: '赵伟峰', deptId: 'd1-4', deptName: '质管科' };
+
+     const isEditable = currentRoleDefaultScope === 'custom';
+     
+     // Determine active IDs for display
+     let currentSelectedIds: string[] = [];
+     if (isEditable) {
+         currentSelectedIds = customScopeData[`role-${activeRoleId}`] || [];
+     } else if (currentRoleDefaultScope === 'department') {
+         currentSelectedIds = [mockUser.deptId];
+     }
+     // 'hospital' implies all, handled in logic below
+
+     const getStatus = (childrenIds: string[]) => {
+        if (currentRoleDefaultScope === 'hospital') return { checked: true, indeterminate: false };
+        
+        const selectedCount = childrenIds.filter(id => currentSelectedIds.includes(id)).length;
+        const allSelected = childrenIds.length > 0 && selectedCount === childrenIds.length;
+        const someSelected = selectedCount > 0 && selectedCount < childrenIds.length;
+        
+        return { checked: allSelected, indeterminate: someSelected };
+     };
+
+     return (
+         <div className="flex flex-col gap-3">
+             {/* Banner for Department Scope */}
+             {currentRoleDefaultScope === 'department' && (
+                 <div className="bg-blue-50/80 border border-blue-100 rounded-md p-3 flex items-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
+                     <div className="bg-white p-1 rounded-full border border-blue-100 shadow-sm flex-shrink-0">
+                        <Users size={14} className="text-blue-600" />
+                     </div>
+                     <span>
+                        模拟视图：当前用户 <span className="font-bold text-blue-900">{mockUser.name}</span> 
+                        所属科室为 <span className="font-bold text-blue-900">{mockUser.deptName}</span>，系统自动匹配仅该科室可见。
+                     </span>
+                 </div>
+             )}
+
+             <div className="border border-gray-200 rounded-lg bg-white select-none shadow-sm">
+                 {DEPARTMENTS.map(group => {
+                     const childrenIds = group.children?.map(c => c.id) || [];
+                     const { checked, indeterminate } = getStatus(childrenIds);
+                     const isExpanded = expandedDeptIds.has(group.id);
+
+                     return (
+                         <div key={group.id} className="border-b border-gray-100 last:border-0">
+                             {/* Group Header */}
+                             <div className={`flex items-center px-4 py-3 hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50/50' : ''}`}>
+                                  <button 
+                                     onClick={(e) => { e.stopPropagation(); toggleDeptExpand(group.id); }}
+                                     className="p-1 mr-2 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                                  >
+                                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                  </button>
+                                  
+                                  <div 
+                                     className={`flex items-center gap-3 flex-1 ${isEditable ? 'cursor-pointer' : ''}`}
+                                     onClick={() => isEditable && handleToggleGroup(group)}
+                                  >
+                                      <div className={`
+                                          w-4 h-4 rounded border flex items-center justify-center transition-all
+                                          ${checked || indeterminate ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}
+                                          ${!isEditable ? 'opacity-60 bg-blue-600 border-blue-600' : ''} 
+                                      `}>
+                                          {checked && <Check size={12} className="text-white" />}
+                                          {indeterminate && !checked && <div className="w-2 h-0.5 bg-white rounded-full" />}
+                                          {!isEditable && !checked && <Check size={12} className="text-white" />}
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-2">
+                                          <span className="text-sm font-bold text-gray-700">{group.name}</span>
+                                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{childrenIds.length}</span>
+                                      </div>
+                                  </div>
+                             </div>
+
+                             {/* Children */}
+                             {isExpanded && (
+                                 <div className="bg-gray-50/30 border-t border-gray-100">
+                                     {group.children?.map(dept => {
+                                         const isChildSelected = currentRoleDefaultScope === 'hospital' || currentSelectedIds.includes(dept.id);
+                                         
+                                         return (
+                                             <div 
+                                                 key={dept.id}
+                                                 onClick={() => isEditable && handleToggleDepartment(dept.id)}
+                                                 className={`
+                                                     flex items-center pl-14 pr-4 py-2.5 border-b border-gray-50/50 last:border-0 transition-colors
+                                                     ${isEditable ? 'cursor-pointer hover:bg-blue-50/30' : ''}
+                                                     ${!isEditable && isChildSelected ? 'bg-blue-50/20' : ''}
+                                                 `}
+                                             >
+                                                 <div className={`
+                                                     w-4 h-4 rounded border flex items-center justify-center mr-3 transition-all
+                                                     ${isChildSelected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}
+                                                     ${!isEditable ? 'opacity-60' : ''}
+                                                 `}>
+                                                     {isChildSelected && <Check size={12} className="text-white" />}
+                                                 </div>
+                                                 <span className={`text-sm ${isChildSelected ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                                                     {dept.name}
+                                                 </span>
+                                             </div>
+                                         )
+                                     })}
+                                 </div>
+                             )}
+                         </div>
+                     );
+                 })}
+             </div>
+         </div>
+     );
+  };
+
+
+  // --- Indicator Permission Logic ---
   const applyDependencies = (node: Indicator, key: keyof Indicator, value: boolean): Indicator => {
     const newNode = { ...node, [key]: value };
-
-    // Rule 1: Fill Permission -> Read + Display
     if (key === 'fillPermission' && value === true) {
       newNode.readPermission = true;
       newNode.displayEntry = true;
     }
-
-    // Rule 2: Read logic
     if (key === 'readPermission') {
       if (value === true) {
-        // Checking Read enables Display (default)
         newNode.displayEntry = true;
       } else {
-        // Unchecking Read disables Display and Fill
         newNode.displayEntry = false;
         newNode.fillPermission = false;
       }
     }
-
-    // Rule 3: Display logic
-    // Enforce: Cannot check display if read is false.
     if (key === 'displayEntry' && value === true) {
       if (!newNode.readPermission) {
-        newNode.displayEntry = false; // Prevent change
+        newNode.displayEntry = false; 
       }
     }
-
-    // Global Invariant: If Read is false, Display must be false.
     if (!newNode.readPermission) {
        newNode.displayEntry = false;
     }
-
-    // Rule for 'sub' tag: Display Entry is always false
     if (newNode.tag === 'sub') {
       newNode.displayEntry = false;
     }
-
     return newNode;
   };
 
-  // 2. Cascade Logic (Top-Down)
   const cascadeUpdate = (nodes: Indicator[], key: keyof Indicator, value: boolean): Indicator[] => {
     return nodes.map((node) => {
       let newNode = applyDependencies(node, key, value);
@@ -151,7 +337,6 @@ const PermissionTable: React.FC = () => {
     });
   };
 
-  // 3. Synchronization Logic (Bottom-Up)
   const syncParents = (nodes: Indicator[]): Indicator[] => {
     return nodes.map((node) => {
       if (hasChildren(node)) {
@@ -173,7 +358,6 @@ const PermissionTable: React.FC = () => {
     });
   };
 
-  // 4. Main Toggle Handler
   const togglePermission = (targetId: string, type: 'read' | 'fill' | 'display') => {
     const targetKey =
       type === 'read'
@@ -201,27 +385,17 @@ const PermissionTable: React.FC = () => {
 
     const updateTargetAndCascade = (nodes: Indicator[]): Indicator[] => {
       return nodes.map((node) => {
-        /**
-         * SPECIAL RULE: 
-         * If type is 'display', only match by ID (isolate to current row/subtree).
-         * For other types (read, fill), continue to match by Name as well (global sync).
-         */
         const isTargetMatch = type === 'display' 
           ? node.id === targetId 
           : (node.id === targetId || node.name === targetName);
 
         if (isTargetMatch) {
-          // Apply to self
           let updatedNode = applyDependencies(node, targetKey, nextValue);
-          
-          // Apply to subtree (Cascade Down)
           if (hasChildren(updatedNode)) {
              updatedNode.children = cascadeUpdate(updatedNode.children!, targetKey, nextValue);
           }
           return updatedNode;
         }
-        
-        // Recurse to find the node
         if (node.children) {
           return { ...node, children: updateTargetAndCascade(node.children) };
         }
@@ -230,42 +404,23 @@ const PermissionTable: React.FC = () => {
     };
 
     let newIndicators = updateTargetAndCascade(indicators);
-
-    // Sync Parents (Bubble Up)
     newIndicators = syncParents(newIndicators);
-
     setIndicators(newIndicators);
   };
 
-  // Helper to determine indeterminate state for rendering
   const getCheckboxState = (node: Indicator, type: 'read' | 'fill' | 'display') => {
-    const key =
-      type === 'read'
-        ? 'readPermission'
-        : type === 'fill'
-        ? 'fillPermission'
-        : 'displayEntry';
-
+    const key = type === 'read' ? 'readPermission' : type === 'fill' ? 'fillPermission' : 'displayEntry';
     const checked = node[key];
-    
-    if (!hasChildren(node)) {
-      return { checked, indeterminate: false };
-    }
-
+    if (!hasChildren(node)) return { checked, indeterminate: false };
     const checkRecursive = (n: Indicator): boolean => {
         const k = key as keyof Indicator;
         if (n[k]) return true;
         if (n.children) return n.children.some(checkRecursive);
         return false;
     };
-    
     const isActuallyChecked = checked;
     const isSomeChecked = checkRecursive(node);
-    
-    return {
-        checked: isActuallyChecked,
-        indeterminate: !isActuallyChecked && isSomeChecked
-    };
+    return { checked: isActuallyChecked, indeterminate: !isActuallyChecked && isSomeChecked };
   };
 
   const getVisibleRows = (nodes: Indicator[], level = 0): Array<Indicator & { level: number }> => {
@@ -282,174 +437,284 @@ const PermissionTable: React.FC = () => {
   const visibleRows = getVisibleRows(indicators);
 
   return (
-    <div className="flex-1 bg-white rounded-lg shadow-sm flex flex-col h-full overflow-hidden">
+    <div className="flex-1 bg-white rounded-lg shadow-sm flex flex-col h-full overflow-hidden relative">
       {/* Tabs */}
-      <div className="flex border-b border-gray-100">
+      <div className="flex border-b border-gray-100 flex-shrink-0">
         <button
-          className={`px-6 py-3 text-sm font-medium relative ${
+          className={`px-6 py-3 text-sm font-medium relative transition-colors ${
             activeTab === TabType.INDICATOR_PERMISSION ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveTab(TabType.INDICATOR_PERMISSION)}
         >
           指标权限
           {activeTab === TabType.INDICATOR_PERMISSION && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 animate-in fade-in zoom-in-x duration-200"></div>
           )}
         </button>
         <button
-          className={`px-6 py-3 text-sm font-medium relative ${
+          className={`px-6 py-3 text-sm font-medium relative transition-colors ${
+            activeTab === TabType.DATA_PERMISSION ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab(TabType.DATA_PERMISSION)}
+        >
+          数据权限
+          {activeTab === TabType.DATA_PERMISSION && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 animate-in fade-in zoom-in-x duration-200"></div>
+          )}
+        </button>
+        <button
+          className={`px-6 py-3 text-sm font-medium relative transition-colors ${
             activeTab === TabType.PERSONNEL ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveTab(TabType.PERSONNEL)}
         >
           角色下人员
           {activeTab === TabType.PERSONNEL && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 animate-in fade-in zoom-in-x duration-200"></div>
           )}
         </button>
       </div>
 
-      <div className="p-5 flex-1 flex flex-col overflow-hidden">
-        {/* Super Permission Banner */}
-        <div className="bg-gray-50 rounded-md p-4 mb-4 flex items-center gap-3">
-          <span className="text-sm font-bold text-gray-700">超级权限</span>
-          <Info size={14} className="text-gray-400" />
-          <Toggle checked={superAdmin} onChange={setSuperAdmin} size="sm" />
+      {/* --- CONTENT AREA SWITCHER --- */}
+      {activeTab === TabType.DATA_PERMISSION ? (
+        // === DATA PERMISSION VIEW ===
+        <div className="flex flex-col h-full overflow-hidden p-6 gap-6 bg-gray-50/50">
+           
+           {/* Section 1: Role Default Scope */}
+           <div className="bg-white border border-blue-100 rounded-lg shadow-sm p-5 animate-in fade-in slide-in-from-top-2 duration-300 flex-shrink-0">
+              <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-2">
+                     <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                        <Shield size={20} />
+                     </div>
+                     <div>
+                        <h3 className="font-bold text-gray-800">角色默认数据范围</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">设置该角色下所有人员的默认数据可见性</p>
+                     </div>
+                  </div>
+                  <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded text-sm font-medium border border-blue-100">
+                      当前配置角色：{currentRoleName}
+                  </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="flex items-center gap-8">
+                      <label className={`flex items-center gap-3 cursor-pointer select-none transition-all p-3 rounded-lg border ${currentRoleDefaultScope === 'department' ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500' : 'border-transparent hover:bg-gray-200/50'}`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${currentRoleDefaultScope === 'department' ? 'border-blue-600' : 'border-gray-400'}`}>
+                              {currentRoleDefaultScope === 'department' && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
+                          </div>
+                          <div className="flex flex-col">
+                             <span className={`text-sm font-bold ${currentRoleDefaultScope === 'department' ? 'text-blue-700' : 'text-gray-700'}`}>仅本人/本科室</span>
+                             <span className="text-xs text-gray-500">只能查看归属于自己科室的数据</span>
+                          </div>
+                          <button onClick={() => updateRoleDefaultScope('department')} className="hidden" />
+                      </label>
+
+                      <label className={`flex items-center gap-3 cursor-pointer select-none transition-all p-3 rounded-lg border ${currentRoleDefaultScope === 'hospital' ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500' : 'border-transparent hover:bg-gray-200/50'}`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${currentRoleDefaultScope === 'hospital' ? 'border-blue-600' : 'border-gray-400'}`}>
+                              {currentRoleDefaultScope === 'hospital' && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
+                          </div>
+                          <div className="flex flex-col">
+                             <span className={`text-sm font-bold ${currentRoleDefaultScope === 'hospital' ? 'text-blue-700' : 'text-gray-700'}`}>全院数据</span>
+                             <span className="text-xs text-gray-500">可查看全院所有科室的数据指标</span>
+                          </div>
+                          <button onClick={() => updateRoleDefaultScope('hospital')} className="hidden" />
+                      </label>
+
+                      <label className={`flex items-center gap-3 cursor-pointer select-none transition-all p-3 rounded-lg border ${currentRoleDefaultScope === 'custom' ? 'bg-white border-blue-500 shadow-sm ring-1 ring-blue-500' : 'border-transparent hover:bg-gray-200/50'}`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${currentRoleDefaultScope === 'custom' ? 'border-blue-600' : 'border-gray-400'}`}>
+                              {currentRoleDefaultScope === 'custom' && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
+                          </div>
+                          <div className="flex flex-col">
+                             <span className={`text-sm font-bold ${currentRoleDefaultScope === 'custom' ? 'text-blue-700' : 'text-gray-700'}`}>自定义范围</span>
+                             <span className="text-xs text-gray-500">手动勾选可见的科室列表</span>
+                          </div>
+                          <button onClick={() => updateRoleDefaultScope('custom')} className="hidden" />
+                      </label>
+                  </div>
+                  
+                  {currentRoleDefaultScope === 'custom' && (
+                     <div className="mt-4 pt-4 border-t border-gray-200 pl-2 animate-in fade-in slide-in-from-top-1 flex items-center gap-2 text-sm text-blue-600 bg-blue-50/50 p-2 rounded">
+                        <Info size={14} />
+                        <span>请在下方“可见科室明细”中直接勾选科室，点击箭头可展开/折叠</span>
+                     </div>
+                  )}
+              </div>
+           </div>
+
+           {/* Section 2: Visible Departments Preview (Replaced Personnel) */}
+           <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+               <div className="bg-gray-50 px-5 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                     <FolderTree size={18} className="text-gray-600" />
+                     <h3 className="font-bold text-gray-800">可见科室明细</h3>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                     {currentRoleDefaultScope === 'custom' ? '点击可直接进行配置' : '根据上方配置自动生成'}
+                  </div>
+               </div>
+
+               <div className="flex-1 overflow-y-auto p-5 bg-white">
+                  {renderVisibleDepartments()}
+               </div>
+           </div>
         </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3 flex-wrap">
-             <div className="flex items-center gap-2">
-                 <span className="text-sm text-gray-600">方案:</span>
-                 <select className="border border-gray-200 rounded px-2 py-1.5 text-sm text-gray-600 bg-white outline-none focus:border-blue-500 w-40">
-                     <option>三级医院等级评审</option>
-                     <option>公立医院绩效考核</option>
-                 </select>
-             </div>
-
-             <div className="flex items-center gap-2">
-                 <span className="text-sm text-gray-600">指标权限:</span>
-                 <select className="border border-gray-200 rounded px-2 py-1.5 text-sm text-gray-600 bg-white outline-none focus:border-blue-500 w-32">
-                     <option>请选择</option>
-                     <option>有查阅权限</option>
-                     <option>无查阅权限</option>
-                 </select>
-             </div>
-
-             <div className="flex rounded border border-gray-200 overflow-hidden bg-white">
-                <input 
-                    type="text" 
-                    placeholder="请输入指标名称" 
-                    className="px-3 py-1.5 text-sm outline-none text-gray-600 w-48 bg-white"
-                />
-                <button className="bg-gray-50 px-3 text-gray-500 border-l border-gray-200 hover:bg-gray-100">
-                    <span className="text-sm">搜索</span>
-                </button>
-             </div>
+      ) : (
+        // === ORIGINAL INDICATOR PERMISSION VIEW ===
+        <div className="p-5 flex-1 flex flex-col overflow-hidden">
+          {/* Super Permission Banner */}
+          <div className="bg-gray-50 rounded-md p-4 mb-4 flex items-center gap-3 border border-gray-100">
+            <span className="text-sm font-bold text-gray-700">超级权限</span>
+            <Info size={14} className="text-gray-400" />
+            <Toggle checked={superAdmin} onChange={setSuperAdmin} size="sm" />
           </div>
 
-          <button 
-            disabled={selectedRowIds.size === 0}
-            className={`px-4 py-1.5 rounded text-sm transition-colors shadow-sm ${
-              selectedRowIds.size > 0 
-                ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            批量操作
-          </button>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">方案:</span>
+                  <select className="border border-gray-200 rounded px-2 py-1.5 text-sm text-gray-600 bg-white outline-none focus:border-blue-500 w-40 transition-colors">
+                      <option>三级医院等级评审</option>
+                      <option>公立医院绩效考核</option>
+                  </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">指标权限:</span>
+                  <select className="border border-gray-200 rounded px-2 py-1.5 text-sm text-gray-600 bg-white outline-none focus:border-blue-500 w-32 transition-colors">
+                      <option>请选择</option>
+                      <option>有查阅权限</option>
+                      <option>无查阅权限</option>
+                  </select>
+              </div>
+
+              <div className="flex rounded border border-gray-200 overflow-hidden bg-white transition-colors focus-within:border-blue-500">
+                  <input 
+                      type="text" 
+                      placeholder="请输入指标名称" 
+                      className="px-3 py-1.5 text-sm outline-none text-gray-600 w-48 bg-white placeholder-gray-400"
+                  />
+                  <button className="bg-gray-50 px-3 text-gray-500 border-l border-gray-200 hover:bg-gray-100 transition-colors">
+                      <span className="text-sm">搜索</span>
+                  </button>
+              </div>
+            </div>
+
+            <button 
+              disabled={selectedRowIds.size === 0}
+              className={`px-4 py-1.5 rounded text-sm transition-colors shadow-sm ${
+                selectedRowIds.size > 0 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              批量操作
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th className="p-3 w-10 border-b border-gray-200 bg-gray-50">
+                      <Checkbox 
+                          checked={isAllSelected}
+                          indeterminate={isIndeterminateSelection}
+                          onChange={handleSelectAll}
+                      />
+                  </th>
+                  <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[35%] bg-gray-50">指标名称</th>
+                  <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 bg-gray-50">应用方案</th>
+                  
+                  {activeTab === TabType.INDICATOR_PERMISSION ? (
+                    <>
+                      <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-24 text-center bg-gray-50">查阅权限</th>
+                      <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-24 text-center bg-gray-50">填报权限</th>
+                      <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-24 text-center bg-gray-50">展示入口</th>
+                    </>
+                  ) : (
+                    <th className="p-3 text-xs font-semibold text-gray-600 border-b border-gray-200 bg-gray-50">人员列表</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {visibleRows.map((item) => {
+                  const readState = getCheckboxState(item, 'read');
+                  const fillState = getCheckboxState(item, 'fill');
+                  const displayState = getCheckboxState(item, 'display');
+                  const isSub = item.tag === 'sub';
+                  const isReadDisabled = !readState.checked && !readState.indeterminate;
+                  const isDisplayDisabled = isReadDisabled || isSub;
+
+                  return (
+                    <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                      <td className="p-3">
+                        <Checkbox 
+                            checked={selectedRowIds.has(item.id)}
+                            onChange={() => handleSelectRow(item.id)}
+                        />
+                      </td>
+                      <td className={`p-3 text-sm ${isSub ? 'text-gray-500' : 'text-blue-600'}`}>
+                        <div className="flex items-center" style={{ paddingLeft: `${item.level * 24}px` }}>
+                          <div className="w-5 flex items-center justify-center flex-shrink-0 mr-1">
+                            {hasChildren(item) && (
+                                <button onClick={() => toggleExpand(item.id)} className="text-gray-500 hover:text-blue-600 focus:outline-none transition-colors">
+                                    {expandedIds.has(item.id) ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+                                </button>
+                            )}
+                          </div>
+                          <span className="cursor-pointer hover:underline truncate">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-sm text-gray-600">{item.scheme}</td>
+                      
+                      {activeTab === TabType.INDICATOR_PERMISSION ? (
+                        <>
+                          <td className="p-3 text-center">
+                            <div className="flex justify-center">
+                                <Checkbox 
+                                    checked={readState.checked}
+                                    indeterminate={readState.indeterminate}
+                                    onChange={() => togglePermission(item.id, 'read')}
+                                    className="w-4 h-4"
+                                />
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="flex justify-center">
+                                <Checkbox 
+                                    checked={fillState.checked}
+                                    indeterminate={fillState.indeterminate}
+                                    onChange={() => togglePermission(item.id, 'fill')}
+                                    className="w-4 h-4"
+                                />
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="flex justify-center">
+                                <Checkbox 
+                                    checked={displayState.checked}
+                                    indeterminate={displayState.indeterminate}
+                                    onChange={() => togglePermission(item.id, 'display')}
+                                    disabled={isDisplayDisabled}
+                                    className="w-4 h-4"
+                                />
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <td className="p-3 text-sm text-gray-400">暂无人员数据</td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        {/* Table */}
-        <div className="flex-1 overflow-auto border border-gray-100 rounded-lg">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th className="p-3 w-10 border-b border-gray-100">
-                    <Checkbox 
-                        checked={isAllSelected}
-                        indeterminate={isIndeterminateSelection}
-                        onChange={handleSelectAll}
-                    />
-                </th>
-                <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100">指标名称</th>
-                <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100">应用方案</th>
-                <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100 w-24 text-center">查阅权限</th>
-                <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100 w-24 text-center">填报权限</th>
-                <th className="p-3 text-xs font-medium text-gray-500 border-b border-gray-100 w-24 text-center">展示入口</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {visibleRows.map((item) => {
-                const readState = getCheckboxState(item, 'read');
-                const fillState = getCheckboxState(item, 'fill');
-                const displayState = getCheckboxState(item, 'display');
-
-                const isSub = item.tag === 'sub';
-
-                const isReadDisabled = !readState.checked && !readState.indeterminate;
-                const isDisplayDisabled = isReadDisabled || isSub;
-
-                return (
-                  <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="p-3">
-                       <Checkbox 
-                          checked={selectedRowIds.has(item.id)}
-                          onChange={() => handleSelectRow(item.id)}
-                       />
-                    </td>
-                    <td className={`p-3 text-sm ${isSub ? 'text-gray-500' : 'text-blue-600'}`}>
-                      <div className="flex items-center" style={{ paddingLeft: `${item.level * 24}px` }}>
-                         <div className="w-5 flex items-center justify-center flex-shrink-0 mr-1">
-                          {hasChildren(item) && (
-                              <button onClick={() => toggleExpand(item.id)} className="text-gray-500 hover:text-blue-600 focus:outline-none">
-                                  {expandedIds.has(item.id) ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
-                              </button>
-                          )}
-                         </div>
-                         <span className="cursor-pointer hover:underline truncate">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-3 text-sm text-gray-600">{item.scheme}</td>
-                    <td className="p-3 text-center">
-                      <div className="flex justify-center">
-                          <Checkbox 
-                              checked={readState.checked}
-                              indeterminate={readState.indeterminate}
-                              onChange={() => togglePermission(item.id, 'read')}
-                              className="w-4 h-4"
-                          />
-                      </div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex justify-center">
-                          <Checkbox 
-                              checked={fillState.checked}
-                              indeterminate={fillState.indeterminate}
-                              onChange={() => togglePermission(item.id, 'fill')}
-                              className="w-4 h-4"
-                          />
-                      </div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex justify-center">
-                          <Checkbox 
-                              checked={displayState.checked}
-                              indeterminate={displayState.indeterminate}
-                              onChange={() => togglePermission(item.id, 'display')}
-                              disabled={isDisplayDisabled}
-                              className="w-4 h-4"
-                          />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

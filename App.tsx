@@ -8,6 +8,7 @@ import PlanManagement from './components/PlanManagement';
 import ReportTemplates from './components/ReportTemplates';
 import ReportEditor from './components/ReportEditor';
 import ReportCenter from './components/ReportCenter';
+import BaseConfig from './components/BaseConfig';
 import { AssociateIndicators } from './components/AssociateIndicators';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
@@ -94,6 +95,8 @@ const App: React.FC = () => {
             <PermissionTable activeRoleId={activeRoleId} />
           </>
         );
+      case 'base_config':
+        return <BaseConfig />;
 
       // --- Hospital Review Views ---
       case 'report_center':

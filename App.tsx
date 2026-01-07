@@ -8,7 +8,9 @@ import PlanManagement from './components/PlanManagement';
 import ReportTemplates from './components/ReportTemplates';
 import ReportEditor from './components/ReportEditor';
 import ReportCenter from './components/ReportCenter';
+import { AssociateIndicators } from './components/AssociateIndicators';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
+import { Plan } from './types';
 
 const App: React.FC = () => {
   // Global Navigation State
@@ -17,6 +19,9 @@ const App: React.FC = () => {
 
   // Role Management State
   const [activeRoleId, setActiveRoleId] = useState('r4');
+
+  // Plan Association State
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   // Header Items State
   const [headerItems, setHeaderItems] = useState<string[]>([
@@ -61,11 +66,23 @@ const App: React.FC = () => {
     setCurrentView('report_editor');
   };
 
+  const handleAssociatePlan = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setCurrentView('associate_indicators');
+  };
+
   const renderContent = () => {
     switch (currentView) {
       // --- Indicator Management Center Views ---
       case 'plan_mgmt':
-        return <PlanManagement onAddPlan={handleAddHeaderItem} />;
+        return <PlanManagement onAddPlan={handleAddHeaderItem} onAssociate={handleAssociatePlan} />;
+      case 'associate_indicators':
+        return selectedPlan ? (
+          <AssociateIndicators 
+            planName={selectedPlan.name} 
+            onBack={() => setCurrentView('plan_mgmt')} 
+          />
+        ) : null;
       case 'report_template':
         return <ReportTemplates onEdit={handleEditReport} />;
       case 'report_editor':
@@ -125,6 +142,8 @@ const App: React.FC = () => {
     );
   }
 
+  const shouldShowSidebar = currentView !== 'associate_indicators';
+
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">
       <Header 
@@ -133,11 +152,13 @@ const App: React.FC = () => {
         onSelectItem={handleModuleChange}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-            items={currentSidebarItems}
-            activeId={currentView} 
-            onNavigate={setCurrentView} 
-        />
+        {shouldShowSidebar && (
+            <Sidebar 
+                items={currentSidebarItems}
+                activeId={currentView} 
+                onNavigate={setCurrentView} 
+            />
+        )}
         <main className="flex-1 p-4 flex gap-4 overflow-hidden">
           {renderContent()}
         </main>

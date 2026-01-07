@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Search, FileText } from 'lucide-react';
 import { PLANS } from '../constants';
@@ -6,9 +7,10 @@ import CreatePlanModal from './CreatePlanModal';
 
 interface PlanManagementProps {
   onAddPlan?: (name: string) => void;
+  onAssociate?: (plan: Plan) => void;
 }
 
-const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan }) => {
+const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan, onAssociate }) => {
   const [plans, setPlans] = useState<Plan[]>(PLANS);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -29,10 +31,16 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan }) => {
     }
   };
 
+  const handleAssociateClick = (plan: Plan) => {
+    if (onAssociate) {
+      onAssociate(plan);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Top Bar */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center">
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex justify-between items-center flex-shrink-0">
         <div className="flex items-center">
           <div className="flex rounded border border-gray-200 overflow-hidden bg-white">
             <input 
@@ -47,7 +55,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan }) => {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-1 text-sm font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-1 text-sm font-medium transition-colors shadow-sm"
         >
           <Plus size={16} />
           新建
@@ -92,7 +100,12 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan }) => {
                 <div className="h-3 w-px bg-gray-300"></div>
                 <button className="text-blue-600 hover:text-blue-800 hover:underline">编辑</button>
                 <div className="h-3 w-px bg-gray-300"></div>
-                <button className="text-blue-600 hover:text-blue-800 hover:underline">关联指标</button>
+                <button 
+                  onClick={() => handleAssociateClick(plan)}
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  关联指标
+                </button>
                 <div className="h-3 w-px bg-gray-300"></div>
                 <button className="text-red-400 hover:text-red-600 hover:underline">删除</button>
               </div>

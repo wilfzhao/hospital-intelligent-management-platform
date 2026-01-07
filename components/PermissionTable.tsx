@@ -181,8 +181,23 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
 
   // Helper to render the visible departments based on current scope
   const renderVisibleDepartments = () => {
-     // Mock Data for "Department" scope simulation (Assuming current logged in user is Zhao Weifeng)
-     const mockUser = { name: '赵伟峰', deptId: 'd1-4', deptName: '质管科' };
+     if (currentRoleDefaultScope === 'department') {
+        return (
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-gray-500 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 animate-in fade-in zoom-in-95 duration-300">
+                 <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                    <Users size={32} className="text-blue-500" />
+                 </div>
+                 <h3 className="text-base font-bold text-gray-800 mb-2">动态匹配所属科室</h3>
+                 <p className="text-sm text-gray-500 text-center max-w-sm leading-relaxed px-4">
+                    该配置应用于角色。当用户被分配此角色时，系统将自动识别其所属科室，并限制其仅能查看本段科室的数据。
+                 </p>
+                 <div className="mt-6 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+                    <Info size={12} />
+                    无需手动勾选科室明细
+                 </div>
+            </div>
+        );
+     }
 
      const isEditable = currentRoleDefaultScope === 'custom';
      
@@ -190,10 +205,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
      let currentSelectedIds: string[] = [];
      if (isEditable) {
          currentSelectedIds = customScopeData[`role-${activeRoleId}`] || [];
-     } else if (currentRoleDefaultScope === 'department') {
-         currentSelectedIds = [mockUser.deptId];
      }
-     // 'hospital' implies all, handled in logic below
 
      const getStatus = (childrenIds: string[]) => {
         if (currentRoleDefaultScope === 'hospital') return { checked: true, indeterminate: false };
@@ -207,19 +219,6 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
 
      return (
          <div className="flex flex-col gap-3">
-             {/* Banner for Department Scope */}
-             {currentRoleDefaultScope === 'department' && (
-                 <div className="bg-blue-50/80 border border-blue-100 rounded-md p-3 flex items-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
-                     <div className="bg-white p-1 rounded-full border border-blue-100 shadow-sm flex-shrink-0">
-                        <Users size={14} className="text-blue-600" />
-                     </div>
-                     <span>
-                        模拟视图：当前用户 <span className="font-bold text-blue-900">{mockUser.name}</span> 
-                        所属科室为 <span className="font-bold text-blue-900">{mockUser.deptName}</span>，系统自动匹配仅该科室可见。
-                     </span>
-                 </div>
-             )}
-
              <div className="border border-gray-200 rounded-lg bg-white select-none shadow-sm">
                  {DEPARTMENTS.map(group => {
                      const childrenIds = group.children?.map(c => c.id) || [];
@@ -532,13 +531,6 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
                           <button onClick={() => updateRoleDefaultScope('custom')} className="hidden" />
                       </label>
                   </div>
-                  
-                  {currentRoleDefaultScope === 'custom' && (
-                     <div className="mt-4 pt-4 border-t border-gray-200 pl-2 animate-in fade-in slide-in-from-top-1 flex items-center gap-2 text-sm text-blue-600 bg-blue-50/50 p-2 rounded">
-                        <Info size={14} />
-                        <span>请在下方“可见科室明细”中直接勾选科室，点击箭头可展开/折叠</span>
-                     </div>
-                  )}
               </div>
            </div>
 

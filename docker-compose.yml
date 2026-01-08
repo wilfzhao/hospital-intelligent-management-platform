@@ -12,7 +12,7 @@ services:
       - .:/app
       - /app/node_modules # 防止容器内的 node_modules 被本地覆盖（或反之）
     
-    # 映射端口 (vite.config.ts 中配置的是 3000)
+    # 映射端口 (vite.config.ts 中配置的是 3100)
     ports:
       - "0.0.0.0:3100:3000"
     

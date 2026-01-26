@@ -59,6 +59,13 @@ export interface Department {
   children?: Department[];
 }
 
+export interface SpecialPermission {
+  id: string;
+  scope: 'hospital' | 'department' | 'custom';
+  targetIndicatorIds: string[];
+  customDeptIds?: string[];
+}
+
 export enum TabType {
   INDICATOR_PERMISSION = 'INDICATOR_PERMISSION',
   DATA_PERMISSION = 'DATA_PERMISSION',

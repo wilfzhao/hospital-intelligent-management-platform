@@ -1,10 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
-import { TabType, Indicator, Department } from '../types';
+import { TabType, Indicator, Department, SpecialPermission } from '../types';
 import { INDICATORS, ROLES, DEPARTMENTS } from '../constants';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
-import { Search, Info, ChevronRight, ChevronDown, Shield, Users, Building, AlertCircle, Edit2, RotateCcw, CheckCircle2, LayoutGrid, Check, FolderTree } from 'lucide-react';
+import SpecialPermissionModal from './SpecialPermissionModal';
+import { Search, Info, ChevronRight, ChevronDown, Shield, Users, Building, AlertCircle, Edit2, RotateCcw, CheckCircle2, LayoutGrid, Check, FolderTree, ShieldAlert, Plus, Trash2 } from 'lucide-react';
 
 type DataScope = 'department' | 'hospital' | 'custom';
 
@@ -31,6 +32,52 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
   const [customScopeData, setCustomScopeData] = useState<Record<string, string[]>>({
     'role-r4': ['d1-1', 'd1-2', 'd2-1', 'd2-2'] 
   });
+
+  // --- SPECIAL PERMISSIONS STATE ---
+  const [specialPermissions, setSpecialPermissions] = useState<SpecialPermission[]>([]);
+  const [isSpecialModalOpen, setIsSpecialModalOpen] = useState(false);
+  const [editingPermission, setEditingPermission] = useState<SpecialPermission | undefined>(undefined);
+
+  const handleAddSpecialPermission = () => {
+    setEditingPermission(undefined);
+    setIsSpecialModalOpen(true);
+  };
+
+  const handleEditSpecialPermission = (perm: SpecialPermission) => {
+    setEditingPermission(perm);
+    setIsSpecialModalOpen(true);
+  };
+
+  const handleDeleteSpecialPermission = (id: string) => {
+    setSpecialPermissions(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleSaveSpecialPermission = (perm: SpecialPermission) => {
+    if (editingPermission) {
+        setSpecialPermissions(prev => prev.map(p => p.id === perm.id ? perm : p));
+    } else {
+        setSpecialPermissions(prev => [...prev, perm]);
+    }
+  };
+
+  // Helper to get indicator names from IDs for display
+  const getIndicatorNamesSummary = (ids: string[]) => {
+     // Naive lookup for mock data
+     const findName = (nodes: Indicator[], id: string): string | null => {
+         for (const node of nodes) {
+             if (node.id === id) return node.name;
+             if (node.children) {
+                 const res = findName(node.children, id);
+                 if (res) return res;
+             }
+         }
+         return null;
+     };
+     const names = ids.map(id => findName(INDICATORS, id)).filter(Boolean);
+     if (names.length === 0) return '未知指标';
+     if (names.length <= 2) return names.join(', ');
+     return `${names[0]}, ${names[1]} 等${names.length}个指标`;
+  };
 
   // Tree View State for Departments
   const [expandedDeptIds, setExpandedDeptIds] = useState<Set<string>>(new Set(['d1', 'd2', 'd3']));
@@ -183,7 +230,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
   const renderVisibleDepartments = () => {
      if (currentRoleDefaultScope === 'department') {
         return (
-            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-gray-500 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-gray-500 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 animate-in fade-in zoom-in-95 duration-300">
                  <div className="bg-white p-4 rounded-full shadow-sm mb-4">
                     <Users size={32} className="text-blue-500" />
                  </div>
@@ -534,15 +581,85 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
               </div>
            </div>
 
-           {/* Section 2: Visible Departments Preview (Replaced Personnel) */}
+           {/* Section 2: Special Permissions (New) */}
+           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 animate-in fade-in slide-in-from-top-3 duration-400 flex-shrink-0">
+               <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-2">
+                     <div className="bg-orange-100 p-2 rounded-lg text-orange-600">
+                        <ShieldAlert size={20} />
+                     </div>
+                     <div>
+                        <h3 className="font-bold text-gray-800">特殊数据权限</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">为特定指标设置独立的数据可见范围，优先级高于默认配置</p>
+                     </div>
+                  </div>
+                  <button 
+                    onClick={handleAddSpecialPermission}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors text-sm font-medium shadow-sm"
+                  >
+                     <Plus size={16} />
+                     添加例外规则
+                  </button>
+               </div>
+
+               {specialPermissions.length === 0 ? (
+                  <div className="bg-gray-50 rounded-lg border border-dashed border-gray-200 p-6 flex flex-col items-center justify-center text-gray-400 gap-2">
+                     <ShieldAlert size={24} className="text-gray-300" />
+                     <span className="text-sm">暂无特殊规则配置</span>
+                  </div>
+               ) : (
+                  <div className="space-y-3">
+                     {specialPermissions.map(perm => {
+                       const scopeLabel = perm.scope === 'hospital' ? '全院数据' : perm.scope === 'department' ? '本科室' : '自定义';
+                       const scopeColor = perm.scope === 'hospital' ? 'bg-blue-100 text-blue-700 border-blue-200' : perm.scope === 'department' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-purple-100 text-purple-700 border-purple-200';
+                       
+                       return (
+                         <div key={perm.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 hover:shadow-sm transition-all bg-white group flex items-center justify-between">
+                            <div className="flex items-center gap-4 overflow-hidden">
+                               <div className={`px-2.5 py-1 rounded text-xs font-bold border whitespace-nowrap ${scopeColor}`}>
+                                  {scopeLabel}
+                               </div>
+                               <div className="flex flex-col min-w-0">
+                                  <span className="text-sm font-bold text-gray-700 truncate">
+                                     应用于: {getIndicatorNamesSummary(perm.targetIndicatorIds)}
+                                  </span>
+                                  {perm.scope === 'custom' && (
+                                     <span className="text-xs text-gray-400">
+                                        包含 {perm.customDeptIds?.length || 0} 个自定义科室
+                                     </span>
+                                  )}
+                               </div>
+                            </div>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <button 
+                                 onClick={() => handleEditSpecialPermission(perm)}
+                                 className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="编辑"
+                               >
+                                  <Edit2 size={14} />
+                               </button>
+                               <button 
+                                 onClick={() => handleDeleteSpecialPermission(perm.id)}
+                                 className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="删除"
+                               >
+                                  <Trash2 size={14} />
+                               </button>
+                            </div>
+                         </div>
+                       );
+                     })}
+                  </div>
+               )}
+           </div>
+
+           {/* Section 3: Visible Departments Preview (Replaced Personnel) */}
            <div className="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
                <div className="bg-gray-50 px-5 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
                   <div className="flex items-center gap-2">
                      <FolderTree size={18} className="text-gray-600" />
-                     <h3 className="font-bold text-gray-800">可见科室明细</h3>
+                     <h3 className="font-bold text-gray-800">默认可见科室预览</h3>
                   </div>
                   <div className="text-xs text-gray-400">
-                     {currentRoleDefaultScope === 'custom' ? '点击可直接进行配置' : '根据上方配置自动生成'}
+                     {currentRoleDefaultScope === 'custom' ? '点击可直接进行配置' : '根据上方默认配置自动生成'}
                   </div>
                </div>
 
@@ -707,6 +824,14 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
           </div>
         </div>
       )}
+
+      {/* Special Permission Modal */}
+      <SpecialPermissionModal 
+         isOpen={isSpecialModalOpen}
+         onClose={() => setIsSpecialModalOpen(false)}
+         onConfirm={handleSaveSpecialPermission}
+         initialData={editingPermission}
+      />
     </div>
   );
 };

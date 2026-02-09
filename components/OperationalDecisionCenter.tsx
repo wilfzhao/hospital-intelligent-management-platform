@@ -1,10 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, PieChart, BarChart3, FileText, 
   Activity, GraduationCap, Settings, Layers, Binary,
-  FileBarChart, ArrowRight, TrendingUp, ChevronLeft,
-  Search, Filter, Download, Share2,
+  FileBarChart, ArrowRight, TrendingUp,
   ChevronRight, ChevronDown, LayoutGrid, Home
 } from 'lucide-react';
 
@@ -53,7 +51,7 @@ const MODULES = [
   },
   { 
     id: 'surgery', 
-    title: '手术全流程', 
+    title: '手术非常准', 
     desc: '术前术中术后全链路分析', 
     icon: Activity, 
     gradient: 'from-rose-500 to-pink-600',
@@ -61,8 +59,8 @@ const MODULES = [
   },
   { 
     id: 'talent', 
-    title: '学科人才', 
-    desc: '绩效考核与职业发展', 
+    title: '学科与人才发展', 
+    desc: '学科发展与梯队建设', 
     icon: GraduationCap, 
     gradient: 'from-cyan-500 to-blue-500',
     shadowColor: 'shadow-cyan-200'
@@ -264,25 +262,6 @@ const OperationalDecisionCenter: React.FC = () => {
                    </div>
                 )}
               </div>
-           </div>
-
-           {/* Right Toolbar */}
-           <div className="flex items-center gap-2">
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="搜索">
-                 <Search size={18} />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="筛选">
-                 <Filter size={18} />
-              </button>
-              <div className="h-4 w-px bg-gray-200 mx-1"></div>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                 <Download size={16} />
-                 导出
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-colors">
-                 <Share2 size={16} />
-                 分享
-              </button>
            </div>
         </header>
 

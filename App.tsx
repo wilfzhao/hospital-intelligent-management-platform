@@ -29,9 +29,9 @@ const App: React.FC = () => {
   const [headerItems, setHeaderItems] = useState<string[]>([
     '医院等级评审', 
     '公立医院绩效考核', 
+    '运营决策中心', 
     '指标管理中心', 
-    '管理配置', 
-    '运营决策中心'
+    '管理配置'
   ]);
 
   // Derive sidebar items based on active module

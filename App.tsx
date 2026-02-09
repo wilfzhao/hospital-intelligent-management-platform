@@ -170,7 +170,13 @@ const App: React.FC = () => {
                 onNavigate={setCurrentView} 
             />
         )}
-        <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${!shouldShowSidebar ? 'max-w-7xl mx-auto w-full' : ''}`}>
+        <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${
+            shouldShowSidebar 
+                ? '' 
+                : currentView === 'odc_dashboard' 
+                    ? 'w-full' // Remove max-width for ODC dashboard to fill the screen
+                    : 'max-w-7xl mx-auto w-full'
+        }`}>
           {renderContent()}
         </main>
       </div>

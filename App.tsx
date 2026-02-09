@@ -9,6 +9,7 @@ import ReportTemplates from './components/ReportTemplates';
 import ReportEditor from './components/ReportEditor';
 import ReportCenter from './components/ReportCenter';
 import BaseConfig from './components/BaseConfig';
+import OperationalDecisionCenter from './components/OperationalDecisionCenter';
 import { AssociateIndicators } from './components/AssociateIndicators';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
@@ -50,6 +51,8 @@ const App: React.FC = () => {
       setCurrentView(HOSPITAL_REVIEW_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '指标管理中心') {
       setCurrentView('indicator_auth'); // Default for this module
+    } else if (moduleName === '运营决策中心') {
+      setCurrentView('odc_dashboard'); // Dashboard view for ODC
     } else {
         // Fallback for modules not yet implemented
         setCurrentView('default_view');
@@ -74,6 +77,10 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (currentView) {
+      // --- Operational Decision Center ---
+      case 'odc_dashboard':
+        return <OperationalDecisionCenter />;
+
       // --- Indicator Management Center Views ---
       case 'plan_mgmt':
         return <PlanManagement onAddPlan={handleAddHeaderItem} onAssociate={handleAssociatePlan} />;
@@ -145,7 +152,8 @@ const App: React.FC = () => {
     );
   }
 
-  const shouldShowSidebar = currentView !== 'associate_indicators';
+  // Hide sidebar for full-page dashboards like ODC
+  const shouldShowSidebar = currentView !== 'associate_indicators' && currentView !== 'odc_dashboard';
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">
@@ -162,7 +170,7 @@ const App: React.FC = () => {
                 onNavigate={setCurrentView} 
             />
         )}
-        <main className="flex-1 p-4 flex gap-4 overflow-hidden">
+        <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${!shouldShowSidebar ? 'max-w-7xl mx-auto w-full' : ''}`}>
           {renderContent()}
         </main>
       </div>

@@ -228,36 +228,30 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
 
   // Helper to render the visible departments based on current scope
   const renderVisibleDepartments = () => {
-     if (currentRoleDefaultScope === 'department') {
-        return (
-            <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-gray-500 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200 animate-in fade-in zoom-in-95 duration-300">
-                 <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                    <Users size={32} className="text-blue-500" />
-                 </div>
-                 <h3 className="text-base font-bold text-gray-800 mb-2">动态匹配所属科室</h3>
-                 <p className="text-sm text-gray-500 text-center max-w-sm leading-relaxed px-4">
-                    该配置应用于角色。当用户被分配此角色时，系统将自动识别其所属科室，并限制其仅能查看本段科室的数据。
-                 </p>
-                 <div className="mt-6 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
-                    <Info size={12} />
-                    无需手动勾选科室明细
-                 </div>
-            </div>
-        );
-     }
-
+     // NOTE: Removed early return for 'department' scope to show preview tree instead.
+     
      const isEditable = currentRoleDefaultScope === 'custom';
+     
+     // Mock ID for department view simulation
+     const mockDeptId = 'd1-4'; // 质管科
      
      // Determine active IDs for display
      let currentSelectedIds: string[] = [];
-     if (isEditable) {
+     if (currentRoleDefaultScope === 'custom') {
          currentSelectedIds = customScopeData[`role-${activeRoleId}`] || [];
+     } else if (currentRoleDefaultScope === 'department') {
+         currentSelectedIds = [mockDeptId];
      }
 
      const getStatus = (childrenIds: string[]) => {
         if (currentRoleDefaultScope === 'hospital') return { checked: true, indeterminate: false };
         
-        const selectedCount = childrenIds.filter(id => currentSelectedIds.includes(id)).length;
+        // For department scope, we check if the mock ID is in the children
+        let targetIds = currentSelectedIds;
+        // In department scope, we only have one ID selected, so groups will generally be indeterminate or unchecked
+        // The filtering logic below handles this correctly for both single and multiple selections
+        
+        const selectedCount = childrenIds.filter(id => targetIds.includes(id)).length;
         const allSelected = childrenIds.length > 0 && selectedCount === childrenIds.length;
         const someSelected = selectedCount > 0 && selectedCount < childrenIds.length;
         
@@ -266,6 +260,23 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
 
      return (
          <div className="flex flex-col gap-3">
+             {/* Dynamic Scope Info Banner */}
+             {currentRoleDefaultScope === 'department' && (
+                <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                    <div className="p-1.5 bg-blue-100 rounded-full text-blue-600 mt-0.5">
+                       <Info size={14} />
+                    </div>
+                    <div>
+                       <h4 className="text-sm font-bold text-blue-800">动态匹配模式预览</h4>
+                       <p className="text-xs text-blue-600 mt-0.5 leading-relaxed">
+                          当前为模拟视图。系统将根据登录用户的所属科室自动匹配权限。
+                          <br/>
+                          示例展示：假设当前用户属于 <span className="font-bold">"质管科"</span> (d1-4)
+                       </p>
+                    </div>
+                </div>
+             )}
+
              <div className="border border-gray-200 rounded-lg bg-white select-none shadow-sm">
                  {DEPARTMENTS.map(group => {
                      const childrenIds = group.children?.map(c => c.id) || [];
@@ -284,21 +295,20 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
                                   </button>
                                   
                                   <div 
-                                     className={`flex items-center gap-3 flex-1 ${isEditable ? 'cursor-pointer' : ''}`}
+                                     className={`flex items-center gap-3 flex-1 ${isEditable ? 'cursor-pointer' : 'cursor-default'}`}
                                      onClick={() => isEditable && handleToggleGroup(group)}
                                   >
                                       <div className={`
                                           w-4 h-4 rounded border flex items-center justify-center transition-all
                                           ${checked || indeterminate ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}
-                                          ${!isEditable ? 'opacity-60 bg-blue-600 border-blue-600' : ''} 
+                                          ${!isEditable ? (checked || indeterminate ? 'opacity-60 bg-blue-600 border-blue-600' : 'opacity-60 bg-gray-100 border-gray-300') : ''} 
                                       `}>
                                           {checked && <Check size={12} className="text-white" />}
                                           {indeterminate && !checked && <div className="w-2 h-0.5 bg-white rounded-full" />}
-                                          {!isEditable && !checked && <Check size={12} className="text-white" />}
                                       </div>
                                       
                                       <div className="flex items-center gap-2">
-                                          <span className="text-sm font-bold text-gray-700">{group.name}</span>
+                                          <span className={`text-sm font-bold ${isEditable ? 'text-gray-700' : 'text-gray-600'}`}>{group.name}</span>
                                           <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{childrenIds.length}</span>
                                       </div>
                                   </div>
@@ -316,7 +326,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
                                                  onClick={() => isEditable && handleToggleDepartment(dept.id)}
                                                  className={`
                                                      flex items-center pl-14 pr-4 py-2.5 border-b border-gray-50/50 last:border-0 transition-colors
-                                                     ${isEditable ? 'cursor-pointer hover:bg-blue-50/30' : ''}
+                                                     ${isEditable ? 'cursor-pointer hover:bg-blue-50/30' : 'cursor-default'}
                                                      ${!isEditable && isChildSelected ? 'bg-blue-50/20' : ''}
                                                  `}
                                              >
@@ -330,6 +340,13 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
                                                  <span className={`text-sm ${isChildSelected ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
                                                      {dept.name}
                                                  </span>
+                                                 
+                                                 {/* Highlight the mock user department */}
+                                                 {currentRoleDefaultScope === 'department' && dept.id === mockDeptId && (
+                                                     <span className="ml-auto text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                                                         当前模拟
+                                                     </span>
+                                                 )}
                                              </div>
                                          )
                                      })}

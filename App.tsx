@@ -13,11 +13,12 @@ import OperationalDecisionCenter from './components/OperationalDecisionCenter';
 import { AssociateIndicators } from './components/AssociateIndicators';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
+import { Settings } from 'lucide-react';
 
 const App: React.FC = () => {
   // Global Navigation State
-  const [activeModule, setActiveModule] = useState('指标管理中心');
-  const [currentView, setCurrentView] = useState('indicator_auth');
+  const [activeModule, setActiveModule] = useState('管理配置');
+  const [currentView, setCurrentView] = useState('plan_mgmt');
 
   // Role Management State
   const [activeRoleId, setActiveRoleId] = useState('r4');
@@ -39,7 +40,10 @@ const App: React.FC = () => {
     if (activeModule === '医院等级评审') {
       return HOSPITAL_REVIEW_SIDEBAR_ITEMS;
     }
-    // Default to Indicator Management Center for '指标管理中心' and others for now
+    if (activeModule === '指标管理中心') {
+      return [];
+    }
+    // Default to SIDEBAR_ITEMS for '管理配置'
     return SIDEBAR_ITEMS;
   }, [activeModule]);
 
@@ -50,9 +54,11 @@ const App: React.FC = () => {
     if (moduleName === '医院等级评审') {
       setCurrentView(HOSPITAL_REVIEW_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '指标管理中心') {
-      setCurrentView('indicator_auth'); // Default for this module
+      setCurrentView('default_view'); 
     } else if (moduleName === '运营决策中心') {
       setCurrentView('odc_dashboard'); // Dashboard view for ODC
+    } else if (moduleName === '管理配置') {
+      setCurrentView('plan_mgmt');
     } else {
         // Fallback for modules not yet implemented
         setCurrentView('default_view');
@@ -134,9 +140,13 @@ const App: React.FC = () => {
         return (
            <div className="flex-1 flex items-center justify-center text-gray-400 bg-white rounded-lg shadow-sm">
              <div className="text-center">
-               <h2 className="text-xl font-medium mb-2">功能开发中</h2>
-               <p className="text-sm">Current View ID: {currentView}</p>
-               <p className="text-xs mt-2 text-gray-300">Module: {activeModule}</p>
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Settings className="text-gray-300" size={32} />
+                </div>
+               <h2 className="text-xl font-medium mb-2 text-gray-700">功能开发中</h2>
+               <p className="text-sm text-gray-500">该模块即将上线，敬请期待</p>
+               {/* Debug info if needed, can remove later */}
+               {/* <p className="text-xs mt-4 text-gray-300">Module: {activeModule}</p> */}
              </div>
            </div>
         );
@@ -152,8 +162,8 @@ const App: React.FC = () => {
     );
   }
 
-  // Hide sidebar for full-page dashboards like ODC
-  const shouldShowSidebar = currentView !== 'associate_indicators' && currentView !== 'odc_dashboard';
+  // Hide sidebar for full-page dashboards like ODC, or if sidebar items are empty
+  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'odc_dashboard';
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">

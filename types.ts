@@ -31,10 +31,14 @@ export interface Indicator {
 export interface Plan {
   id: string;
   name: string;
+  type: 'standard' | 'featured'; // 'standard': 标准考评, 'featured': 特色考评
   indicatorCount: number;
   remark: string;
   status: 'enabled' | 'disabled';
   application?: string;
+  // Featured Plan specific fields
+  target?: 'department' | 'discipline' | 'person'; // 考核对象
+  cycle?: 'year' | 'quarter' | 'month'; // 考核周期
 }
 
 export interface ReportTemplate {

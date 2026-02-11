@@ -11,6 +11,7 @@ import ReportCenter from './components/ReportCenter';
 import BaseConfig from './components/BaseConfig';
 import OperationalDecisionCenter from './components/OperationalDecisionCenter';
 import { AssociateIndicators } from './components/AssociateIndicators';
+import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
 import { Settings } from 'lucide-react';
@@ -78,7 +79,11 @@ const App: React.FC = () => {
 
   const handleAssociatePlan = (plan: Plan) => {
     setSelectedPlan(plan);
-    setCurrentView('associate_indicators');
+    if (plan.type === 'featured') {
+      setCurrentView('featured_plan_config');
+    } else {
+      setCurrentView('associate_indicators');
+    }
   };
 
   const renderContent = () => {
@@ -95,6 +100,13 @@ const App: React.FC = () => {
           <AssociateIndicators 
             planName={selectedPlan.name} 
             onBack={() => setCurrentView('plan_mgmt')} 
+          />
+        ) : null;
+      case 'featured_plan_config':
+        return selectedPlan ? (
+          <FeaturedPlanConfig 
+            planName={selectedPlan.name}
+            onBack={() => setCurrentView('plan_mgmt')}
           />
         ) : null;
       case 'report_template':
@@ -163,7 +175,7 @@ const App: React.FC = () => {
   }
 
   // Hide sidebar for full-page dashboards like ODC, or if sidebar items are empty
-  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'odc_dashboard';
+  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'featured_plan_config' && currentView !== 'odc_dashboard';
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">
@@ -183,8 +195,8 @@ const App: React.FC = () => {
         <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${
             shouldShowSidebar 
                 ? '' 
-                : currentView === 'odc_dashboard' 
-                    ? 'w-full' // Remove max-width for ODC dashboard to fill the screen
+                : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config')
+                    ? 'w-full' // Remove max-width for full-screen views
                     : 'max-w-7xl mx-auto w-full'
         }`}>
           {renderContent()}

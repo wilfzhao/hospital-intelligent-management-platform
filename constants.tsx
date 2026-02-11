@@ -162,11 +162,64 @@ export const INDICATORS: Indicator[] = [
 ];
 
 export const PLANS: Plan[] = [
-  { id: 'p4', name: '三级医院等级评审', indicatorCount: 237, remark: '无', status: 'enabled', application: '三级医院等级评审' },
-  { id: 'p5', name: '三级公立医院绩效考核（2022）', indicatorCount: 64, remark: '无', status: 'enabled', application: '公立医院绩效考核' },
-  { id: 'p6', name: '公立医院高质量发展', indicatorCount: 2, remark: '无', status: 'enabled', application: '医疗质量管理' },
-  { id: 'p8', name: '市级医院综合质量考核', indicatorCount: 1, remark: '无', status: 'enabled', application: '三级医院等级评审' },
-  { id: 'p13', name: '三级医院等级评审（福建）', indicatorCount: 7, remark: '测试备注长度1234测试备注长度1234测试备注长度1234测试备注长度1234测试备注长度1234测试备注长度...', status: 'enabled', application: '三级医院等级评审' },
+  { 
+    id: 'p4', 
+    name: '三级医院等级评审', 
+    type: 'standard',
+    indicatorCount: 237, 
+    remark: '无', 
+    status: 'enabled', 
+    application: '三级医院等级评审' 
+  },
+  { 
+    id: 'p5', 
+    name: '三级公立医院绩效考核（2022）', 
+    type: 'standard',
+    indicatorCount: 64, 
+    remark: '无', 
+    status: 'enabled', 
+    application: '公立医院绩效考核' 
+  },
+  { 
+    id: 'p6', 
+    name: '2025年度科室医疗质量考核', 
+    type: 'featured',
+    target: 'department',
+    cycle: 'quarter',
+    indicatorCount: 42, 
+    remark: '用于各临床、医技科室的季度质量考核评分', 
+    status: 'enabled', 
+    application: '医疗质量管理' 
+  },
+  { 
+    id: 'p7', 
+    name: '重点学科建设评价指标', 
+    type: 'featured',
+    target: 'discipline',
+    cycle: 'year',
+    indicatorCount: 28, 
+    remark: '年度学科建设评估使用', 
+    status: 'enabled', 
+    application: '学科建设' 
+  },
+  { 
+    id: 'p8', 
+    name: '市级医院综合质量考核', 
+    type: 'standard',
+    indicatorCount: 1, 
+    remark: '无', 
+    status: 'enabled', 
+    application: '三级医院等级评审' 
+  },
+  { 
+    id: 'p13', 
+    name: '三级医院等级评审（福建）', 
+    type: 'standard',
+    indicatorCount: 7, 
+    remark: '测试备注长度...', 
+    status: 'enabled', 
+    application: '三级医院等级评审' 
+  },
 ];
 
 export const REPORT_TEMPLATES: ReportTemplate[] = [

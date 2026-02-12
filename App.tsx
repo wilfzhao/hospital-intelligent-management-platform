@@ -105,7 +105,7 @@ const App: React.FC = () => {
       case 'featured_plan_config':
         return selectedPlan ? (
           <FeaturedPlanConfig 
-            planName={selectedPlan.name}
+            plan={selectedPlan}
             onBack={() => setCurrentView('plan_mgmt')}
           />
         ) : null;

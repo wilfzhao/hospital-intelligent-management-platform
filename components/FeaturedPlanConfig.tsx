@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   ArrowLeft, Users, Layers, Info, Search, ChevronRight, ChevronDown, 
   Check, X, Filter, Plus, Trash2, Edit2, Target, Percent, AlertCircle, 
-  MoreHorizontal, FileText, Hash, Trophy
+  MoreHorizontal, FileText, Hash, Trophy, Settings
 } from 'lucide-react';
 import { Plan, Department, Indicator } from '../types';
 import { DEPARTMENTS, INDICATORS } from '../constants';
@@ -20,7 +20,8 @@ interface AssociatedIndicatorConfig {
   id: string;
   name: string;
   weight: number;
-  score: number; // Added score
+  score: number; 
+  scoringType: 'positive' | 'negative' | 'veto'; // Added scoring attribute options
 }
 
 interface DimensionNode {
@@ -297,7 +298,8 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                   id,
                   name: findIndicatorName(INDICATORS, id),
                   weight: 0,
-                  score: 0
+                  score: 0,
+                  scoringType: 'positive' // Default to '赋分指标'
               };
           });
           
@@ -340,6 +342,16 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                   score: newScore,
                   weight: parseFloat(newWeight.toFixed(2))
               } : ind
+          );
+          updateDimensionNode(selectedDimensionId, { indicators: updatedIndicators });
+      }
+  };
+
+  const handleIndicatorScoringTypeChange = (indId: string, type: 'positive' | 'negative' | 'veto') => {
+      const currentNode = findDimensionNode(dimensions, selectedDimensionId);
+      if(currentNode && currentNode.indicators) {
+          const updatedIndicators = currentNode.indicators.map(ind => 
+              ind.id === indId ? { ...ind, scoringType: type } : ind
           );
           updateDimensionNode(selectedDimensionId, { indicators: updatedIndicators });
       }
@@ -779,7 +791,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
              <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-1 w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300">
                  
                  {/* Left Panel: Dimension Tree */}
-                 <div className="w-[35%] flex flex-col border-r border-gray-100 bg-gray-50/20">
+                 <div className="w-[30%] flex flex-col border-r border-gray-100 bg-gray-50/20">
                      <div className="p-4 border-b border-gray-100 bg-white flex flex-col gap-3">
                          <div className="flex items-center justify-between">
                              <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -841,7 +853,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                  </div>
 
                  {/* Right Panel: Dimension Details */}
-                 <div className="w-[65%] flex flex-col bg-white">
+                 <div className="w-[70%] flex flex-col bg-white">
                      {currentSelectedDimension ? (
                          <>
                             <div className="p-6 border-b border-gray-100">
@@ -951,9 +963,10 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-gray-50 sticky top-0">
                                                 <tr>
-                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[40%]">指标名称</th>
-                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[25%]">指标权重 (%)</th>
-                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[25%]">指标分值</th>
+                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[30%]">指标名称</th>
+                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">计分属性</th>
+                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">指标权重 (%)</th>
+                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">指标分值</th>
                                                     <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 text-center w-[10%]">操作</th>
                                                 </tr>
                                             </thead>
@@ -962,8 +975,26 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                                     <tr key={ind.id} className="hover:bg-blue-50/30 group">
                                                         <td className="px-4 py-3 text-sm text-gray-800">
                                                             <div className="flex items-center gap-2">
-                                                                <FileText size={14} className="text-gray-400" />
-                                                                <span className="truncate">{ind.name}</span>
+                                                                <FileText size={14} className="text-gray-400 flex-shrink-0" />
+                                                                <span className="truncate" title={ind.name}>{ind.name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="relative w-32">
+                                                                <select
+                                                                    value={ind.scoringType}
+                                                                    onChange={(e) => handleIndicatorScoringTypeChange(ind.id, e.target.value as any)}
+                                                                    className={`w-full appearance-none border border-gray-200 rounded px-3 py-1.5 text-xs font-medium outline-none focus:border-blue-500 transition-colors pr-8 cursor-pointer ${
+                                                                        ind.scoringType === 'positive' ? 'text-blue-700 bg-blue-50/50' :
+                                                                        ind.scoringType === 'negative' ? 'text-red-600 bg-red-50/50' :
+                                                                        'text-orange-600 bg-orange-50/50'
+                                                                    }`}
+                                                                >
+                                                                    <option value="positive">赋分指标</option>
+                                                                    <option value="negative">负向指标</option>
+                                                                    <option value="veto">一票否决</option>
+                                                                </select>
+                                                                <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                                             </div>
                                                         </td>
                                                         <td className="px-4 py-3">

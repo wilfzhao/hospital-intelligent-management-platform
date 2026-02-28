@@ -91,7 +91,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan, onAssociate 
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
             >
               <Plus size={16} />
-              创建考评方案
+              新建
             </button>
         </div>
 

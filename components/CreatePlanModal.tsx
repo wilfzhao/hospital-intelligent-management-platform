@@ -314,9 +314,9 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
                                     value={target}
                                     onChange={(e) => setTarget(e.target.value as any)}
                                 >
-                                    <option value="department">科室 (Department)</option>
-                                    <option value="discipline">学科 (Discipline)</option>
-                                    <option value="person">人员 (Person)</option>
+                                    <option value="department">科室</option>
+                                    <option value="discipline">学科</option>
+                                    <option value="person">人员</option>
                                 </select>
                              </div>
                              <div>
@@ -329,9 +329,9 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
                                     value={cycle}
                                     onChange={(e) => setCycle(e.target.value as any)}
                                 >
-                                    <option value="year">年度 (Yearly)</option>
-                                    <option value="quarter">季度 (Quarterly)</option>
-                                    <option value="month">月度 (Monthly)</option>
+                                    <option value="year">年度</option>
+                                    <option value="quarter">季度</option>
+                                    <option value="month">月度</option>
                                 </select>
                              </div>
                         </div>

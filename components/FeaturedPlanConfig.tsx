@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, Users, Layers, Info, Search, ChevronRight, ChevronDown, 
   Check, X, Filter, Plus, Trash2, Edit2, Target, Percent, AlertCircle, 
@@ -102,6 +102,22 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
   const [isIndicatorModalOpen, setIsIndicatorModalOpen] = useState(false);
   const [planTotalScore, setPlanTotalScore] = useState<number>(1000); // Default to 1000
 
+  // --- Toast State ---
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (msg: string) => {
+      setToastMsg(msg);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  useEffect(() => {
+      return () => {
+          if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      };
+  }, []);
+
   const targetType = plan.target || 'department';
 
   // --- Statistics Calculation ---
@@ -129,6 +145,29 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
     dimensions.forEach(traverse);
     return Array.from(ids);
   }, [dimensions, selectedDimensionId]);
+
+  const handlePlanTotalScoreChange = (newTotalScore: number) => {
+      setPlanTotalScore(newTotalScore);
+      
+      // Cascade to root dimensions
+      const cascadeScore = (n: DimensionNode, newBaseScore: number): DimensionNode => {
+          const cascaded = { ...n, score: parseFloat((newBaseScore * (n.weight / 100)).toFixed(1)) };
+          if (cascaded.children) {
+              cascaded.children = cascaded.children.map(c => 
+                  cascadeScore(c, cascaded.score)
+              );
+          }
+          if (cascaded.indicators) {
+              cascaded.indicators = cascaded.indicators.map(i => ({
+                  ...i,
+                  score: parseFloat((cascaded.score * (i.weight / 100)).toFixed(1))
+              }));
+          }
+          return cascaded;
+      };
+      
+      setDimensions(dimensions.map(dim => cascadeScore(dim, newTotalScore)));
+  };
 
   // --- Target Logic ---
   const toggleSelection = (id: string) => {
@@ -183,7 +222,38 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
     const updateRecursive = (nodes: DimensionNode[]): DimensionNode[] => {
       return nodes.map(node => {
         if (node.id === id) {
-          return { ...node, ...updates };
+          const updatedNode = { ...node, ...updates };
+          // If score was updated, cascade to children and indicators based on their existing weights
+          if (updates.score !== undefined && updates.score !== node.score) {
+              const cascadeScore = (n: DimensionNode, newBaseScore: number): DimensionNode => {
+                  const cascaded = { ...n, score: newBaseScore };
+                  if (cascaded.children) {
+                      cascaded.children = cascaded.children.map(c => 
+                          cascadeScore(c, parseFloat((newBaseScore * (c.weight / 100)).toFixed(1)))
+                      );
+                  }
+                  if (cascaded.indicators) {
+                      cascaded.indicators = cascaded.indicators.map(i => ({
+                          ...i,
+                          score: parseFloat((newBaseScore * (i.weight / 100)).toFixed(1))
+                      }));
+                  }
+                  return cascaded;
+              };
+              
+              if (updatedNode.children) {
+                  updatedNode.children = updatedNode.children.map(c => 
+                      cascadeScore(c, parseFloat((updatedNode.score * (c.weight / 100)).toFixed(1)))
+                  );
+              }
+              if (updatedNode.indicators) {
+                  updatedNode.indicators = updatedNode.indicators.map(i => ({
+                      ...i,
+                      score: parseFloat((updatedNode.score * (i.weight / 100)).toFixed(1))
+                  }));
+              }
+          }
+          return updatedNode;
         }
         if (node.children) {
           return { ...node, children: updateRecursive(node.children) };
@@ -243,11 +313,27 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
     const parentNode = findParentNode(dimensions, currentSelectedDimension.id);
     const baseScore = parentNode ? parentNode.score : planTotalScore;
     
+    // Calculate max allowed weight
+    let maxWeight = 100;
+    if (parentNode) {
+        const siblingsWeight = parentNode.children?.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.weight || 0), 0) || 0;
+        maxWeight = 100 - siblingsWeight;
+    } else {
+        const siblingsWeight = dimensions.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.weight || 0), 0);
+        maxWeight = 100 - siblingsWeight;
+    }
+    
+    if (newWeight > maxWeight) {
+        showToast(`同级维度权重之和不能超过100%，当前最大可输入: ${maxWeight}%`);
+    }
+    
+    const finalWeight = Math.min(Math.max(0, newWeight), maxWeight);
+    
     // Calculate score: Base Score * (Weight / 100)
-    const newScore = baseScore ? (baseScore * newWeight / 100) : 0;
+    const newScore = baseScore ? (baseScore * finalWeight / 100) : 0;
     
     updateDimensionNode(currentSelectedDimension.id, { 
-      weight: newWeight,
+      weight: finalWeight,
       score: parseFloat(newScore.toFixed(1)) // Keep 1 decimal for score
     });
   };
@@ -258,11 +344,27 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
     const parentNode = findParentNode(dimensions, currentSelectedDimension.id);
     const baseScore = parentNode ? parentNode.score : planTotalScore;
 
+    // Calculate max allowed score
+    let maxScore = baseScore;
+    if (parentNode) {
+        const siblingsScore = parentNode.children?.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.score || 0), 0) || 0;
+        maxScore = baseScore - siblingsScore;
+    } else {
+        const siblingsScore = dimensions.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.score || 0), 0);
+        maxScore = baseScore - siblingsScore;
+    }
+
+    if (newScore > maxScore) {
+        showToast(`同级维度分值之和不能超过父级总分，当前最大可输入: ${maxScore}分`);
+    }
+
+    const finalScore = Math.min(Math.max(0, newScore), maxScore);
+
     // Calculate weight: (Score / Base Score) * 100
-    const newWeight = baseScore ? (newScore / baseScore * 100) : 0;
+    const newWeight = baseScore ? (finalScore / baseScore * 100) : 0;
 
     updateDimensionNode(currentSelectedDimension.id, { 
-      score: newScore,
+      score: finalScore,
       weight: parseFloat(newWeight.toFixed(2)) // Keep 2 decimals for weight
     });
   };
@@ -315,13 +417,23 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
       const currentNode = findDimensionNode(dimensions, selectedDimensionId);
       if(currentNode && currentNode.indicators) {
           const baseScore = currentNode.score;
+          
+          const siblingsWeight = currentNode.indicators.filter(i => i.id !== indId).reduce((sum, i) => sum + (i.weight || 0), 0);
+          const maxWeight = 100 - siblingsWeight;
+          
+          if (newWeight > maxWeight) {
+              showToast(`当前维度下指标权重之和不能超过100%，最大可输入: ${maxWeight}%`);
+          }
+          
+          const finalWeight = Math.min(Math.max(0, newWeight), maxWeight);
+
           // Score = Dimension Score * (Weight / 100)
-          const newScore = baseScore ? (baseScore * newWeight / 100) : 0;
+          const newScore = baseScore ? (baseScore * finalWeight / 100) : 0;
 
           const updatedIndicators = currentNode.indicators.map(ind => 
               ind.id === indId ? { 
                   ...ind, 
-                  weight: newWeight,
+                  weight: finalWeight,
                   score: parseFloat(newScore.toFixed(1))
               } : ind
           );
@@ -333,13 +445,23 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
       const currentNode = findDimensionNode(dimensions, selectedDimensionId);
       if(currentNode && currentNode.indicators) {
           const baseScore = currentNode.score;
+          
+          const siblingsScore = currentNode.indicators.filter(i => i.id !== indId).reduce((sum, i) => sum + (i.score || 0), 0);
+          const maxScore = baseScore - siblingsScore;
+          
+          if (newScore > maxScore) {
+              showToast(`当前维度下指标分值之和不能超过维度总分，最大可输入: ${maxScore}分`);
+          }
+          
+          const finalScore = Math.min(Math.max(0, newScore), maxScore);
+
           // Weight = (Score / Dimension Score) * 100
-          const newWeight = baseScore ? (newScore / baseScore * 100) : 0;
+          const newWeight = baseScore ? (finalScore / baseScore * 100) : 0;
 
           const updatedIndicators = currentNode.indicators.map(ind => 
               ind.id === indId ? { 
                   ...ind, 
-                  score: newScore,
+                  score: finalScore,
                   weight: parseFloat(newWeight.toFixed(2))
               } : ind
           );
@@ -384,6 +506,26 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
 
   const isScoreOverflow = currentSelectedDimension && indTotalScore > currentSelectedDimension.score;
   const isWeightOverflow = indTotalWeight > 100;
+
+  // Calculate max available for current dimension
+  const { maxDimWeight, maxDimScore } = useMemo(() => {
+      if (!currentSelectedDimension) return { maxDimWeight: 100, maxDimScore: planTotalScore };
+      const parentNode = findParentNode(dimensions, currentSelectedDimension.id);
+      const baseScore = parentNode ? parentNode.score : planTotalScore;
+      
+      const siblingsWeight = parentNode 
+          ? parentNode.children?.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.weight || 0), 0) || 0
+          : dimensions.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.weight || 0), 0);
+          
+      const siblingsScore = parentNode 
+          ? parentNode.children?.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.score || 0), 0) || 0
+          : dimensions.filter(c => c.id !== currentSelectedDimension.id).reduce((sum, c) => sum + (c.score || 0), 0);
+          
+      return {
+          maxDimWeight: 100 - siblingsWeight,
+          maxDimScore: baseScore - siblingsScore
+      };
+  }, [dimensions, currentSelectedDimension, planTotalScore]);
 
   // --- Render Helpers ---
 
@@ -818,7 +960,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                     type="number" 
                                     className="w-20 h-7 text-sm font-bold text-blue-700 text-center border border-blue-200 rounded bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all"
                                     value={planTotalScore}
-                                    onChange={(e) => setPlanTotalScore(Number(e.target.value))}
+                                    onChange={(e) => handlePlanTotalScoreChange(Number(e.target.value))}
                                   />
                                   <span className="text-xs text-gray-500">分</span>
                              </div>
@@ -885,6 +1027,10 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                             />
                                             <Percent size={14} className="absolute right-3 top-2.5 text-gray-400" />
                                         </div>
+                                        <div className="text-[10px] text-gray-400 mt-1.5 flex items-center gap-1">
+                                            <Info size={10} />
+                                            最大可用: {maxDimWeight}%
+                                        </div>
                                     </div>
                                     <div className="col-span-1">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">分值设置</label>
@@ -897,6 +1043,10 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                                 className="w-full border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:border-blue-500 transition-all"
                                             />
                                             <Hash size={14} className="absolute right-3 top-2.5 text-gray-400" />
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 mt-1.5 flex items-center gap-1">
+                                            <Info size={10} />
+                                            最大可用: {maxDimScore}分
                                         </div>
                                     </div>
                                 </div>
@@ -1057,6 +1207,14 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
         initialSelection={currentSelectedDimension?.indicators?.map(i => i.id) || []}
         disabledIds={disabledIndicatorIds}
       />
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+            <AlertCircle size={18} className="text-orange-400" />
+            <span className="text-sm font-medium">{toastMsg}</span>
+        </div>
+      )}
     </div>
   );
 };

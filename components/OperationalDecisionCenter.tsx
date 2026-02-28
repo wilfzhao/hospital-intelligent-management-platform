@@ -3,16 +3,16 @@ import {
   LayoutDashboard, PieChart, BarChart3, FileText, 
   Activity, GraduationCap, Settings, Layers, Binary,
   FileBarChart, ArrowRight, TrendingUp,
-  ChevronRight, ChevronDown, LayoutGrid, Home
+  ChevronRight, ChevronDown, LayoutGrid, Home, Search
 } from 'lucide-react';
 
 // Stats Data
 const STATS = [
-  { label: '分析主题', value: 12, unit: '个', icon: Layers, trend: '+2' },
-  { label: '分析专题', value: 8, unit: '个', icon: Binary, trend: '+1' },
-  { label: '统计报表', value: 156, unit: '张', icon: FileBarChart, trend: '+12' },
-  { label: '指标总数', value: 2450, unit: '个', icon: Activity, trend: '+85' },
-  { label: '发布报告', value: 56, unit: '份', icon: FileText, trend: '+5' },
+  { label: '分析主题', value: 12, unit: '个', icon: Layers },
+  { label: '分析专题', value: 8, unit: '个', icon: Binary },
+  { label: '统计报表', value: 156, unit: '张', icon: FileBarChart },
+  { label: '指标总数', value: 2450, unit: '个', icon: Activity },
+  { label: '发布报告', value: 56, unit: '份', icon: FileText },
 ];
 
 // Modules Data
@@ -125,12 +125,6 @@ const OperationalDecisionCenter: React.FC = () => {
               <span className="text-3xl font-bold text-gray-800 tracking-tight">{stat.value}</span>
               <span className="text-xs text-gray-400">{stat.unit}</span>
             </div>
-            {stat.trend && (
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-medium bg-emerald-50 w-fit px-1.5 py-0.5 rounded">
-                <TrendingUp size={10} />
-                <span>{stat.trend}</span>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -173,6 +167,155 @@ const OperationalDecisionCenter: React.FC = () => {
       </div>
     </div>
   );
+
+  const renderGenericDetail = () => {
+    const activeModule = MODULES.find(m => m.id === activeModuleId);
+    return (
+      <div className="grid grid-cols-12 gap-6">
+          {/* Top KPIs */}
+          <div className="col-span-12 grid grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                 <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow">
+                    <div className="text-gray-500 text-xs font-medium mb-1">关键指标 {i}</div>
+                    <div className="flex items-end justify-between">
+                        <div className="text-2xl font-bold text-gray-800 tracking-tight">1,2{i}4.00</div>
+                        <div className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1 font-medium mb-1">
+                           <TrendingUp size={10} />
+                           <span>+5.{i}%</span>
+                        </div>
+                    </div>
+                 </div>
+              ))}
+          </div>
+
+          {/* Main Chart Area */}
+          <div className="col-span-12 lg:col-span-9 bg-white p-6 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] min-h-[500px] flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                 <div>
+                    <h3 className="font-bold text-gray-800 text-lg">{activeModule?.title} - 核心趋势</h3>
+                    <p className="text-xs text-gray-400 mt-1">数据来源：全院集成平台 (T+1)</p>
+                 </div>
+                 <div className="flex bg-gray-100/50 p-1 rounded-lg">
+                    <button className="px-3 py-1 text-xs font-medium bg-white text-gray-800 shadow-sm rounded-md">趋势图</button>
+                    <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">分布图</button>
+                    <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">明细表</button>
+                 </div>
+              </div>
+              <div className="flex-1 flex items-center justify-center border border-dashed border-gray-100 rounded-lg bg-gray-50/30 text-gray-400 relative overflow-hidden group">
+                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                 <div className="text-center">
+                    <BarChart3 size={64} className="mx-auto mb-3 text-gray-200" />
+                    <span className="text-gray-400">交互式数据可视化区域</span>
+                    <div className="mt-4 flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                       <button className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs text-gray-600 hover:border-blue-300 hover:text-blue-600">下钻分析</button>
+                       <button className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs text-gray-600 hover:border-blue-300 hover:text-blue-600">查看SQL</button>
+                    </div>
+                 </div>
+              </div>
+          </div>
+
+          {/* Right Side Cards */}
+          <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
+              {/* Alert Card */}
+              <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col">
+                  <h3 className="font-bold text-gray-800 mb-4 flex items-center justify-between">
+                     异常监控
+                     <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium">3</span>
+                  </h3>
+                  <div className="space-y-3">
+                     {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-start gap-3 p-2.5 bg-gray-50/50 hover:bg-red-50/30 border border-transparent hover:border-red-100 rounded-lg transition-colors cursor-pointer group">
+                           <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
+                           <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-800 group-hover:text-red-700 truncate">门诊量环比下降异常</div>
+                              <div className="text-xs text-gray-400 mt-0.5">同比下降 15% • 心内科</div>
+                           </div>
+                           <ChevronRight size={14} className="text-gray-300 group-hover:text-red-400" />
+                        </div>
+                     ))}
+                  </div>
+              </div>
+
+              {/* Info Card */}
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-xl shadow-lg text-white flex flex-col relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Activity size={100} />
+                  </div>
+                  <h3 className="font-bold text-lg mb-1 relative z-10">智能洞察</h3>
+                  <p className="text-blue-100 text-xs mb-4 relative z-10 leading-relaxed">
+                     AI分析发现，本月手术耗材占比呈现下降趋势，主要受骨科集采政策落地影响。建议关注...
+                  </p>
+                  <button className="mt-auto bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-xs font-medium py-2 rounded-lg transition-colors w-full relative z-10">
+                     查看完整报告
+                  </button>
+              </div>
+          </div>
+      </div>
+    );
+  };
+
+  const renderCockpitDetail = () => {
+    return (
+      <div className="w-full min-h-full flex flex-col items-center pt-12 px-8 relative bg-[#f8fafc]">
+        {/* Background Grid Pattern */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: 'linear-gradient(45deg, #e2e8f0 1px, transparent 1px), linear-gradient(-45deg, #e2e8f0 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+          opacity: 0.4
+        }}></div>
+        
+        <div className="relative z-10 w-full max-w-6xl">
+          {/* Search Bar */}
+          <div className="w-full max-w-4xl mx-auto mb-12 flex bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+            <div className="flex-1 flex items-center px-5">
+              <Search className="text-gray-400 mr-3" size={20} />
+              <input 
+                type="text" 
+                placeholder="输入关键词搜索" 
+                className="flex-1 outline-none text-gray-600 py-4 text-base bg-transparent" 
+              />
+            </div>
+            <button className="bg-[#2563eb] hover:bg-blue-700 text-white px-12 py-4 font-medium transition-colors text-base tracking-widest">
+              搜索
+            </button>
+          </div>
+
+          {/* Cockpit Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Card 1: 院长驾驶舱 */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col">
+              <div className="aspect-[16/9] bg-gray-900 relative overflow-hidden">
+                <img 
+                  src="https://picsum.photos/seed/dash1/800/450" 
+                  alt="院长驾驶舱" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  referrerPolicy="no-referrer" 
+                />
+              </div>
+              <div className="p-5 text-center bg-white">
+                <h3 className="text-lg font-medium text-gray-800">院长驾驶舱</h3>
+              </div>
+            </div>
+
+            {/* Card 2: 检查驾驶舱 */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col">
+              <div className="aspect-[16/9] bg-gray-900 relative overflow-hidden">
+                <img 
+                  src="https://picsum.photos/seed/dash2/800/450" 
+                  alt="检查驾驶舱" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  referrerPolicy="no-referrer" 
+                />
+              </div>
+              <div className="p-5 text-center bg-white">
+                <h3 className="text-lg font-medium text-gray-800">检查驾驶舱</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // --------------------------------------------------------------------------
   // View 2: Detailed Module View (Full Width with Header Switcher)
@@ -268,88 +411,8 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Full Width Content Area */}
         <main className="flex-1 flex flex-col min-w-0 bg-white relative z-0">
            {/* Content Body */}
-           <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
-              {/* Mock Content based on module type */}
-              <div className="grid grid-cols-12 gap-6">
-                  {/* Top KPIs */}
-                  <div className="col-span-12 grid grid-cols-4 gap-4">
-                      {[1, 2, 3, 4].map(i => (
-                         <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-md transition-shadow">
-                            <div className="text-gray-500 text-xs font-medium mb-1">关键指标 {i}</div>
-                            <div className="flex items-end justify-between">
-                                <div className="text-2xl font-bold text-gray-800 tracking-tight">1,2{i}4.00</div>
-                                <div className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1 font-medium mb-1">
-                                   <TrendingUp size={10} />
-                                   <span>+5.{i}%</span>
-                                </div>
-                            </div>
-                         </div>
-                      ))}
-                  </div>
-
-                  {/* Main Chart Area */}
-                  <div className="col-span-12 lg:col-span-9 bg-white p-6 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] min-h-[500px] flex flex-col">
-                      <div className="flex justify-between items-center mb-6">
-                         <div>
-                            <h3 className="font-bold text-gray-800 text-lg">{activeModule?.title} - 核心趋势</h3>
-                            <p className="text-xs text-gray-400 mt-1">数据来源：全院集成平台 (T+1)</p>
-                         </div>
-                         <div className="flex bg-gray-100/50 p-1 rounded-lg">
-                            <button className="px-3 py-1 text-xs font-medium bg-white text-gray-800 shadow-sm rounded-md">趋势图</button>
-                            <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">分布图</button>
-                            <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">明细表</button>
-                         </div>
-                      </div>
-                      <div className="flex-1 flex items-center justify-center border border-dashed border-gray-100 rounded-lg bg-gray-50/30 text-gray-400 relative overflow-hidden group">
-                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-50/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                         <div className="text-center">
-                            <BarChart3 size={64} className="mx-auto mb-3 text-gray-200" />
-                            <span className="text-gray-400">交互式数据可视化区域</span>
-                            <div className="mt-4 flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                               <button className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs text-gray-600 hover:border-blue-300 hover:text-blue-600">下钻分析</button>
-                               <button className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs text-gray-600 hover:border-blue-300 hover:text-blue-600">查看SQL</button>
-                            </div>
-                         </div>
-                      </div>
-                  </div>
-
-                  {/* Right Side Cards */}
-                  <div className="col-span-12 lg:col-span-3 flex flex-col gap-6">
-                      {/* Alert Card */}
-                      <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col">
-                          <h3 className="font-bold text-gray-800 mb-4 flex items-center justify-between">
-                             异常监控
-                             <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium">3</span>
-                          </h3>
-                          <div className="space-y-3">
-                             {[1, 2, 3].map(i => (
-                                <div key={i} className="flex items-start gap-3 p-2.5 bg-gray-50/50 hover:bg-red-50/30 border border-transparent hover:border-red-100 rounded-lg transition-colors cursor-pointer group">
-                                   <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 shadow-[0_0_8px_rgba(239,68,68,0.4)]"></div>
-                                   <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium text-gray-800 group-hover:text-red-700 truncate">门诊量环比下降异常</div>
-                                      <div className="text-xs text-gray-400 mt-0.5">同比下降 15% • 心内科</div>
-                                   </div>
-                                   <ChevronRight size={14} className="text-gray-300 group-hover:text-red-400" />
-                                </div>
-                             ))}
-                          </div>
-                      </div>
-
-                      {/* Info Card */}
-                      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-xl shadow-lg text-white flex flex-col relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-4 opacity-10">
-                              <Activity size={100} />
-                          </div>
-                          <h3 className="font-bold text-lg mb-1 relative z-10">智能洞察</h3>
-                          <p className="text-blue-100 text-xs mb-4 relative z-10 leading-relaxed">
-                             AI分析发现，本月手术耗材占比呈现下降趋势，主要受骨科集采政策落地影响。建议关注...
-                          </p>
-                          <button className="mt-auto bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white text-xs font-medium py-2 rounded-lg transition-colors w-full relative z-10">
-                             查看完整报告
-                          </button>
-                      </div>
-                  </div>
-              </div>
+           <div className={`flex-1 overflow-y-auto ${activeModuleId === 'cockpit' ? 'bg-gray-50/30' : 'p-6 bg-gray-50/30'}`}>
+              {activeModuleId === 'cockpit' ? renderCockpitDetail() : renderGenericDetail()}
            </div>
         </main>
       </div>

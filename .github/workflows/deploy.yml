@@ -1,0 +1,54 @@
+name: Deploy to GitHub Pages
+
+on:
+  # 当代码推送到 main 分支时触发自动化流程
+  # 如果你的主分支叫 master，请将这里的 main 改为 master
+  push:
+    branches: ['main']
+
+# 设置运行时的读写权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 并发控制：如果连续 push，取消正在进行的旧部署，只运行最新的
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # 使用稳定的 Node.js 版本
+          cache: 'npm'     # 开启 npm 缓存，加快后续部署速度
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build # 执行 Vite 的打包命令
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 注意：Vite 默认的打包产物目录是 dist。如果你修改过输出目录，请对应更改这里
+          path: './dist' 
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

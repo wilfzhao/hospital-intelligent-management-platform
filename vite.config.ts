@@ -1,14 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
 export default defineConfig({
+  base: '/hospital-intelligent-management-platform/',   // 这里改成你的 GitHub 仓库名
   plugins: [react()],
   build: {
     outDir: 'dist',
   },
   server: {
-    host: '0.0.0.0', // Allow access from outside container if running in dev mode
+    host: '0.0.0.0',
     port: 3000
   }
 })

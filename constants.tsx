@@ -49,6 +49,19 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   },
 ];
 
+export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
+  {
+    id: 'supervision_dashboard',
+    label: '全景看版',
+    icon: <LayoutDashboard size={20} />,
+  },
+  {
+    id: 'task_list_library',
+    label: '任务清单库',
+    icon: <ListTodo size={20} />,
+  },
+];
+
 export const HOSPITAL_REVIEW_SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'review_overview',
@@ -118,10 +131,10 @@ export const INDICATORS: Indicator[] = [
     fillPermission: false,
     displayEntry: false,
     children: [
-      { id: '1', name: '自定义统计方式指标 (基础指标二)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false, tag: 'main' },
-      { id: '2', name: '自定义统计方式指标 (手动转自动)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
-      { id: '3', name: '自定义统计方式指标 (手动转自动1)', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true },
-      { id: '4', name: '自定义统计方式指标 (复合指标一)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '1', name: 'CMI', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false, tag: 'main' },
+      { id: '2', name: '时间消耗指数', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '3', name: 'RW 总权重值', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true },
+      { id: '4', name: '四级手术占比', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
     ]
   },
   {
@@ -132,9 +145,9 @@ export const INDICATORS: Indicator[] = [
     fillPermission: false,
     displayEntry: false,
     children: [
-      { id: '5', name: '自定义统计方式指标 (基础指标一)', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
-      { id: '6', name: '自定义统计方式指标 (基础指标二)', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
-      { id: '7', name: '自定义统计方式指标 (基础指标三)', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
+      { id: '5', name: '非计划二次手术率', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '6', name: '床位周转率', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
+      { id: '7', name: '费用消耗指数', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
     ]
   },
   {
@@ -145,7 +158,7 @@ export const INDICATORS: Indicator[] = [
     fillPermission: false,
     displayEntry: false,
     children: [
-      { id: '8', name: '填报配置测试十一', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '8', name: 'ASA III级及以上占比', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
       {
         id: '9',
         name: '填报配置测试六',
@@ -154,7 +167,7 @@ export const INDICATORS: Indicator[] = [
         fillPermission: false,
         displayEntry: true,
         children: [
-          { id: '10', name: '填报配置测试十一', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true }, 
+          { id: '10', name: 'PACU 拔管时效达标率', scheme: '三级医院等级评审', readPermission: true, fillPermission: false, displayEntry: true }, 
         ]
       },
     ]

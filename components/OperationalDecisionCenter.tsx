@@ -9,7 +9,7 @@ import {
   PieChart as RePieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, ScatterChart, Scatter, ZAxis, Legend, ReferenceLine, LabelList
 } from 'recharts';
-import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Beaker, Filter } from 'lucide-react';
+import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Beaker, Filter, Users, Hourglass, Info, User, ArrowUpDown, X } from 'lucide-react';
 
 // Mock Data for Department Selector
 const MOCK_DEPARTMENTS = [
@@ -121,6 +121,14 @@ const MODULES = [
     shadowColor: 'shadow-slate-200'
   },
   { 
+    id: 'attending-kpi', 
+    title: '主诊组KPI效能评价', 
+    desc: '主诊组效能实时排行与分析', 
+    icon: Users, 
+    gradient: 'from-indigo-500 to-purple-600',
+    shadowColor: 'shadow-indigo-200'
+  },
+  { 
     id: 'er_return_monitor', 
     title: '计划外重返急诊就诊监测', 
     desc: '急诊重返率监控与分析', 
@@ -142,6 +150,14 @@ const OperationalDecisionCenter: React.FC = () => {
   const [selectedReports, setSelectedReports] = useState<number[]>([]);
   const [activeCockpitId, setActiveCockpitId] = useState<string | null>(null);
   const [selectedCampus, setSelectedCampus] = useState('全院');
+  const [selectedDoctorId, setSelectedDoctorId] = useState(1);
+
+  // Attending Group KPI State
+  const [kpiSearchQuery, setKpiSearchQuery] = useState('');
+  const [kpiSelectedType, setKpiSelectedType] = useState('全部');
+  const [kpiSelectedLabel, setKpiSelectedLabel] = useState('全部');
+  const [kpiSelectedMonth, setKpiSelectedMonth] = useState('2026-03');
+  const [kpiSortDirection, setKpiSortDirection] = useState<'desc' | 'asc' | null>('desc');
 
   // Close switcher when clicking outside
   useEffect(() => {
@@ -1128,8 +1144,737 @@ const OperationalDecisionCenter: React.FC = () => {
     );
   };
 
+  const renderExamCockpit = () => {
+    // Data for charts
+    const workloadBarData = [
+      { name: 'DR', value: 8 },
+      { name: 'CT', value: 10 },
+      { name: 'MR', value: 6 },
+      { name: '其他', value: 5 },
+    ];
+
+    const workloadDonutData = [
+      { name: 'DR', value: 8, color: '#0ea5e9' },
+      { name: 'CT', value: 10, color: '#10b981' },
+      { name: 'MR', value: 6, color: '#3b82f6' },
+      { name: '其他', value: 5, color: '#8b5cf6' },
+    ];
+
+    const trafficTrendData = [
+      { day: '星期一', thisWeek: 600, lastWeek: 550 },
+      { day: '星期三', thisWeek: 800, lastWeek: 750 },
+      { day: '星期五', thisWeek: 950, lastWeek: 900 },
+      { day: '星期日', thisWeek: 700, lastWeek: 650 },
+    ];
+
+    const efficiencyData = [
+      { day: '星期一', value: 0.8 },
+      { day: '星期三', value: 1.2 },
+      { day: '星期五', value: 1.4 },
+      { day: '星期日', value: 0.9 },
+    ];
+
+    const costTrendData = [
+      { day: '星期一', thisWeek: 500, lastWeek: 450 },
+      { day: '星期三', thisWeek: 700, lastWeek: 650 },
+      { day: '星期五', thisWeek: 850, lastWeek: 800 },
+      { day: '星期日', thisWeek: 600, lastWeek: 550 },
+    ];
+
+    const performanceData = [
+      { day: '星期一', value: 0.9 },
+      { day: '星期三', value: 1.3 },
+      { day: '星期五', value: 1.5 },
+      { day: '星期日', value: 1.0 },
+    ];
+
+    const reportTimeData = [
+      { name: 'DR', value: 0.8, color: 'bg-cyan-400' },
+      { name: 'CT', value: 1.5, color: 'bg-emerald-400' },
+      { name: 'MR', value: 2.1, color: 'bg-blue-400' },
+    ];
+
+    const costDonutData = [
+      { name: 'CT', value: 45, color: '#10b981' },
+      { name: 'DR', value: 25, color: '#0ea5e9' },
+      { name: 'MR', value: 20, color: '#3b82f6' },
+      { name: '其他', value: 10, color: '#8b5cf6' },
+    ];
+
+    const campusCostDonutData = [
+      { name: '天河院区', value: 40, color: '#f59e0b' },
+      { name: '珠玑院区', value: 35, color: '#ec4899' },
+      { name: '同德院区', value: 25, color: '#8b5cf6' },
+    ];
+
+    // Helper for Panel Title
+    const PanelTitle = ({ title }: { title: string }) => (
+      <div className="flex items-center gap-2 mb-4 relative">
+        <div className="absolute -left-4 top-0 bottom-0 w-1 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div>
+        <div className="absolute left-0 bottom-0 w-32 h-[1px] bg-gradient-to-r from-cyan-400 to-transparent"></div>
+        <h3 className="text-lg font-bold text-white tracking-wider italic">{title}</h3>
+      </div>
+    );
+
+    // Helper for KPI Box
+    const KpiBox = ({ title, value, unit, trend, trendValue, icon }: any) => (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2 text-slate-400 text-sm">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
+          {title}
+          {icon && <div className="ml-auto text-cyan-500">{icon}</div>}
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-2xl font-bold text-cyan-400">{value}</span>
+          {unit && <span className="text-sm text-cyan-400">{unit}</span>}
+        </div>
+        <div className="flex items-center gap-1 text-xs">
+          <span className={trend === 'up' ? 'text-red-500' : 'text-emerald-500'}>
+            {trend === 'up' ? '↑' : '↓'} {trendValue}
+          </span>
+          <span className="text-slate-500">较昨日</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="w-full min-h-screen bg-[#050b14] text-white p-6 flex flex-col gap-6 font-sans relative overflow-hidden">
+        {/* Background styling */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(circle at 50% 0%, #0c2b5e 0%, #050b14 50%)',
+        }}></div>
+
+        {/* Header */}
+        <div className="relative flex justify-between items-center mb-4 z-10">
+          <div className="flex items-center gap-4 w-1/3">
+            <button 
+              onClick={() => setActiveCockpitId(null)}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ChevronLeft size={24} />
+            </button>
+          </div>
+          
+          {/* Stylized Title Background */}
+          <div className="relative px-20 py-4 w-1/3 flex justify-center">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNjAiPjxwYXRoIGQ9Ik0wLDYwIEw0MCwwIEwzNjAsMCBMNDAwLDYwIFoiIGZpbGw9InJnYmEoMTQsIDE2NSwgMjMzLCAwLjE1KSIgc3Ryb2tlPSIjMGVhNWU5IiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=')] bg-no-repeat bg-center bg-contain"></div>
+            <h1 className="text-3xl font-bold tracking-[0.2em] text-white text-shadow-lg relative z-10 whitespace-nowrap">
+              检查驾驶舱
+            </h1>
+          </div>
+
+          <div className="flex items-center justify-end gap-4 w-1/3">
+            <div className="flex items-center gap-1 bg-[#0a1128]/80 p-1 rounded-lg border border-[#1e3a8a] shadow-[inset_0_0_10px_rgba(14,165,233,0.1)]">
+              {['全院', '天河院区', '珠玑院区', '同德院区'].map(campus => (
+                <button
+                  key={campus}
+                  onClick={() => setSelectedCampus(campus)}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                    selectedCampus === campus 
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.2)]' 
+                      : 'text-slate-400 hover:text-cyan-300 hover:bg-white/5 border border-transparent'
+                  }`}
+                >
+                  {campus}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-12 gap-6 z-10">
+          {/* Top Row */}
+          {/* Workload */}
+          <div className="col-span-12 lg:col-span-5 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+            <PanelTitle title="医技服务工作量" />
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <KpiBox title="已检人数" value="1300" trend="up" trendValue="12.5" icon={<Users size={16}/>} />
+              <KpiBox title="等待人数" value="1248" trend="up" trendValue="12.5" icon={<Hourglass size={16}/>} />
+              <KpiBox title="预约人数" value="1248" trend="up" trendValue="12.5" icon={<Calendar size={16}/>} />
+              <KpiBox title="预约率" value="12%" trend="up" trendValue="5.1" icon={<PieChart size={16}/>} />
+            </div>
+
+            <div className="flex h-[200px]">
+              <div className="w-1/2 h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={workloadBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e3a8a" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                    <Bar dataKey="value" fill="#0ea5e9" barSize={16} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-1/2 h-full relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={workloadDonutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {workloadDonutData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </RePieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-bold text-cyan-400">29</span>
+                  <span className="text-xs text-slate-400">总量</span>
+                </div>
+                {/* Legend for Donut */}
+                <div className="absolute right-0 top-0 bottom-0 flex flex-col justify-center gap-2 text-[10px] text-slate-300">
+                  {workloadDonutData.map(item => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                      {item.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Traffic Trend */}
+          <div className="col-span-12 md:col-span-6 lg:col-span-4 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+            <PanelTitle title="流量趋势" />
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trafficTrendData} margin={{ top: 20, right: 20, left: -20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e3a8a" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <Line type="monotone" dataKey="thisWeek" name="本周" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4, fill: '#0ea5e9' }} />
+                  <Line type="monotone" dataKey="lastWeek" name="上周" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                  <Legend verticalAlign="bottom" height={36} iconType="plainline" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Efficiency */}
+          <div className="col-span-12 md:col-span-6 lg:col-span-3 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+            <PanelTitle title="医技服务效率" />
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400 flex items-center gap-1">检查可预约等待时长(天) <Info size={10}/></div>
+                <div className="text-xl font-bold text-cyan-400">100</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400 flex items-center gap-1">预约到检查等待时长(天) <Info size={10}/></div>
+                <div className="text-xl font-bold text-cyan-400">90</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400 flex items-center gap-1">预约检查患者现场等待时长(分钟) <Info size={10}/></div>
+                <div className="text-xl font-bold text-cyan-400">80</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+            </div>
+            <div className="h-[160px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={efficiencyData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e3a8a" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <Line type="monotone" dataKey="value" name="效率数据" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4, fill: '#0ea5e9' }} />
+                  <Legend verticalAlign="bottom" height={36} iconType="plainline" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bottom Row */}
+          {/* Quality */}
+          <div className="col-span-12 lg:col-span-3 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+            <PanelTitle title="医技服务质量" />
+            
+            <div className="mb-6">
+              <div className="text-sm text-slate-300 mb-3">平均报告发布时长 (小时)</div>
+              <div className="space-y-3">
+                {reportTimeData.map(item => (
+                  <div key={item.name} className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 w-6">{item.name}</span>
+                    <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className={`h-full ${item.color}`} style={{ width: `${(item.value / 3) * 100}%` }}></div>
+                    </div>
+                    <span className="text-xs font-bold text-white w-8 text-right">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Cost */}
+          <div className="col-span-12 lg:col-span-6 flex flex-col gap-6">
+            <div className="flex-1 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+              <PanelTitle title="医技服务费用" />
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <KpiBox title="今日收入(万元)" value="1,300" trend="up" trendValue="12.5" />
+                <KpiBox title="门诊收入(万元)" value="2,736" trend="up" trendValue="12.5" />
+                <KpiBox title="住院收入(万元)" value="2,736" trend="up" trendValue="12.5" />
+              </div>
+              
+              <div className="flex gap-4">
+                {/* Pie Chart 1: Item Breakdown */}
+                <div className="flex-1 relative h-[180px] flex items-center justify-center">
+                  <div className="absolute top-0 left-4 text-xs text-slate-400">项目占比</div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={costDonutData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {costDonutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e3a8a', color: '#f8fafc' }}
+                        itemStyle={{ color: '#e2e8f0' }}
+                        formatter={(value: any) => [`${value}%`, '占比']}
+                      />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                  {/* Legend for Donut 1 */}
+                  <div className="absolute right-4 top-0 bottom-0 flex flex-col justify-center gap-3 text-xs text-slate-300">
+                    {costDonutData.map(item => (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                        {item.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pie Chart 2: Campus Breakdown */}
+                <div className="flex-1 relative h-[180px] flex items-center justify-center">
+                  <div className="absolute top-0 left-4 text-xs text-slate-400">院区占比</div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={campusCostDonutData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {campusCostDonutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e3a8a', color: '#f8fafc' }}
+                        itemStyle={{ color: '#e2e8f0' }}
+                        formatter={(value: any) => [`${value}%`, '占比']}
+                      />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                  {/* Legend for Donut 2 */}
+                  <div className="absolute right-4 top-0 bottom-0 flex flex-col justify-center gap-3 text-xs text-slate-300">
+                    {campusCostDonutData.map(item => (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                        {item.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance */}
+          <div className="col-span-12 lg:col-span-3 bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm p-5 relative shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
+            <PanelTitle title="医技绩效监控" />
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400">人均检查费用(元)</div>
+                <div className="text-xl font-bold text-cyan-400">100</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400">医师人均检查量(次)</div>
+                <div className="text-xl font-bold text-cyan-400">90</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] text-slate-400">设备利用率</div>
+                <div className="text-xl font-bold text-cyan-400">80</div>
+                <div className="text-[9px] text-slate-500">同比: <span className="text-red-500">+30% ↑</span></div>
+                <div className="text-[9px] text-slate-500">环比: <span className="text-emerald-500">-12% ↓</span></div>
+              </div>
+            </div>
+            <div className="h-[160px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e3a8a" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <Line type="monotone" dataKey="value" name="绩效指标" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4, fill: '#0ea5e9' }} />
+                  <Legend verticalAlign="bottom" height={36} iconType="plainline" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  };
+
+  const renderAttendingGroupKPI = () => {
+    // Mock data for Attending Group KPI
+    const attendingGroups = [
+      { id: 1, name: '张三', type: '内科', score: 95.2, label: '优秀', month: '2026-03' },
+      { id: 2, name: '李四', type: '外科', score: 92.8, label: '良好', month: '2026-03' },
+      { id: 3, name: '王五', type: '内科', score: 88.5, label: '达标', month: '2026-03' },
+      { id: 4, name: '赵六', type: '外科', score: 85.0, label: '达标', month: '2026-03' },
+      { id: 5, name: '孙七', type: '内科', score: 78.4, label: '预警', month: '2026-03' },
+      { id: 6, name: '周八', type: '外科', score: 75.1, label: '预警', month: '2026-03' },
+      { id: 7, name: '吴九', type: '内科', score: 96.5, label: '优秀', month: '2026-03' },
+      { id: 8, name: '郑十', type: '外科', score: 89.2, label: '良好', month: '2026-03' },
+      { id: 9, name: '张三', type: '内科', score: 94.0, label: '优秀', month: '2026-02' },
+      { id: 10, name: '李四', type: '外科', score: 91.5, label: '良好', month: '2026-02' },
+    ];
+
+    let filteredGroups = attendingGroups.filter(g => {
+      const matchSearch = g.name.includes(kpiSearchQuery);
+      const matchType = kpiSelectedType === '全部' || g.type === kpiSelectedType;
+      const matchLabel = kpiSelectedLabel === '全部' || g.label === kpiSelectedLabel;
+      const matchMonth = !kpiSelectedMonth || kpiSelectedMonth === '全部' || g.month === kpiSelectedMonth;
+      return matchSearch && matchType && matchLabel && matchMonth;
+    });
+
+    if (kpiSortDirection) {
+      filteredGroups.sort((a, b) => {
+        if (kpiSortDirection === 'asc') return a.score - b.score;
+        return b.score - a.score;
+      });
+    }
+
+    const selectedDoctor = filteredGroups.find(g => g.id === selectedDoctorId) || filteredGroups[0] || attendingGroups[0];
+
+    // KPI Data based on type
+    const internalKPIs = [
+      { name: 'CMI', value: '1.25', score: 25, maxScore: 25, icon: Activity },
+      { name: '时间消耗指数', value: '0.92', score: 20, maxScore: 25, icon: Hourglass },
+      { name: 'RW 总权重值', value: '1500', score: 25, maxScore: 25, icon: Layers },
+      { name: '医疗质量安全总得分', value: '98', score: 25.2, maxScore: 25, icon: Check },
+    ];
+
+    const surgeryKPIs = [
+      { name: '四级手术占比', value: '25%', score: 22, maxScore: 25, icon: PieChart },
+      { name: '非计划二次手术率', value: '0.5%', score: 24, maxScore: 25, icon: RotateCcw },
+      { name: '床位周转率', value: '95%', score: 23, maxScore: 25, icon: RefreshCw },
+      { name: '费用消耗指数', value: '0.88', score: 23.8, maxScore: 25, icon: TrendingUp },
+    ];
+
+    const currentKPIs = selectedDoctor.type === '内科' ? internalKPIs : surgeryKPIs;
+
+    return (
+      <div className="w-full min-h-full bg-[#f8fafc] p-6 flex flex-col gap-6 font-sans">
+        {/* Filter Bar */}
+        <div className="bg-white border border-gray-100 rounded-xl p-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text" 
+                placeholder="搜索主诊医师..." 
+                value={kpiSearchQuery}
+                onChange={(e) => setKpiSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-48 transition-all"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-500 font-medium">模型分类:</label>
+              <select 
+                value={kpiSelectedType}
+                onChange={(e) => setKpiSelectedType(e.target.value)}
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+              >
+                <option value="全部">全部</option>
+                <option value="内科">内科</option>
+                <option value="外科">外科</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-500 font-medium">结论标签:</label>
+              <select 
+                value={kpiSelectedLabel}
+                onChange={(e) => setKpiSelectedLabel(e.target.value)}
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+              >
+                <option value="全部">全部</option>
+                <option value="优秀">优秀</option>
+                <option value="良好">良好</option>
+                <option value="达标">达标</option>
+                <option value="预警">预警</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+            <Calendar className="text-gray-400" size={16} />
+            <input 
+              type="month"
+              value={kpiSelectedMonth === '全部' ? '' : kpiSelectedMonth}
+              onChange={(e) => setKpiSelectedMonth(e.target.value)}
+              className="bg-transparent border-none text-sm focus:outline-none cursor-pointer font-medium text-gray-700 w-[110px]"
+            />
+            {kpiSelectedMonth && kpiSelectedMonth !== '全部' && (
+              <button 
+                onClick={() => setKpiSelectedMonth('')}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none flex items-center justify-center p-0.5 rounded-full hover:bg-gray-200 transition-colors"
+                title="清除月份筛选"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex gap-6 h-[calc(100vh-210px)]">
+          {/* Left Panel: Ranking Table */}
+          <div className="w-1/2 bg-white border border-gray-100 rounded-xl p-6 flex flex-col shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <div className="w-1 h-5 bg-blue-500 rounded-full"></div>
+                全院主诊组效能排行
+              </h3>
+              <div className="text-sm text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                共 {filteredGroups.length} 条记录
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-auto pr-2 custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b border-gray-100 text-gray-500 text-sm">
+                    <th className="py-3 px-2 font-medium">排名</th>
+                    <th className="py-3 px-2 font-medium">主诊医师</th>
+                    <th className="py-3 px-2 font-medium">模型分类</th>
+                    <th 
+                      className="py-3 px-2 font-medium cursor-pointer hover:text-blue-600 transition-colors group flex items-center gap-1"
+                      onClick={() => setKpiSortDirection(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    >
+                      效能分
+                      <ArrowUpDown size={14} className={`transition-colors ${kpiSortDirection ? 'text-blue-500' : 'text-gray-300 group-hover:text-blue-400'}`} />
+                    </th>
+                    <th className="py-3 px-2 font-medium">结论标签</th>
+                    <th className="py-3 px-2 font-medium">月份</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredGroups.length > 0 ? filteredGroups.map((group, index) => (
+                    <tr 
+                      key={group.id} 
+                      onClick={() => setSelectedDoctorId(group.id)}
+                      className={`border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50 ${selectedDoctorId === group.id ? 'bg-blue-50/50 border-l-2 border-l-blue-500' : ''}`}
+                    >
+                      <td className="py-4 px-2">
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${index < 3 && kpiSortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {index + 1}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 font-medium text-gray-800">{group.name}</td>
+                      <td className="py-4 px-2 text-gray-600">
+                        <span className="bg-gray-100 px-2 py-1 rounded text-xs">{group.type}</span>
+                      </td>
+                      <td className="py-4 px-2 font-bold text-gray-900">{group.score}</td>
+                      <td className="py-4 px-2">
+                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                          group.label === '优秀' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                          group.label === '良好' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                          group.label === '达标' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                          'bg-red-50 text-red-600 border border-red-100'
+                        }`}>
+                          {group.label}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-xs text-gray-500 font-mono">{group.month}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-gray-500">
+                        没有找到匹配的数据
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Right Panel: Details */}
+          <div className="w-1/2 flex flex-col gap-6">
+            {/* Top: Score & Warning */}
+            <div className="bg-white border border-gray-100 rounded-xl p-6 flex items-center justify-between shadow-sm relative overflow-hidden">
+              {/* Decorative background element */}
+              <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-bl from-blue-50 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 opacity-50 pointer-events-none"></div>
+              
+              <div className="flex items-center gap-5 relative z-10">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-blue-100 text-blue-600 shadow-sm">
+                  <User size={32} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-1 flex items-center gap-3">
+                    {selectedDoctor.name} 
+                    <span className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">{selectedDoctor.type}</span>
+                  </h2>
+                  <div className="text-gray-500 text-sm flex items-center gap-2">
+                    <Calendar size={14} className="text-gray-400" />
+                    {selectedDoctor.month} 月度综合效能分
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-8 relative z-10">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-gray-900 mb-1 tracking-tight">{selectedDoctor.score}</div>
+                  <div className="text-xs text-gray-500 font-medium">总分 100</div>
+                </div>
+                <div className="w-px h-12 bg-gray-200"></div>
+                <div className="text-center">
+                  <div className={`text-2xl font-bold mb-1 ${
+                    selectedDoctor.label === '预警' ? 'text-red-600' : 
+                    selectedDoctor.label === '优秀' ? 'text-emerald-600' :
+                    selectedDoctor.label === '良好' ? 'text-blue-600' : 'text-amber-600'
+                  }`}>
+                    {selectedDoctor.label}
+                  </div>
+                  <div className="text-xs text-gray-500 font-medium">效能结论</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: KPI Indicators */}
+            <div className="flex-1 bg-white border border-gray-100 rounded-xl p-6 flex flex-col shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
+                  KPI指标详情
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 flex-1">
+                {currentKPIs.map((kpi, idx) => {
+                  const percentage = (kpi.score / kpi.maxScore) * 100;
+                  let colorConfig = {
+                    bar: 'bg-red-500',
+                    text: 'text-red-600',
+                    hoverBg: 'group-hover:bg-red-50',
+                    hoverText: 'group-hover:text-red-600',
+                    hoverBorder: 'group-hover:border-red-100',
+                    gradient: 'from-red-50/50',
+                    border: 'hover:border-red-200'
+                  };
+                  
+                  if (percentage >= 95) {
+                    colorConfig = {
+                      bar: 'bg-emerald-500',
+                      text: 'text-emerald-600',
+                      hoverBg: 'group-hover:bg-emerald-50',
+                      hoverText: 'group-hover:text-emerald-600',
+                      hoverBorder: 'group-hover:border-emerald-100',
+                      gradient: 'from-emerald-50/50',
+                      border: 'hover:border-emerald-200'
+                    };
+                  } else if (percentage >= 90) {
+                    colorConfig = {
+                      bar: 'bg-blue-500',
+                      text: 'text-blue-600',
+                      hoverBg: 'group-hover:bg-blue-50',
+                      hoverText: 'group-hover:text-blue-600',
+                      hoverBorder: 'group-hover:border-blue-100',
+                      gradient: 'from-blue-50/50',
+                      border: 'hover:border-blue-200'
+                    };
+                  } else if (percentage >= 80) {
+                    colorConfig = {
+                      bar: 'bg-amber-500',
+                      text: 'text-amber-600',
+                      hoverBg: 'group-hover:bg-amber-50',
+                      hoverText: 'group-hover:text-amber-600',
+                      hoverBorder: 'group-hover:border-amber-100',
+                      gradient: 'from-amber-50/50',
+                      border: 'hover:border-amber-200'
+                    };
+                  }
+
+                  return (
+                    <div key={idx} className={`bg-white border border-gray-100 p-6 rounded-2xl flex flex-col justify-between hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] ${colorConfig.border} transition-all duration-300 group relative overflow-hidden`}>
+                      {/* Subtle background gradient on hover */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`}></div>
+
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 ${colorConfig.hoverText} ${colorConfig.hoverBg} ${colorConfig.hoverBorder} transition-colors`}>
+                              <kpi.icon size={16} />
+                            </div>
+                            <div className="text-gray-600 text-sm font-medium">{kpi.name}</div>
+                          </div>
+                          <div className={`bg-gray-50 text-gray-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-gray-100 ${colorConfig.hoverBg} ${colorConfig.hoverText} ${colorConfig.hoverBorder} transition-colors`}>
+                            {kpi.score} <span className="text-[10px] font-normal opacity-70">分</span>
+                          </div>
+                        </div>
+
+                        <div className="text-3xl font-bold text-gray-900 tracking-tight mb-6 group-hover:text-gray-950 transition-colors">
+                          {kpi.value}
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs font-medium text-gray-400">
+                            <span>达成率</span>
+                            <span className={`font-bold ${colorConfig.text}`}>{percentage.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${colorConfig.bar} rounded-full transition-all duration-500`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCockpitDetail = () => {
     if (activeCockpitId === 'lab') return renderLabCockpit();
+    if (activeCockpitId === 'exam') return renderExamCockpit();
 
     return (
       <div className="w-full min-h-full flex flex-col items-center pt-12 px-8 relative bg-[#f8fafc]">
@@ -1174,10 +1919,14 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
 
             {/* Card 2: 检查驾驶舱 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col">
+            <div 
+              onClick={() => setActiveCockpitId('exam')}
+              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col"
+            >
               <div className="aspect-[16/9] bg-gray-900 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/20 to-blue-900/40 z-10"></div>
                 <img 
-                  src="https://picsum.photos/seed/dash2/800/450" 
+                  src="https://picsum.photos/seed/exam-cockpit/800/450" 
                   alt="检查驾驶舱" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   referrerPolicy="no-referrer" 
@@ -1579,10 +2328,11 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Full Width Content Area */}
         <main className="flex-1 flex flex-col min-w-0 bg-white relative z-0">
            {/* Content Body */}
-           <div className={`flex-1 min-h-screen ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' ? 'bg-gray-50/30 p-0' : 'p-6 bg-gray-50/30'}`}>
+           <div className={`flex-1 min-h-screen ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' || activeModuleId === 'attending-kpi' ? 'bg-gray-50/30 p-0' : 'p-6 bg-gray-50/30'}`}>
               {activeModuleId === 'cockpit' ? renderCockpitDetail() : 
                activeModuleId === 'er_return_monitor' ? renderERReturnMonitor() : 
                activeModuleId === 'doc' ? renderReportCenter() :
+               activeModuleId === 'attending-kpi' ? renderAttendingGroupKPI() :
                renderGenericDetail()}
            </div>
         </main>

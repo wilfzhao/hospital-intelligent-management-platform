@@ -12,9 +12,10 @@ import BaseConfig from './components/BaseConfig';
 import OperationalDecisionCenter from './components/OperationalDecisionCenter';
 import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
-import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS } from './constants';
+import { TaskListLibrary } from './components/TaskListLibrary';
+import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
-import { Settings } from 'lucide-react';
+import { Settings, LayoutDashboard } from 'lucide-react';
 
 const App: React.FC = () => {
   // Global Navigation State
@@ -29,6 +30,7 @@ const App: React.FC = () => {
 
   // Header Items State
   const [headerItems, setHeaderItems] = useState<string[]>([
+    '党委政务督办平台',
     '医院等级评审', 
     '公立医院绩效考核', 
     '运营决策中心', 
@@ -38,6 +40,9 @@ const App: React.FC = () => {
 
   // Derive sidebar items based on active module
   const currentSidebarItems = useMemo(() => {
+    if (activeModule === '党委政务督办平台') {
+      return SUPERVISION_SIDEBAR_ITEMS;
+    }
     if (activeModule === '医院等级评审') {
       return HOSPITAL_REVIEW_SIDEBAR_ITEMS;
     }
@@ -52,7 +57,9 @@ const App: React.FC = () => {
     setActiveModule(moduleName);
     
     // Reset view to the first item of the new module's sidebar
-    if (moduleName === '医院等级评审') {
+    if (moduleName === '党委政务督办平台') {
+      setCurrentView(SUPERVISION_SIDEBAR_ITEMS[0].id);
+    } else if (moduleName === '医院等级评审') {
       setCurrentView(HOSPITAL_REVIEW_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '指标管理中心') {
       setCurrentView('default_view'); 
@@ -88,6 +95,20 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (currentView) {
+      // --- Supervision Platform Views ---
+      case 'task_list_library':
+        return <TaskListLibrary />;
+      case 'supervision_dashboard':
+        return (
+          <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm h-full p-8 items-center justify-center text-gray-500">
+              <div className="bg-blue-50 p-4 rounded-full mb-4">
+                  <LayoutDashboard size={32} className="text-blue-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">全景看版</h2>
+              <p>该功能模块正在开发中...</p>
+          </div>
+        );
+
       // --- Operational Decision Center ---
       case 'odc_dashboard':
         return <OperationalDecisionCenter />;

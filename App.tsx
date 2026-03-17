@@ -13,6 +13,7 @@ import OperationalDecisionCenter from './components/OperationalDecisionCenter';
 import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { TaskListLibrary } from './components/TaskListLibrary';
+import { SupervisionDashboard } from './components/SupervisionDashboard';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
 import { Settings, LayoutDashboard } from 'lucide-react';
@@ -99,15 +100,7 @@ const App: React.FC = () => {
       case 'task_list_library':
         return <TaskListLibrary />;
       case 'supervision_dashboard':
-        return (
-          <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm h-full p-8 items-center justify-center text-gray-500">
-              <div className="bg-blue-50 p-4 rounded-full mb-4">
-                  <LayoutDashboard size={32} className="text-blue-500" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">全景看版</h2>
-              <p>该功能模块正在开发中...</p>
-          </div>
-        );
+        return <SupervisionDashboard />;
 
       // --- Operational Decision Center ---
       case 'odc_dashboard':

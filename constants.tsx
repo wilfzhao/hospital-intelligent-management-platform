@@ -57,7 +57,7 @@ export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
   },
   {
     id: 'task_list_library',
-    label: '任务清单库',
+    label: '任务清单',
     icon: <ListTodo size={20} />,
   },
 ];

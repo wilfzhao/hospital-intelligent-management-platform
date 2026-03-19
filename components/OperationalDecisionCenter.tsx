@@ -9,7 +9,7 @@ import {
   PieChart as RePieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, ScatterChart, Scatter, ZAxis, Legend, ReferenceLine, LabelList
 } from 'recharts';
-import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Beaker, Filter, Users, Hourglass, Info, User, ArrowUpDown, X } from 'lucide-react';
+import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Beaker, Filter, Users, Hourglass, Info, User, ArrowUpDown, X, Pill } from 'lucide-react';
 
 // Mock Data for Department Selector
 const MOCK_DEPARTMENTS = [
@@ -142,6 +142,11 @@ const OperationalDecisionCenter: React.FC = () => {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
+
+  // Theme Analysis State
+  const [activeThemeId, setActiveThemeId] = useState('emergency');
+  const [activeEmergencyTab, setActiveEmergencyTab] = useState<'realtime' | 'history'>('realtime');
+  const [activePharmacyTab, setActivePharmacyTab] = useState<'antibacterial' | 'prescription' | 'monitoring'>('antibacterial');
 
   // Report Center State
   const [isDeptSelectorOpen, setIsDeptSelectorOpen] = useState(false);
@@ -644,6 +649,866 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
 
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEmergencyRealtime = () => (
+    <div className="space-y-6">
+      {/* Core KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: '当前候诊总人数', value: '142', unit: '人', trend: '较平时 +45%', isWarning: true, icon: Users },
+          { label: '预计最长等候', value: '85', unit: '分钟', trend: '超阈值 25 分钟', isWarning: true, icon: Hourglass },
+          { label: '今日累计接诊', value: '856', unit: '人次', trend: '较昨日同时段 +12%', isWarning: false, icon: Activity },
+          { label: '抢救室空床数', value: '1', unit: '张', trend: '使用率 95%', isWarning: true, icon: AlertCircle },
+        ].map((kpi, idx) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={idx} className={`p-5 rounded-xl border shadow-sm ${kpi.isWarning ? 'bg-rose-50 border-rose-200' : 'bg-white border-gray-100'}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div className={`text-sm font-medium ${kpi.isWarning ? 'text-rose-700' : 'text-gray-500'}`}>{kpi.label}</div>
+                <Icon size={18} className={kpi.isWarning ? 'text-rose-500' : 'text-blue-500'} />
+              </div>
+              <div className="flex items-end gap-2">
+                <div className={`text-3xl font-bold ${kpi.isWarning ? 'text-rose-700' : 'text-gray-900'}`}>{kpi.value}</div>
+                <div className={`text-sm mb-1 ${kpi.isWarning ? 'text-rose-600' : 'text-gray-500'}`}>{kpi.unit}</div>
+              </div>
+              <div className={`text-xs font-medium mt-2 flex items-center gap-1 ${kpi.isWarning ? 'text-rose-600' : 'text-gray-500'}`}>
+                {kpi.trend}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 分诊进度与患者流向 */}
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Filter size={18} className="text-blue-600" />
+            实时分诊级别分布
+          </h3>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { level: 'I级 (濒危)', count: 3, color: '#ef4444' },
+                { level: 'II级 (危重)', count: 12, color: '#f97316' },
+                { level: 'III级 (急症)', count: 58, color: '#eab308' },
+                { level: 'IV级 (非急症)', count: 69, color: '#22c55e' },
+              ]} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis dataKey="level" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }} width={80} />
+                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Bar dataKey="count" name="候诊人数" radius={[0, 4, 4, 0]} barSize={24}>
+                  {
+                    [
+                      { level: 'I级 (濒危)', count: 3, color: '#ef4444' },
+                      { level: 'II级 (危重)', count: 12, color: '#f97316' },
+                      { level: 'III级 (急症)', count: 58, color: '#eab308' },
+                      { level: 'IV级 (非急症)', count: 69, color: '#22c55e' },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))
+                  }
+                  <LabelList dataKey="count" position="right" fill="#6b7280" fontSize={12} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 各诊室实时压力 */}
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm lg:col-span-2">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity size={18} className="text-rose-600" />
+            各诊室实时候诊压力
+          </h3>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { room: '急诊内科', waiting: 68, doctors: 3 },
+                { room: '急诊外科', waiting: 25, doctors: 2 },
+                { room: '儿科急诊', waiting: 42, doctors: 2 },
+                { room: '发热门诊', waiting: 15, doctors: 1 },
+                { room: '急诊妇产', waiting: 8, doctors: 1 },
+                { room: '急诊眼科', waiting: 4, doctors: 1 },
+              ]} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="room" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <Tooltip 
+                  cursor={{ fill: '#f9fafb' }} 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value: any, name: string | undefined) => [value, name === 'waiting' ? '候诊人数' : '出诊医生数']}
+                />
+                <ReferenceLine y={30} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: '拥挤阈值 (30人)', fill: '#ef4444', fontSize: 12 }} />
+                <Bar dataKey="waiting" name="候诊人数" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32}>
+                  {
+                    [
+                      { room: '急诊内科', waiting: 68, doctors: 3 },
+                      { room: '急诊外科', waiting: 25, doctors: 2 },
+                      { room: '儿科急诊', waiting: 42, doctors: 2 },
+                      { room: '发热门诊', waiting: 15, doctors: 1 },
+                      { room: '急诊妇产', waiting: 8, doctors: 1 },
+                      { room: '急诊眼科', waiting: 4, doctors: 1 },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.waiting > 30 ? '#ef4444' : '#3b82f6'} />
+                    ))
+                  }
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* 智能调度与行动项 */}
+      <div className="bg-white p-5 rounded-xl border border-rose-200 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <AlertCircle size={18} className="text-rose-600" />
+            智能调度建议 (AI 实时生成)
+          </h3>
+        </div>
+        <div className="space-y-4">
+          <div className="p-4 bg-rose-50 border border-rose-100 rounded-lg flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="flex gap-3">
+              <div className="mt-1">
+                <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 mb-1">急诊内科候诊严重积压</h4>
+                <p className="text-sm text-gray-700">
+                  当前急诊内科候诊 68 人，仅 3 名医生出诊，预计最长等候时间将超过 85 分钟。
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs font-medium text-rose-800 bg-rose-100 px-2 py-1 rounded">调度建议</span>
+                  <span className="text-sm text-gray-600">建议立即从住院部心血管内科、呼吸内科各抽调 1 名二线医生前往急诊内科支援。</span>
+                </div>
+              </div>
+            </div>
+            <button className="shrink-0 px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2">
+              <User size={16} />
+              一键发送调度指令
+            </button>
+          </div>
+          
+          <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="flex gap-3">
+              <div className="mt-1">
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 mb-1">儿科急诊压力上升预警</h4>
+                <p className="text-sm text-gray-700">
+                  儿科急诊候诊 42 人，已超拥挤阈值。当前为流感高发期，预计夜间就诊量将持续增加。
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs font-medium text-amber-800 bg-amber-100 px-2 py-1 rounded">调度建议</span>
+                  <span className="text-sm text-gray-600">建议通知儿科病房备班医生做好支援准备，并增开 1 个儿科急诊诊室。</span>
+                </div>
+              </div>
+            </div>
+            <button className="shrink-0 px-4 py-2 bg-white border border-amber-300 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-50 transition-colors flex items-center gap-2">
+              <ArrowUpDown size={16} />
+              预警通知科室
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEmergencyHistory = () => (
+    <div className="space-y-6">
+      {/* Core KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: '急诊人次数', value: '13,560', unit: '人次', trend: '+5.2%', isPositive: false },
+          { label: '抢救室平均滞留时间', value: '3.5', unit: '小时', trend: '-12%', isPositive: true },
+          { label: '胸痛D2W时间', value: '65', unit: '分钟', trend: '-5%', isPositive: true },
+          { label: '急诊转住院率', value: '18.5', unit: '%', trend: '+1.2%', isPositive: true },
+        ].map((kpi, idx) => (
+          <div key={idx} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="text-sm text-gray-500 mb-2">{kpi.label}</div>
+            <div className="flex items-end gap-2">
+              <div className="text-3xl font-bold text-gray-900">{kpi.value}</div>
+              <div className="text-sm text-gray-500 mb-1">{kpi.unit}</div>
+            </div>
+            <div className={`text-xs font-medium mt-2 flex items-center gap-1 ${kpi.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <TrendingUp size={14} className={kpi.isPositive ? 'rotate-180' : ''} />
+              较上期 {kpi.trend}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 急诊人次数趋势 */}
+      <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+        <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Users size={18} className="text-blue-600" />
+          急诊人次数趋势 (最近一个月)
+        </h3>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={[
+              { date: '1日', current: 420, previous: 380 },
+              { date: '4日', current: 450, previous: 410 },
+              { date: '7日', current: 410, previous: 430 },
+              { date: '10日', current: 520, previous: 460 },
+              { date: '13日', current: 490, previous: 450 },
+              { date: '16日', current: 460, previous: 440 },
+              { date: '19日', current: 470, previous: 420 },
+              { date: '22日', current: 510, previous: 480 },
+              { date: '25日', current: 530, previous: 490 },
+              { date: '28日', current: 460, previous: 450 },
+              { date: '30日', current: 440, previous: 410 }
+            ]}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+              <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+              <Line type="monotone" dataKey="current" name="本期人次数" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="previous" name="同期人次数" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 滞留时间分析 */}
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Clock size={18} className="text-blue-600" />
+            急诊各区域平均滞留时间趋势
+          </h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[
+                { time: '1日', resus: 4.2, obs: 24, normal: 1.5 },
+                { time: '5日', resus: 3.8, obs: 22, normal: 1.4 },
+                { time: '10日', resus: 4.5, obs: 26, normal: 1.8 },
+                { time: '15日', resus: 3.5, obs: 20, normal: 1.2 },
+                { time: '20日', resus: 3.2, obs: 18, normal: 1.1 },
+                { time: '25日', resus: 3.6, obs: 21, normal: 1.3 },
+                { time: '30日', resus: 3.4, obs: 19, normal: 1.2 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="resus" name="抢救室(h)" stroke="#ef4444" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="obs" name="留观室(h)" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="normal" name="普通急诊(h)" stroke="#3b82f6" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 绿色通道达标率 */}
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+          <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity size={18} className="text-emerald-600" />
+            三大中心绿色通道达标率
+          </h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[
+                { name: '胸痛中心(D2W<90m)', rate: 92, target: 90 },
+                { name: '卒中中心(DNT<60m)', rate: 85, target: 80 },
+                { name: '创伤中心(严重创伤救治)', rate: 88, target: 85 },
+              ]} layout="vertical" margin={{ left: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }} />
+                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="rate" name="实际达标率(%)" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+                <Bar dataKey="target" name="目标值(%)" fill="#94a3b8" radius={[0, 4, 4, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* 落地建议与行动项 */}
+      <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+        <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <AlertCircle size={18} className="text-amber-500" />
+          智能诊断与落地建议
+        </h3>
+        <div className="space-y-4">
+          <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-4">
+            <div className="mt-0.5">
+              <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></div>
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-gray-900 mb-1">抢救室滞留时间存在周期性波动</h4>
+              <p className="text-sm text-gray-700 mb-2">
+                分析发现，每月 10 日左右抢救室滞留时间明显上升（峰值 4.5 小时）。经下钻分析，主要原因为该时段重症患者转入 ICU 的床位周转不畅。
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs font-medium text-amber-800 bg-amber-100 px-2 py-1 rounded">行动建议</span>
+                <span className="text-sm text-gray-600">建议医务处协调重症医学科，在每月上旬预留 1-2 张应急床位，或建立急诊-ICU快速流转绿色通道。</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-4">
+            <div className="mt-0.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></div>
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-gray-900 mb-1">卒中中心 DNT 达标率稳步提升</h4>
+              <p className="text-sm text-gray-700 mb-2">
+                本月卒中中心 DNT 达标率达到 85%，超过目标值 5 个百分点。主要得益于上月实施的“急诊CT优先叫号”策略。
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs font-medium text-blue-800 bg-blue-100 px-2 py-1 rounded">行动建议</span>
+                <span className="text-sm text-gray-600">建议将此流程固化为标准化制度，并在胸痛中心推广类似的影像检查优先策略。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEmergencyTheme = () => {
+    return (
+      <div className="space-y-6 max-w-6xl mx-auto pb-10">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              {activeEmergencyTab === 'realtime' ? '急诊实时调度大屏' : '急诊历史运行分析'}
+              {activeEmergencyTab === 'realtime' && (
+                <>
+                  <span className="flex h-3 w-3 relative ml-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                  <span className="text-xs font-normal text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">Live</span>
+                </>
+              )}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {activeEmergencyTab === 'realtime' 
+                ? '实时监控患者流量与诊室压力，支持一键资源调度，有效缩短等候时间'
+                : '聚焦急诊长期运行效率与医疗质量趋势，辅助流程优化与资源调配'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {activeEmergencyTab === 'realtime' ? (
+              <>
+                <span className="text-sm text-gray-500 flex items-center gap-1"><Clock size={14}/> 数据更新于刚刚</span>
+                <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                  <RefreshCw size={16} />
+                  手动刷新
+                </button>
+              </>
+            ) : (
+              <>
+                <select className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                  <option>本月</option>
+                  <option>上月</option>
+                  <option>本季度</option>
+                  <option>本年度</option>
+                </select>
+                <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                  <FileText size={16} />
+                  生成分析报告
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-6 border-b border-gray-200">
+          <button
+            onClick={() => setActiveEmergencyTab('realtime')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              activeEmergencyTab === 'realtime'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            实时监测
+          </button>
+          <button
+            onClick={() => setActiveEmergencyTab('history')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+              activeEmergencyTab === 'history'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            历史回看
+          </button>
+        </div>
+
+        {activeEmergencyTab === 'realtime' ? renderEmergencyRealtime() : renderEmergencyHistory()}
+      </div>
+    );
+  };
+
+  const renderPharmacyTheme = () => (
+    <div className="space-y-6 max-w-6xl mx-auto pb-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            药学主题分析大屏
+            {activePharmacyTab === 'monitoring' && (
+              <>
+                <span className="flex h-3 w-3 relative ml-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Live</span>
+              </>
+            )}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">抗菌药物使用、处方结构分析及药房实时运营监控</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {activePharmacyTab === 'monitoring' ? (
+            <>
+              <span className="text-sm text-gray-500 flex items-center gap-1"><Clock size={14}/> 数据更新于刚刚</span>
+              <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <RefreshCw size={16} />
+                手动刷新
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+                <button className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-600">本月</button>
+                <button className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50">上月</button>
+                <button className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50">本年</button>
+              </div>
+              <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm">
+                <FileText size={16} />
+                生成分析报告
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200">
+        <button
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activePharmacyTab === 'antibacterial' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          onClick={() => setActivePharmacyTab('antibacterial')}
+        >
+          抗菌药物与合理用药
+        </button>
+        <button
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activePharmacyTab === 'prescription' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          onClick={() => setActivePharmacyTab('prescription')}
+        >
+          门诊处方结构分析
+        </button>
+        <button
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activePharmacyTab === 'monitoring' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          onClick={() => setActivePharmacyTab('monitoring')}
+        >
+          药房运营监控
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activePharmacyTab === 'antibacterial' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-1">
+              <div className="text-sm text-gray-500 mb-2">住院DDDs抗菌药物使用强度</div>
+              <div className="flex items-end gap-2">
+                <div className="text-4xl font-bold text-gray-900">38.5</div>
+                <div className="text-sm text-gray-500 mb-1">DDDs</div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500">同比 (YoY)</span>
+                  <span className="text-emerald-600 font-medium flex items-center"><TrendingUp size={14} className="rotate-180 mr-1"/> 2.4%</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500">环比 (MoM)</span>
+                  <span className="text-emerald-600 font-medium flex items-center"><TrendingUp size={14} className="rotate-180 mr-1"/> 1.1%</span>
+                </div>
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                  <span className="text-gray-500">目标值</span>
+                  <span className="text-gray-900 font-medium">&lt; 40.0</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-2">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Activity size={18} className="text-blue-600" />
+                住院DDDs抗菌药物使用强度趋势
+              </h3>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={[
+                    { month: '1月', ddds: 39.2 },
+                    { month: '2月', ddds: 38.8 },
+                    { month: '3月', ddds: 39.5 },
+                    { month: '4月', ddds: 38.1 },
+                    { month: '5月', ddds: 37.9 },
+                    { month: '6月', ddds: 38.5 },
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <YAxis domain={[35, 45]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <ReferenceLine y={40} stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: '目标线 (40)', fill: '#ef4444', fontSize: 12 }} />
+                    <Line type="monotone" dataKey="ddds" name="使用强度" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <BarChart3 size={18} className="text-blue-600" />
+                抗菌药物处方数与金额趋势
+              </h3>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div> 处方数 (张)</span>
+                <span className="flex items-center gap-1 ml-3"><div className="w-3 h-3 bg-rose-500 rounded-full"></div> 金额 (万元)</span>
+              </div>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { date: '1日', count: 120, amount: 1.5 },
+                  { date: '5日', count: 135, amount: 1.8 },
+                  { date: '10日', count: 110, amount: 1.4 },
+                  { date: '15日', count: 145, amount: 2.1 },
+                  { date: '20日', count: 125, amount: 1.6 },
+                  { date: '25日', count: 150, amount: 2.3 },
+                  { date: '30日', count: 130, amount: 1.7 },
+                ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <YAxis yAxisId="right" orientation="right" stroke="#ef4444" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Bar yAxisId="left" dataKey="count" name="处方数" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={30} />
+                  <Line yAxisId="right" type="monotone" dataKey="amount" name="金额(万元)" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePharmacyTab === 'prescription' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <PieChart size={18} className="text-blue-600" />
+                门诊处方数结构
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { month: '1月', western: 12000, patent: 4000, herbal: 2500 },
+                    { month: '2月', western: 11500, patent: 3800, herbal: 2200 },
+                    { month: '3月', western: 13000, patent: 4500, herbal: 2800 },
+                    { month: '4月', western: 12500, patent: 4200, herbal: 2600 },
+                  ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="western" name="西药处方" stackId="a" fill="#3b82f6" />
+                    <Bar dataKey="patent" name="中成药处方" stackId="a" fill="#10b981" />
+                    <Bar dataKey="herbal" name="中药饮片处方" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <BarChart3 size={18} className="text-emerald-600" />
+                门诊处方金额结构
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { month: '1月', western: 180, patent: 60, herbal: 40 },
+                    { month: '2月', western: 175, patent: 58, herbal: 38 },
+                    { month: '3月', western: 195, patent: 68, herbal: 45 },
+                    { month: '4月', western: 185, patent: 65, herbal: 42 },
+                  ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <Tooltip formatter={(value) => `${value} 万元`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="western" name="西药金额(万)" stackId="a" fill="#3b82f6" />
+                    <Bar dataKey="patent" name="中成药金额(万)" stackId="a" fill="#10b981" />
+                    <Bar dataKey="herbal" name="中药饮片金额(万)" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-2">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FlaskConical size={18} className="text-purple-600" />
+                中药制剂 / 中药颗粒 使用情况
+              </h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { name: '中药制剂', count: 1250, amount: 15.2 },
+                    { name: '中药颗粒', count: 850, amount: 12.5 },
+                  ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#8b5cf6" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#ec4899" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar yAxisId="left" dataKey="count" name="处方数" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
+                    <Bar yAxisId="right" dataKey="amount" name="金额(万元)" fill="#ec4899" radius={[4, 4, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm col-span-1 flex flex-col">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Check size={18} className="text-emerald-600" />
+                国家基本药物使用占比
+              </h3>
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={[
+                          { name: '基本药物', value: 65, color: '#10b981' },
+                          { name: '非基本药物', value: 35, color: '#e5e7eb' },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        startAngle={90}
+                        endAngle={-270}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {
+                          [
+                            { name: '基本药物', value: 65, color: '#10b981' },
+                            { name: '非基本药物', value: 35, color: '#e5e7eb' },
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))
+                        }
+                      </Pie>
+                      <Tooltip formatter={(value) => `${value}%`} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-12">
+                    <span className="text-3xl font-bold text-gray-900">65%</span>
+                    <span className="text-xs text-gray-500">处方数占比</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <div className="text-xs text-gray-500 mb-1">处方数</div>
+                    <div className="text-lg font-bold text-gray-900">8,900</div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <div className="text-xs text-gray-500 mb-1">金额(万元)</div>
+                    <div className="text-lg font-bold text-emerald-600">120.5</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePharmacyTab === 'monitoring' && (
+        <div className="space-y-6 bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-gray-100 text-gray-800 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/40 blur-[100px]"></div>
+            <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-emerald-100/40 blur-[100px]"></div>
+          </div>
+
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Activity size={20} className="text-blue-600" />
+              药房实时运营指挥舱
+            </h3>
+            <div className="flex items-center gap-2 text-blue-600 text-sm font-mono bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              SYSTEM ONLINE // {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10">
+            {/* KPI 1 */}
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-400 transform origin-left scale-x-100 transition-transform"></div>
+              <div className="text-sm text-gray-500 mb-2">当前总排队人数</div>
+              <div className="flex items-end gap-2">
+                <div className="text-5xl font-mono font-bold text-blue-600">40</div>
+                <div className="text-sm text-gray-500 mb-1">人</div>
+              </div>
+              <div className="text-xs text-blue-500 mt-2 flex items-center"><TrendingUp size={14} className="mr-1"/> 较过去1小时增加 12 人</div>
+            </div>
+            {/* KPI 2 */}
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow">
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+              <div className="text-sm text-gray-500 mb-2">当日发药处方数</div>
+              <div className="flex items-end gap-2">
+                <div className="text-5xl font-mono font-bold text-emerald-600">1,002</div>
+                <div className="text-sm text-gray-500 mb-1">单</div>
+              </div>
+              <div className="text-xs text-emerald-500 mt-2 flex items-center"><TrendingUp size={14} className="mr-1"/> 较昨日同期 +5%</div>
+            </div>
+            {/* KPI 3 */}
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow">
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-400"></div>
+              <div className="text-sm text-gray-500 mb-2">当日发药金额</div>
+              <div className="flex items-end gap-2">
+                <div className="text-5xl font-mono font-bold text-purple-600">28.5</div>
+                <div className="text-sm text-gray-500 mb-1">万元</div>
+              </div>
+              <div className="text-xs text-purple-500 mt-2 flex items-center"><TrendingUp size={14} className="mr-1"/> 较昨日同期 +2%</div>
+            </div>
+          </div>
+
+          <div className="relative z-10">
+            {/* Windows Grid */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                <Layers size={16} />
+                各窗口实时负载监控
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { window: '1号窗口 (西药)', queue: 12, workload: 345, status: 'busy', maxQueue: 15, waitTime: '18 min' },
+                  { window: '2号窗口 (西药)', queue: 8, workload: 312, status: 'normal', maxQueue: 15, waitTime: '10 min' },
+                  { window: '3号窗口 (中成药)', queue: 5, workload: 189, status: 'normal', maxQueue: 15, waitTime: '6 min' },
+                  { window: '4号窗口 (中药饮片)', queue: 15, workload: 156, status: 'busy', maxQueue: 15, waitTime: '25 min' },
+                  { window: '5号窗口 (急诊用药)', queue: 3, workload: 210, status: 'normal', maxQueue: 10, waitTime: '3 min' },
+                  { window: '6号窗口 (慢性病)', queue: 14, workload: 420, status: 'busy', maxQueue: 20, waitTime: '20 min' },
+                  { window: '7号窗口 (特病用药)', queue: 2, workload: 85, status: 'normal', maxQueue: 10, waitTime: '2 min' },
+                  { window: '8号窗口 (综合咨询)', queue: 6, workload: 120, status: 'normal', maxQueue: 10, waitTime: '8 min' },
+                ].map((w, idx) => (
+                  <div key={idx} className={`bg-white p-4 rounded-xl border ${w.status === 'busy' ? 'border-rose-200 shadow-[0_4px_15px_rgba(244,63,94,0.05)]' : 'border-gray-100 shadow-sm'} transition-all`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="text-gray-900 font-bold">{w.window}</div>
+                        <div className="text-xs text-gray-500 mt-1">预计等候: <span className={w.status === 'busy' ? 'text-rose-500 font-medium' : 'text-blue-500 font-medium'}>{w.waitTime}</span></div>
+                      </div>
+                      <div className={`px-2 py-1 rounded text-xs font-mono border ${w.status === 'busy' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-blue-50 text-blue-600 border-blue-200'}`}>
+                        {w.status === 'busy' ? '高负载' : '正常'}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">排队人数</span>
+                        <span className="font-mono text-gray-700 font-medium">{w.queue} / {w.maxQueue}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200/50">
+                        <div 
+                          className={`h-full rounded-full relative ${w.status === 'busy' ? 'bg-gradient-to-r from-rose-500 to-rose-400' : 'bg-gradient-to-r from-blue-500 to-cyan-400'}`} 
+                          style={{ width: `${(w.queue / w.maxQueue) * 100}%` }}
+                        >
+                          <div className="absolute top-0 left-0 w-full h-full bg-white/30 animate-[pulse_2s_ease-in-out_infinite]"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center text-xs">
+                      <span className="text-gray-500">累计处理单量</span>
+                      <span className="font-mono text-gray-700 font-medium">{w.workload} 单</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderThemeAnalysis = () => {
+    const THEMES = [
+      { id: 'emergency', name: '急诊主题分析', icon: Activity },
+      { id: 'pharmacy', name: '药学主题分析', icon: Pill },
+      { id: 'surgery', name: '手术主题分析', icon: Activity },
+      { id: 'outpatient', name: '门诊主题分析', icon: Users },
+      { id: 'inpatient', name: '住院主题分析', icon: Home },
+    ];
+
+    return (
+      <div className="flex h-full overflow-hidden bg-gray-50/30">
+        {/* Left Sidebar - Theme Catalog */}
+        <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full overflow-y-auto">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-gray-800">主题目录</h2>
+          </div>
+          <div className="p-2 space-y-1">
+            {THEMES.map(theme => {
+              const Icon = theme.icon;
+              const isActive = activeThemeId === theme.id;
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => setActiveThemeId(theme.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon size={18} className={isActive ? 'text-blue-600' : 'text-gray-400'} />
+                  {theme.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Content Area */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeThemeId === 'emergency' ? renderEmergencyTheme() : 
+           activeThemeId === 'pharmacy' ? renderPharmacyTheme() : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              请选择左侧主题目录查看详情
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2328,11 +3193,12 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Full Width Content Area */}
         <main className="flex-1 flex flex-col min-w-0 bg-white relative z-0">
            {/* Content Body */}
-           <div className={`flex-1 min-h-screen ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' || activeModuleId === 'attending-kpi' ? 'bg-gray-50/30 p-0' : 'p-6 bg-gray-50/30'}`}>
+           <div className={`flex-1 min-h-screen ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' || activeModuleId === 'attending-kpi' || activeModuleId === 'theme' ? 'bg-gray-50/30 p-0' : 'p-6 bg-gray-50/30'}`}>
               {activeModuleId === 'cockpit' ? renderCockpitDetail() : 
                activeModuleId === 'er_return_monitor' ? renderERReturnMonitor() : 
                activeModuleId === 'doc' ? renderReportCenter() :
                activeModuleId === 'attending-kpi' ? renderAttendingGroupKPI() :
+               activeModuleId === 'theme' ? renderThemeAnalysis() :
                renderGenericDetail()}
            </div>
         </main>

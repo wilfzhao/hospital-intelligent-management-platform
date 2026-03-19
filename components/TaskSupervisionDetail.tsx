@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, Download, CheckCircle2, Clock, AlertCircle, FileEdit, CheckSquare, MessageSquare, Activity, Plus, Edit, X, FileText, Paperclip } from 'lucide-react';
+import { ArrowLeft, Upload, Download, CheckCircle2, Clock, AlertCircle, FileEdit, CheckSquare, MessageSquare, Activity, Plus, Edit, X, FileText, Paperclip, Bot, Sparkles } from 'lucide-react';
 
 interface TaskSupervisionDetailProps {
   taskId: number;
@@ -23,7 +23,7 @@ const MOCK_TASK = {
 const MOCK_PHASES = [
   {
     id: 1,
-    stage: '2026年第一季度',
+    stage: '第一季度',
     timeNode: '2026-03-31',
     content: '制定主题教育实施方案，召开动员部署会；开展集中学习研讨不少于3次。',
     kpi: '方案发布率100%，集中学习参会率>95%',
@@ -31,7 +31,7 @@ const MOCK_PHASES = [
   },
   {
     id: 2,
-    stage: '2026年第二季度',
+    stage: '第二季度',
     timeNode: '2026-06-30',
     content: '院领导班子成员带头开展调查研究，形成高质量调研报告；讲授专题党课。',
     kpi: '调研报告不少于5篇，专题党课不少于5次',
@@ -39,7 +39,7 @@ const MOCK_PHASES = [
   },
   {
     id: 3,
-    stage: '2026年第三季度',
+    stage: '第三季度',
     timeNode: '2026-09-30',
     content: '对照检视问题清单，抓好整改落实；开展专项整治工作。',
     kpi: '问题整改率>80%，专项整治取得阶段性成效',
@@ -47,7 +47,7 @@ const MOCK_PHASES = [
   },
   {
     id: 4,
-    stage: '2026年第四季度',
+    stage: '第四季度',
     timeNode: '2026-12-31',
     content: '召开专题民主生活会和组织生活会；总结评估主题教育成效，建章立制。',
     kpi: '形成长效机制制度不少于3项，群众满意度>90%',
@@ -72,7 +72,7 @@ const MOCK_TRACES: Trace[] = [
     id: 1,
     date: '2026-03-10 14:30',
     user: '王督导',
-    targetTask: '2026年第一季度',
+    targetTask: '第一季度',
     action: '批示',
     content: '第一季度学习研讨开展扎实，请继续保持。第二季度调研工作要紧密结合医院实际业务痛点。'
   },
@@ -80,7 +80,7 @@ const MOCK_TRACES: Trace[] = [
     id: 2,
     date: '2026-02-15 09:00',
     user: '李干事',
-    targetTask: '2026年第一季度',
+    targetTask: '第一季度',
     action: '填报',
     content: '已完成第一季度集中学习研讨3次，参会率98%。相关台账已上传。',
     attachments: [
@@ -165,15 +165,30 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
       attachments: actionType === 'fill' ? [{ name: '最新进展汇报.pdf', size: '2.4MB' }] : undefined
     };
 
-    setTraces([newTrace, ...traces]);
+    setTraces(prev => [newTrace, ...prev]);
 
     if (actionType === 'fill') {
       setPhases(phases.map(p => p.id === editingPhase.id ? { 
         ...p, 
-        status: '待审核',
+        status: 'AI初审中',
         progressDescription: actionComment,
         attachments: [{ name: '阶段进展佐证材料.pdf', size: '2.4 MB' }]
       } : p));
+
+      // Simulate AI Review process
+      setTimeout(() => {
+        const aiTrace = {
+          id: Date.now() + 1,
+          date: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'),
+          user: 'AI 智能助手',
+          targetTask: editingPhase.stage,
+          action: 'AI初审',
+          content: `【AI初审通过】经语义分析与材料比对，填报内容与阶段目标（${editingPhase.kpi}）匹配度达 96%。佐证材料格式合规，无缺失。已自动流转至人工督办审核环节。`,
+        };
+        setTraces(prev => [aiTrace, ...prev]);
+        setPhases(prevPhases => prevPhases.map(p => p.id === editingPhase.id ? { ...p, status: '待审核' } : p));
+      }, 2000);
+
     } else if (actionType === 'audit_pass') {
       setPhases(phases.map(p => p.id === editingPhase.id ? { ...p, status: '已完成' } : p));
     } else if (actionType === 'audit_reject') {
@@ -191,6 +206,8 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><Clock size={12} /> 待审核</span>;
       case '已填报':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><AlertCircle size={12} /> 已填报</span>;
+      case 'AI初审中':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800"><Sparkles size={12} className="animate-pulse" /> AI初审中</span>;
       default:
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
     }
@@ -203,6 +220,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
       case '审核通过': return <CheckCircle2 size={14} className="text-green-600" />;
       case '审核退回': return <AlertCircle size={14} className="text-red-600" />;
       case '任务下达': return <CheckSquare size={14} className="text-indigo-600" />;
+      case 'AI初审': return <Bot size={14} className="text-purple-600" />;
       default: return <Activity size={14} className="text-gray-600" />;
     }
   };
@@ -214,6 +232,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
       case '审核通过': return 'bg-green-100 border-green-200';
       case '审核退回': return 'bg-red-100 border-red-200';
       case '任务下达': return 'bg-indigo-100 border-indigo-200';
+      case 'AI初审': return 'bg-purple-100 border-purple-200';
       default: return 'bg-gray-100 border-gray-200';
     }
   };
@@ -228,6 +247,22 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
           <span className="font-bold text-gray-900">{trace.user}</span>
           <span>下达了</span>
           <span className="font-medium text-blue-700">{trace.targetTask}</span>
+        </div>
+      );
+    }
+    if (trace.action === 'AI初审') {
+      return (
+        <div className="text-sm text-gray-600 flex items-center gap-1.5 flex-wrap">
+          <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold mr-1">
+            <Bot size={14} />
+          </div>
+          <span className="font-bold text-purple-700">{trace.user}</span>
+          <span>对</span>
+          <span className="font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100/50">{trace.targetTask}</span>
+          <span>进行了</span>
+          <span className="font-medium px-2 py-0.5 rounded-md text-xs border bg-purple-50 text-purple-700 border-purple-200">
+            {trace.action}
+          </span>
         </div>
       );
     }
@@ -475,14 +510,18 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">推进阶段名称</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-sm font-medium text-gray-700 mb-1">推进阶段名称（按季度）</label>
+                  <select 
                     value={formData.stage}
                     onChange={(e) => setFormData({...formData, stage: e.target.value})}
-                    placeholder="例如：2026年第一季度"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white"
+                  >
+                    <option value="">请选择季度</option>
+                    <option value="第一季度">第一季度</option>
+                    <option value="第二季度">第二季度</option>
+                    <option value="第三季度">第三季度</option>
+                    <option value="第四季度">第四季度</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">截止日期</label>
@@ -539,9 +578,19 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
 
       {/* Action Modals (Fill, Audit, Review) */}
       {(modalType === 'fill' || modalType === 'audit' || modalType === 'review') && editingPhase && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setModalType(null)}
+          ></div>
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-[slideIn_0.3s_ease-out]">
+            <style>{`
+              @keyframes slideIn {
+                from { transform: translateX(100%); }
+                to { transform: translateX(0); }
+              }
+            `}</style>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
               <h3 className="text-lg font-bold text-gray-900">
                 {modalType === 'fill' ? '填报阶段进展' : modalType === 'audit' ? '督办审核' : '领导评阅'}
               </h3>
@@ -553,7 +602,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
               </button>
             </div>
             
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="flex-1 p-6 space-y-4 overflow-y-auto">
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                 <div className="text-sm font-medium text-gray-900 mb-1">{editingPhase.stage}</div>
                 <div className="text-xs text-gray-500 mb-3">截止日期: {editingPhase.timeNode}</div>
@@ -586,6 +635,19 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {(modalType === 'audit' || modalType === 'review') && traces.find(t => t.action === 'AI初审' && t.targetTask === editingPhase.stage) && (
+                <div className="p-4 border border-purple-100 bg-purple-50/50 rounded-lg space-y-3 mb-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-200/40 to-transparent rounded-bl-full pointer-events-none"></div>
+                  <h4 className="text-sm font-medium text-purple-900 flex items-center gap-2">
+                    <Bot size={16} className="text-purple-600" />
+                    AI 智能初审结论
+                  </h4>
+                  <p className="text-sm text-purple-800 whitespace-pre-wrap leading-relaxed">
+                    {traces.find(t => t.action === 'AI初审' && t.targetTask === editingPhase.stage)?.content}
+                  </p>
                 </div>
               )}
 
@@ -648,7 +710,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
               )}
             </div>
             
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
               <button 
                 onClick={() => setModalType(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

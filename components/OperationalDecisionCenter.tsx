@@ -2700,33 +2700,60 @@ const OperationalDecisionCenter: React.FC = () => {
     return (
       <div className="flex flex-col gap-6">
         {/* Row 1: 实时监控 */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col justify-between h-[240px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-4">
             <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
               <Activity className="text-rose-400" size={20} />
               实时监控
             </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-                <span className="text-slate-400">实时库存</span>
-                <span className="text-2xl font-bold text-rose-400">1,250 <span className="text-sm font-normal text-slate-500">U</span></span>
+            <div className="flex flex-col justify-between flex-1 gap-4">
+              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                <div className="text-slate-400 text-sm mb-2">实时库存 (U)</div>
+                <div className="grid grid-cols-4 gap-4 text-center">
+                  <div className="bg-slate-900/50 rounded py-2"><div className="text-xs text-slate-500 mb-1">A型</div><div className="font-bold text-rose-400 text-xl">350</div></div>
+                  <div className="bg-slate-900/50 rounded py-2"><div className="text-xs text-slate-500 mb-1">B型</div><div className="font-bold text-rose-400 text-xl">280</div></div>
+                  <div className="bg-slate-900/50 rounded py-2"><div className="text-xs text-slate-500 mb-1">O型</div><div className="font-bold text-rose-400 text-xl">420</div></div>
+                  <div className="bg-slate-900/50 rounded py-2"><div className="text-xs text-slate-500 mb-1">AB型</div><div className="font-bold text-rose-400 text-xl">120</div></div>
+                </div>
               </div>
-              <div className="flex justify-between items-center bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
-                <span className="text-amber-400">库存预警</span>
-                <span className="text-xl font-bold text-amber-400">3 <span className="text-sm font-normal text-amber-500/70">项</span></span>
-              </div>
-              <div className="flex justify-between items-center bg-red-500/10 p-3 rounded-lg border border-red-500/20">
-                <span className="text-red-400">血液过期提醒</span>
-                <span className="text-xl font-bold text-red-400">5 <span className="text-sm font-normal text-red-500/70">袋</span></span>
+              
+              <div className="grid grid-cols-2 gap-4 flex-1">
+                <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 flex flex-col justify-center">
+                  <div className="text-amber-400/80 text-xs mb-2">库存预警</div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-amber-400">A型红细胞</span>
+                      <span className="text-amber-400 font-medium">低于下限 (35U)</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-amber-400">AB型血浆</span>
+                      <span className="text-amber-400 font-medium">低于下限 (12U)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20 flex flex-col justify-center">
+                  <div className="text-red-400/80 text-xs mb-2">血液过期提醒 (近3天)</div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-red-400 font-mono">B20260315001</span>
+                      <span className="text-red-400">03-25</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-red-400 font-mono">B20260316023</span>
+                      <span className="text-red-400">03-26</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[240px]">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-2">
             <h3 className="text-sm font-bold text-slate-300 mb-2">红细胞库存分布</h3>
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <RePieChart>
                   <Pie data={bloodInventoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
                     {bloodInventoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -2734,16 +2761,16 @@ const OperationalDecisionCenter: React.FC = () => {
                   </Pie>
                   <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
                   <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                </PieChart>
+                </RePieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[240px]">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-2">
             <h3 className="text-sm font-bold text-slate-300 mb-2">血浆库存分布</h3>
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <RePieChart>
                   <Pie data={plasmaInventoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
                     {plasmaInventoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -2751,24 +2778,38 @@ const OperationalDecisionCenter: React.FC = () => {
                   </Pie>
                   <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
                   <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                </PieChart>
+                </RePieChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col justify-center gap-6 h-[240px]">
-            <div className="text-center">
-              <div className="text-slate-400 text-sm mb-1">配血比例</div>
-              <div className="text-3xl font-bold text-blue-400">85<span className="text-lg font-normal text-slate-500">%</span></div>
-              <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                <div className="bg-blue-400 h-full rounded-full" style={{ width: '85%' }}></div>
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-row items-center justify-around h-[320px] lg:col-span-4">
+            <div className="flex flex-col items-center justify-center w-1/2 h-full relative">
+              <h3 className="text-sm font-bold text-slate-300 absolute top-0 left-0">配血比例</h3>
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie data={[{name: '已配血', value: 85}, {name: '未配血', value: 15}]} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={70} startAngle={90} endAngle={-270} stroke="none">
+                    <Cell fill="#3b82f6" />
+                    <Cell fill="#1e293b" />
+                  </Pie>
+                </RePieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                <span className="text-3xl font-bold text-blue-400">85<span className="text-sm font-normal text-slate-500">%</span></span>
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-slate-400 text-sm mb-1">发血比例</div>
-              <div className="text-3xl font-bold text-emerald-400">92<span className="text-lg font-normal text-slate-500">%</span></div>
-              <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                <div className="bg-emerald-400 h-full rounded-full" style={{ width: '92%' }}></div>
+            <div className="flex flex-col items-center justify-center w-1/2 h-full relative">
+              <h3 className="text-sm font-bold text-slate-300 absolute top-0 left-0">发血比例</h3>
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie data={[{name: '已发血', value: 92}, {name: '未发血', value: 8}]} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={70} startAngle={90} endAngle={-270} stroke="none">
+                    <Cell fill="#10b981" />
+                    <Cell fill="#1e293b" />
+                  </Pie>
+                </RePieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-4">
+                <span className="text-3xl font-bold text-emerald-400">92<span className="text-sm font-normal text-slate-500">%</span></span>
               </div>
             </div>
           </div>
@@ -2777,20 +2818,20 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Row 2: 科室用血 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-2">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-8 mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <BarChart3 className="text-blue-400" size={20} />
                 科室用血 (30天)
               </h3>
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <div className="text-slate-400 text-xs mb-1">申请人次</div>
-                  <div className="text-xl font-bold text-blue-400">1,245</div>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-slate-400 text-xs mb-0.5">申请人次</span>
+                  <span className="text-xl font-bold text-blue-400 leading-none">1,245</span>
                 </div>
                 <div className="w-px h-8 bg-slate-700"></div>
-                <div className="text-center">
-                  <div className="text-slate-400 text-xs mb-1">输血人次</div>
-                  <div className="text-xl font-bold text-emerald-400">1,180</div>
+                <div className="flex flex-col">
+                  <span className="text-slate-400 text-xs mb-0.5">输血人次</span>
+                  <span className="text-xl font-bold text-emerald-400 leading-none">1,180</span>
                 </div>
               </div>
             </div>
@@ -2811,7 +2852,13 @@ const OperationalDecisionCenter: React.FC = () => {
           </div>
 
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] overflow-hidden">
-            <h3 className="text-sm font-bold text-slate-300 mb-4">30天用血排名</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-bold text-slate-300">30天用血排名</h3>
+              <button className="text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-xs">
+                <span>查看明细</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
               <div>
                 <h4 className="text-xs text-rose-400 mb-2 font-medium">红细胞 (U)</h4>

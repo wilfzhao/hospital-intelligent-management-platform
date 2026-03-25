@@ -16,16 +16,8 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({ isOpen, onClose, 
   const [reportType, setReportType] = useState<'annual' | 'quarterly' | 'monthly'>('annual');
   const [error, setError] = useState('');
 
-  // Reset state when opening
-  useEffect(() => {
-    if (isOpen) {
-      setName('');
-      setTemplateId('');
-      setReportType('annual');
-      setError('');
-    }
-  }, [isOpen]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   const handleConfirm = () => {
     if (!name.trim()) {
       setError('请输入报告名称');

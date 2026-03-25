@@ -242,11 +242,13 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan, onAssociate 
         )}
       </div>
       
-      <CreatePlanModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onConfirm={handleSavePlan}
-      />
+      {isModalOpen && (
+        <CreatePlanModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onConfirm={handleSavePlan}
+        />
+      )}
     </div>
   );
 };

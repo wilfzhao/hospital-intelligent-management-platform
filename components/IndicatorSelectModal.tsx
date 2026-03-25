@@ -28,16 +28,8 @@ const IndicatorSelectModal: React.FC<IndicatorSelectModalProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedIds(new Set(initialSelection));
-      setSelectedCategoryId(null);
-      setLeftSearchTerm('');
-      setRightSearchTerm('');
-      setCurrentPage(1);
-    }
-  }, [isOpen, initialSelection]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   const toggleCategoryExpand = (id: string) => {
     const newExpanded = new Set(expandedCategoryIds);
     if (newExpanded.has(id)) {
@@ -301,7 +293,7 @@ const IndicatorSelectModal: React.FC<IndicatorSelectModalProps> = ({
                                     const isDisabled = disabledIds.includes(ind.id);
                                     const isSelected = selectedIds.has(ind.id);
                                     // Mock code and type based on name for visual fidelity
-                                    const mockCode = `L201${Math.floor(Math.random() * 100000000000000)}`;
+                                    const mockCode = `L201${ind.id.replace(/[^0-9]/g, '').padEnd(14, '0')}`;
                                     const mockType = ind.name.includes('复合') ? '复合指标' : '基础指标';
                                     
                                     return (

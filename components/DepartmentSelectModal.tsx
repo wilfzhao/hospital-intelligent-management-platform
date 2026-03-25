@@ -23,12 +23,8 @@ const DepartmentSelectModal: React.FC<DepartmentSelectModalProps> = ({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['d1', 'd2', 'd3']));
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedIds(new Set(initialSelection));
-    }
-  }, [isOpen, initialSelection]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedIds);
     if (newExpanded.has(id)) {

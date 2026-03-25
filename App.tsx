@@ -16,7 +16,7 @@ import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
-import { Settings, LayoutDashboard } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 const App: React.FC = () => {
   // Global Navigation State

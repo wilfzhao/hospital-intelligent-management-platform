@@ -42,21 +42,8 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Reset state when opening
-  useEffect(() => {
-    if (isOpen) {
-      setStep('select-type');
-      setPlanType('standard');
-      setName('');
-      setIsEnabled(true);
-      setRemark('');
-      setSelectedApp('');
-      setTarget('department');
-      setCycle('year');
-      setError('');
-    }
-  }, [isOpen]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {

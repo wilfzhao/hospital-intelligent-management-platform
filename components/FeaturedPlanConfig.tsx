@@ -1133,7 +1133,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                                             <div className="relative w-32">
                                                                 <select
                                                                     value={ind.scoringType}
-                                                                    onChange={(e) => handleIndicatorScoringTypeChange(ind.id, e.target.value as any)}
+                                                                    onChange={(e) => handleIndicatorScoringTypeChange(ind.id, e.target.value as 'positive' | 'negative' | 'veto')}
                                                                     className={`w-full appearance-none border border-gray-200 rounded px-3 py-1.5 text-xs font-medium outline-none focus:border-blue-500 transition-colors pr-8 cursor-pointer ${
                                                                         ind.scoringType === 'positive' ? 'text-blue-700 bg-blue-50/50' :
                                                                         ind.scoringType === 'negative' ? 'text-red-600 bg-red-50/50' :

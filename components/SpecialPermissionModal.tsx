@@ -27,21 +27,8 @@ const SpecialPermissionModal: React.FC<SpecialPermissionModalProps> = ({
   const [isIndicatorModalOpen, setIsIndicatorModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setScope(initialData.scope);
-        setTargetIndicatorIds(initialData.targetIndicatorIds);
-        setCustomDeptIds(initialData.customDeptIds || []);
-      } else {
-        // Reset defaults for new
-        setScope('hospital'); // Default to something distinctive
-        setTargetIndicatorIds([]);
-        setCustomDeptIds([]);
-      }
-    }
-  }, [isOpen, initialData]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   const handleConfirm = () => {
     if (targetIndicatorIds.length === 0) {
       // Could show error toast here

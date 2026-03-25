@@ -13,7 +13,7 @@ import {
 import { PLANS } from '../constants';
 
 // TipTap Imports
-import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
+import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { Node, mergeAttributes } from '@tiptap/core';
 
 // Individual Extensions
@@ -165,7 +165,7 @@ const IndicatorInfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () 
 // 0.5 LOCAL PARAM MODAL
 // ----------------------------------------------------------------------
 
-const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => void }) => {
+const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: { type: string; value: string }) => void }) => {
   const [paramType, setParamType] = useState<'global' | 'document' | 'custom'>('global');
   const [globalValue, setGlobalValue] = useState('报告周期');
   const [documentParam, setDocumentParam] = useState('');
@@ -203,7 +203,7 @@ const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
               ].map((type) => (
                 <button
                   key={type.id}
-                  onClick={() => setParamType(type.id as any)}
+                  onClick={() => setParamType(type.id as 'global' | 'document' | 'custom')}
                   className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
                     paramType === type.id 
                     ? 'bg-blue-50 border-blue-500 text-blue-600 ring-2 ring-blue-100' 
@@ -264,7 +264,7 @@ const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
                     {['year', 'quarter', 'month'].map((dim) => (
                       <button
                         key={dim}
-                        onClick={() => setCustomDimension(dim as any)}
+                        onClick={() => setCustomDimension(dim as 'year' | 'quarter' | 'month')}
                         className={`flex-1 py-1 text-xs rounded transition-colors ${
                           customDimension === dim ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
                         }`}
@@ -312,11 +312,11 @@ const LocalParamModal = ({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
 // 1. DATA TAG EXTENSION (Custom Node for [Value])
 // ----------------------------------------------------------------------
 
-const DataTagComponent = ({ node }: any) => {
+const DataTagComponent = ({ node }: NodeViewProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showParamModal, setShowParamModal] = useState(false);
-  const hoverTimeoutRef = useRef<any>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
@@ -439,7 +439,7 @@ const DataTag = Node.create({
 // 2. CHART COMPONENT (Node View) - Kept custom for Charts
 // ----------------------------------------------------------------------
 
-const ChartComponent = (props: any) => {
+const ChartComponent = (props: NodeViewProps) => {
   const settings: ChartSettings = props.node.attrs.settings;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);

@@ -315,12 +315,14 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
         </div>
       </div>
 
-      <EditIndicatorModal 
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        indicatorData={editingIndicator}
-        onConfirm={handleEditConfirm}
-      />
+      {isEditModalOpen && (
+        <EditIndicatorModal 
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          indicatorData={editingIndicator}
+          onConfirm={handleEditConfirm}
+        />
+      )}
     </div>
   );
 };

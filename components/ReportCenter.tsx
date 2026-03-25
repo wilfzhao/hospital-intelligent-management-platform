@@ -222,11 +222,13 @@ const ReportCenter: React.FC<ReportCenterProps> = ({ onOpenEditor }) => {
           <ReportSection title="月度数据分析" type="monthly" reports={monthlyReports} onReportClick={handleReportClick} />
        </div>
 
-       <CreateReportModal 
-         isOpen={isModalOpen}
-         onClose={() => setIsModalOpen(false)}
-         onConfirm={handleCreateReport}
-       />
+       {isModalOpen && (
+         <CreateReportModal 
+           isOpen={isModalOpen}
+           onClose={() => setIsModalOpen(false)}
+           onConfirm={handleCreateReport}
+         />
+       )}
     </div>
   );
 };

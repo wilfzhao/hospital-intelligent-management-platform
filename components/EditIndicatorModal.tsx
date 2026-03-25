@@ -4,11 +4,19 @@ import { X, Plus, Minus, ChevronDown } from 'lucide-react';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
 
+interface AssociatedIndicator {
+  id: string;
+  name: string;
+  displayName: string;
+  sort: number;
+  type: 'basic' | 'composite';
+}
+
 interface EditIndicatorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  indicatorData: any; // Using any for flexibility with mock data
-  onConfirm: (data: any) => void;
+  indicatorData: AssociatedIndicator | null;
+  onConfirm: (data: AssociatedIndicator) => void;
 }
 
 const MOCK_DB_TABLES = [
@@ -26,8 +34,8 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
   onConfirm
 }) => {
   // Form State
-  const [displayName, setDisplayName] = useState('');
-  const [sort, setSort] = useState(0);
+  const [displayName, setDisplayName] = useState(indicatorData?.displayName || '');
+  const [sort, setSort] = useState(indicatorData?.sort || 0);
   const [weight, setWeight] = useState<number | ''>('');
   
   const [showPC, setShowPC] = useState(true);
@@ -39,8 +47,8 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
   const [dimensions, setDimensions] = useState<string[]>([]);
   
   // Associated Indicators
-  const [numerator, setNumerator] = useState('');
-  const [denominator, setDenominator] = useState('');
+  const [numerator, setNumerator] = useState('指标权限测试（基础指标手动采集一）');
+  const [denominator, setDenominator] = useState('指标权限测试（基础指标手动采集二）');
   
   // Details
   const [numeratorDetail, setNumeratorDetail] = useState('');
@@ -54,25 +62,8 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
   const [spoType, setSpoType] = useState('');
   const [verificationStatus, setVerificationStatus] = useState<'verified' | 'unverified'>('unverified');
 
-  useEffect(() => {
-    if (isOpen && indicatorData) {
-       // Initialize with data or defaults
-       setDisplayName(indicatorData.displayName || '');
-       setSort(indicatorData.sort || 0);
-       // Reset other fields to defaults or mock values since they aren't in the list view
-       setWeight('');
-       setShowPC(true);
-       setShowMobile(false);
-       setIsKeyMonitor(false);
-       setNumerator('指标权限测试（基础指标手动采集一）'); // Mock default from screenshot
-       setDenominator('指标权限测试（基础指标手动采集二）'); // Mock default
-       setIsDiff(true);
-       setCustomDiffTable('');
-       setIsSummary(true);
-       setVerificationStatus('unverified');
-    }
-  }, [isOpen, indicatorData]);
-
+  // Reset state when opening removed - handled by conditional rendering in parent
+  
   if (!isOpen) return null;
 
   return (
@@ -346,7 +337,15 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
              取 消
            </button>
            <button 
-             onClick={() => onConfirm({})}
+             onClick={() => {
+               if (indicatorData) {
+                 onConfirm({
+                   ...indicatorData,
+                   displayName,
+                   sort
+                 });
+               }
+             }}
              className="w-32 py-2.5 bg-blue-600 rounded text-sm text-white hover:bg-blue-700 shadow-sm transition-colors font-medium"
            >
              确 定

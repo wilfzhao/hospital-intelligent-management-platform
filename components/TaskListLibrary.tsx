@@ -85,14 +85,25 @@ const DEPARTMENTS_TREE = [
   }
 ];
 
+interface Task {
+  id: number;
+  year: string;
+  category: string;
+  target: string;
+  leader: string;
+  department: string;
+  coDepartment: string;
+  status: string;
+}
+
 export const TaskListLibrary: React.FC = () => {
-  const [tasks, setTasks] = useState(MOCK_DATA);
+  const [tasks, setTasks] = useState<Task[]>(MOCK_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedLeaders, setSelectedLeaders] = useState<string[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [editingTask, setEditingTask] = useState<any>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showDeptSelector, setShowDeptSelector] = useState(false);
   const [expandedDepts, setExpandedDepts] = useState<string[]>(['d1', 'd2']);
   const [showCoDeptSelector, setShowCoDeptSelector] = useState(false);

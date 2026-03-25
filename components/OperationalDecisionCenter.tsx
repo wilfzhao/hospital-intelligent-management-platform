@@ -2653,9 +2653,25 @@ const OperationalDecisionCenter: React.FC = () => {
     ];
 
     const bloodTrendData = [
-      { date: '03-22', apply: 45, issue: 42 },
-      { date: '03-23', apply: 52, issue: 48 },
-      { date: '03-24', apply: 38, issue: 35 },
+      { date: '03-22', rbc: 45, plasma: 30, platelet: 12, cryo: 5 },
+      { date: '03-23', rbc: 52, plasma: 35, platelet: 15, cryo: 8 },
+      { date: '03-24', rbc: 38, plasma: 25, platelet: 10, cryo: 4 },
+    ];
+
+    const bloodPrepTimeData = [
+      { name: '30min内', value: 45 },
+      { name: '1h内', value: 30 },
+      { name: '2h内', value: 15 },
+      { name: '3h内', value: 7 },
+      { name: '3h+', value: 3 },
+    ];
+
+    const emergencyBloodTimeData = [
+      { name: '30min内', value: 65 },
+      { name: '1h内', value: 20 },
+      { name: '2h内', value: 10 },
+      { name: '3h内', value: 4 },
+      { name: '3h+', value: 1 },
     ];
 
     const deptRankingRBC = [
@@ -2923,61 +2939,73 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Row 3: 备血输血 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-2">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-8 mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <TrendingUp className="text-emerald-400" size={20} />
                 备血输血趋势 (3天内)
               </h3>
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <div className="text-slate-400 text-xs mb-1">申请人次</div>
-                  <div className="text-xl font-bold text-blue-400">135</div>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                  <span className="text-slate-400 text-xs mb-0.5">申请人次</span>
+                  <span className="text-xl font-bold text-blue-400 leading-none">135</span>
                 </div>
                 <div className="w-px h-8 bg-slate-700"></div>
-                <div className="text-center">
-                  <div className="text-slate-400 text-xs mb-1">输血人次</div>
-                  <div className="text-xl font-bold text-emerald-400">125</div>
+                <div className="flex flex-col">
+                  <span className="text-slate-400 text-xs mb-0.5">输血人次</span>
+                  <span className="text-xl font-bold text-emerald-400 leading-none">125</span>
                 </div>
               </div>
             </div>
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={bloodTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorApply" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorIssue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <LineChart data={bloodTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
                   <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '10px', paddingBottom: '10px' }} />
-                  <Area type="monotone" dataKey="apply" name="输血申请" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorApply)" />
-                  <Area type="monotone" dataKey="issue" name="临床发血" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIssue)" />
-                </AreaChart>
+                  <Line type="monotone" dataKey="rbc" name="红细胞" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="plasma" name="血浆" stroke="#eab308" strokeWidth={3} dot={{ r: 4, fill: '#eab308', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="platelet" name="血小板" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="cryo" name="冷沉淀" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px]">
-            <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
               <Clock className="text-amber-400" size={20} />
               时效与明细
             </h3>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 text-center">
-                <div className="text-slate-400 text-xs mb-1">3天内备血发血比例</div>
-                <div className="text-2xl font-bold text-blue-400">92.5<span className="text-sm font-normal text-slate-500">%</span></div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700 h-[140px] flex flex-col">
+                <div className="text-slate-400 text-[10px] mb-1">3天内备血发血比例 (%)</div>
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={bloodPrepTimeData} margin={{ top: 5, right: 5, left: -35, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '4px', fontSize: '10px' }} />
+                      <Bar dataKey="value" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={12} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 text-center">
-                <div className="text-slate-400 text-xs mb-1">30天抢救备血用时</div>
-                <div className="text-2xl font-bold text-emerald-400">12<span className="text-sm font-normal text-slate-500">min</span></div>
+              <div className="bg-slate-800/50 p-2 rounded-lg border border-slate-700 h-[140px] flex flex-col">
+                <div className="text-slate-400 text-[10px] mb-1">30天抢救备血用时 (%)</div>
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={emergencyBloodTimeData} margin={{ top: 5, right: 5, left: -35, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '4px', fontSize: '10px' }} />
+                      <Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} barSize={12} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
             <h4 className="text-sm font-medium text-slate-300 mb-3">今日输血申请</h4>

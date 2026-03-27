@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronRight,
   Check,
-  Minus
+  Minus,
+  Layout
 } from 'lucide-react';
 
 interface IndicatorNode {
@@ -65,15 +66,33 @@ const COMMON_DIMENSIONS = [
 
 const MOCK_DEPARTMENTS = ['心血管内科', '神经内科', '呼吸内科', '消化内科', '普通外科', '骨科'];
 
-export default function AnalysisTableWidget() {
+interface AnalysisTableWidgetProps {
+  isConfiguring?: boolean;
+  onReconfigure?: () => void;
+  onGenerate?: () => void;
+}
+
+export default function AnalysisTableWidget({ isConfiguring, onReconfigure, onGenerate }: AnalysisTableWidgetProps = {}) {
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
   const [rows, setRows] = useState<string[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [internalShowPreview, setInternalShowPreview] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelected, setTempSelected] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<string[]>(['1', '1-2']);
+
+  const showPreview = isConfiguring !== undefined ? !isConfiguring : internalShowPreview;
+
+  const handleSetShowPreview = (val: boolean) => {
+    if (val) {
+      if (onGenerate) onGenerate();
+      else setInternalShowPreview(true);
+    } else {
+      if (onReconfigure) onReconfigure();
+      else setInternalShowPreview(false);
+    }
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedNodes(prev => 
@@ -161,7 +180,7 @@ export default function AnalysisTableWidget() {
   const confirmSelection = () => {
     setSelectedIndicators(tempSelected);
     setIsModalOpen(false);
-    setShowPreview(false);
+    handleSetShowPreview(false);
   };
 
   const toggleTempIndicator = (indicator: string) => {
@@ -174,7 +193,7 @@ export default function AnalysisTableWidget() {
 
   const removeIndicator = (indicator: string) => {
     setSelectedIndicators(selectedIndicators.filter(i => i !== indicator));
-    setShowPreview(false);
+    handleSetShowPreview(false);
   };
 
   const handleDragStart = (e: React.DragEvent, type: 'dimension' | 'indicator_group' | 'indicator', value: string) => {
@@ -190,7 +209,7 @@ export default function AnalysisTableWidget() {
       } else if (target === 'columns' && !columns.includes(data.value)) {
         setColumns([...columns, data.value]);
       }
-      setShowPreview(false);
+      handleSetShowPreview(false);
     } catch (err) {
       console.error('Drop error', err);
     }
@@ -203,11 +222,11 @@ export default function AnalysisTableWidget() {
   const removeItem = (target: 'rows' | 'columns', value: string) => {
     if (target === 'rows') setRows(rows.filter(r => r !== value));
     if (target === 'columns') setColumns(columns.filter(c => c !== value));
-    setShowPreview(false);
+    handleSetShowPreview(false);
   };
 
   const generateTable = () => {
-    setShowPreview(true);
+    handleSetShowPreview(true);
   };
 
   const normalizeAxis = (axisItems: string[]) => {
@@ -274,18 +293,11 @@ export default function AnalysisTableWidget() {
       {showPreview ? (
         <div className="flex flex-col h-full bg-white">
           {/* Preview Toolbar */}
-          <div className="flex items-center justify-end px-4 py-3 border-b border-slate-200 bg-slate-50/50">
-            <div className="flex items-center gap-3">
-              {dateRange && <span className="text-sm text-slate-500 bg-white px-2 py-1 rounded border border-slate-200">{dateRange}</span>}
-              <button 
-                onClick={() => setShowPreview(false)}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-white border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-              >
-                <Settings2 size={14} />
-                重新配置
-              </button>
+          {dateRange && (
+            <div className="flex items-center justify-end px-4 py-3 border-b border-slate-200 bg-slate-50/50">
+              <span className="text-sm text-slate-500 bg-white px-2 py-1 rounded border border-slate-200">{dateRange}</span>
             </div>
-          </div>
+          )}
 
           {/* Table Content */}
           <div className="flex-1 p-6 overflow-auto custom-scrollbar bg-white">
@@ -488,10 +500,68 @@ export default function AnalysisTableWidget() {
           </div>
 
           {/* Empty State / Placeholder for Config Mode */}
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
-            <TableIcon size={48} strokeWidth={1} className="mb-4 text-slate-200" />
-            <p>配置完成后点击右上角「生成表格」查看效果</p>
-          </div>
+          {rows.length === 0 && columns.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
+              <TableIcon size={48} strokeWidth={1} className="mb-4 text-slate-200" />
+              <p>拖拽左侧维度或指标到上方配置区域</p>
+            </div>
+          ) : (
+            <div className="flex-1 p-6 overflow-auto custom-scrollbar bg-slate-50/30">
+              <div className="mb-3 text-sm font-medium text-slate-500 flex items-center gap-2">
+                <Layout size={16} />
+                表格结构预览
+              </div>
+              <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white opacity-90">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      {/* Render Row Headers */}
+                      {effectiveRowAxis.map(axis => (
+                        <th key={axis.name} className="px-4 py-3 text-sm font-semibold text-slate-700 border-r border-slate-200 bg-slate-100/50">
+                          {axis.name}
+                        </th>
+                      ))}
+                      {effectiveRowAxis.length === 0 && (
+                        <th className="px-4 py-3 text-sm font-semibold text-slate-700 border-r border-slate-200 bg-slate-100/50">
+                          汇总
+                        </th>
+                      )}
+                      {/* Render Column Headers */}
+                      {colCombinations.map((colCombo, i) => (
+                        <th key={i} className="px-4 py-3 text-sm font-semibold text-slate-700 border-r border-slate-200">
+                          {colCombo.join(' / ')}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {/* Mock Data Rows */}
+                    {rowCombinations.slice(0, 5).map((rowCombo, rowIndex) => (
+                      <tr key={rowIndex} className="hover:bg-blue-50/30 transition-colors">
+                        {rowCombo.map((rowVal, i) => (
+                          <td key={i} className="px-4 py-3 text-sm text-slate-800 border-r border-slate-100 font-medium bg-slate-50/30">
+                            {rowVal}
+                          </td>
+                        ))}
+                        {colCombinations.map((colCombo, colIndex) => (
+                          <td key={colIndex} className="px-4 py-3 text-sm text-slate-400 border-r border-slate-100 italic">
+                            数据占位
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {rowCombinations.length > 5 && (
+                      <tr>
+                        <td colSpan={(effectiveRowAxis.length || 1) + colCombinations.length} className="px-4 py-3 text-center text-sm text-slate-400 bg-slate-50/50">
+                          ... 更多数据行 ...
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       )}

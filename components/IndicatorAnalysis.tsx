@@ -22,8 +22,7 @@ interface IndicatorAnalysisProps {
 }
 
 export default function IndicatorAnalysis({ onAddSystem }: IndicatorAnalysisProps) {
-  const [codeSearch, setCodeSearch] = useState('');
-  const [nameSearch, setNameSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <div className="flex h-full w-full bg-[#f5f7fa] overflow-hidden p-4">
@@ -32,41 +31,28 @@ export default function IndicatorAnalysis({ onAddSystem }: IndicatorAnalysisProp
         
         {/* Search Toolbar */}
         <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-6 shrink-0">
-          {/* Left: Action Buttons */}
+          {/* Left: Search Input */}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="搜索指标分析体系" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 border border-gray-200 rounded text-sm pl-9 pr-3 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+              />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+
+          {/* Right: Action Buttons */}
           <div>
             <button 
               onClick={onAddSystem}
               className="flex items-center justify-center gap-2 bg-[#3b82f6] hover:bg-blue-600 text-white px-4 py-1.5 rounded transition-colors shadow-sm text-sm"
             >
               <Plus size={16} />
-              <span>新增指标分析体系</span>
-            </button>
-          </div>
-
-          {/* Right: Search Inputs */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-600 whitespace-nowrap">指标代码:</label>
-              <input 
-                type="text" 
-                placeholder="请输入" 
-                value={codeSearch}
-                onChange={(e) => setCodeSearch(e.target.value)}
-                className="w-48 border border-gray-200 rounded text-sm px-3 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-600 whitespace-nowrap">指标名称:</label>
-              <input 
-                type="text" 
-                placeholder="请输入" 
-                value={nameSearch}
-                onChange={(e) => setNameSearch(e.target.value)}
-                className="w-48 border border-gray-200 rounded text-sm px-3 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
-              />
-            </div>
-            <button className="px-6 py-1.5 bg-[#3b82f6] hover:bg-blue-600 text-white text-sm rounded transition-colors shadow-sm">
-              查询
+              <span>新增</span>
             </button>
           </div>
         </div>

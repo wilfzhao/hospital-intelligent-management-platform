@@ -21,14 +21,22 @@ interface CanvasComponent {
   id: string;
   type: ComponentType;
   title: string;
+  isConfiguring?: boolean;
 }
 
 export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
   const [canvasItems, setCanvasItems] = useState<CanvasComponent[]>([]);
+  const [systemTitle, setSystemTitle] = useState('新增指标分析体系');
 
   const updateComponentTitle = (id: string, newTitle: string) => {
     setCanvasItems(canvasItems.map(item => 
       item.id === id ? { ...item, title: newTitle } : item
+    ));
+  };
+
+  const setComponentConfiguring = (id: string, isConfiguring: boolean) => {
+    setCanvasItems(canvasItems.map(item => 
+      item.id === id ? { ...item, isConfiguring } : item
     ));
   };
 
@@ -38,7 +46,7 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
       bar: '柱状图分析',
       line: '折线图趋势'
     };
-    setCanvasItems([...canvasItems, { id: Date.now().toString(), type, title: titles[type] }]);
+    setCanvasItems([...canvasItems, { id: Date.now().toString(), type, title: titles[type], isConfiguring: true }]);
   };
 
   const removeComponent = (id: string) => {
@@ -53,7 +61,13 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center shadow-sm">
             <Layout size={18} />
           </div>
-          <h1 className="text-lg font-semibold text-slate-800 tracking-tight">新增指标分析体系</h1>
+          <input 
+            type="text"
+            value={systemTitle}
+            onChange={(e) => setSystemTitle(e.target.value)}
+            className="text-lg font-semibold text-slate-800 tracking-tight bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-1 py-0.5 transition-colors w-64"
+            placeholder="输入体系名称"
+          />
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -72,30 +86,30 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
       </header>
 
       {/* Main Workspace */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
         
-        {/* Floating Toolbar */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-          <div className="flex items-center gap-1 p-1.5 bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl shadow-lg shadow-slate-200/50">
+        {/* Toolbar */}
+        <div className="flex-none py-3 flex justify-center border-b border-slate-200 bg-white shadow-sm z-20 relative">
+          <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl">
             <button 
               onClick={() => addComponent('table')} 
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors group"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all group"
             >
               <TableIcon size={18} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
               指标表格
             </button>
-            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+            <div className="w-px h-4 bg-slate-200 mx-1"></div>
             <button 
               onClick={() => addComponent('bar')} 
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors group"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all group"
             >
               <BarChart3 size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
               柱状图
             </button>
-            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+            <div className="w-px h-4 bg-slate-200 mx-1"></div>
             <button 
               onClick={() => addComponent('line')} 
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-colors group"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-white hover:text-emerald-600 hover:shadow-sm transition-all group"
             >
               <LineChart size={18} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
               折线图
@@ -105,7 +119,7 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
 
         {/* Canvas Area */}
         <div 
-          className="flex-1 overflow-auto p-8 pt-28 custom-scrollbar bg-white relative"
+          className="flex-1 overflow-auto p-8 custom-scrollbar bg-white relative"
           style={{ 
             backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', 
             backgroundSize: '24px 24px',
@@ -146,7 +160,11 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
                         />
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                        <button 
+                          onClick={() => setComponentConfiguring(item.id, !item.isConfiguring)}
+                          className={`p-1.5 rounded-md transition-colors ${item.isConfiguring ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                          title={item.isConfiguring ? "完成配置" : "重新配置"}
+                        >
                           <Settings2 size={14} />
                         </button>
                         <button 
@@ -161,7 +179,11 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
                     {/* Component Body */}
                     {item.type === 'table' ? (
                       <div className="p-0">
-                        <AnalysisTableWidget />
+                        <AnalysisTableWidget 
+                          isConfiguring={item.isConfiguring} 
+                          onReconfigure={() => setComponentConfiguring(item.id, true)}
+                          onGenerate={() => setComponentConfiguring(item.id, false)}
+                        />
                       </div>
                     ) : (
                       <div className="p-6 flex items-center justify-center bg-slate-50/30 h-72">

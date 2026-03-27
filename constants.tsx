@@ -62,11 +62,33 @@ export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
   },
 ];
 
+export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [
+  {
+    id: 'indicator_library',
+    label: '指标库',
+    icon: <Database size={20} />,
+  },
+  {
+    id: 'indicator_reporting',
+    label: '指标填报',
+    icon: <FileText size={20} />,
+  },
+  {
+    id: 'indicator_analysis',
+    label: '指标分析',
+    icon: <BarChart size={20} />,
+  },
+];
+
 export const HOSPITAL_REVIEW_SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'review_overview',
     label: '医院评审全览',
     icon: <LayoutDashboard size={20} />,
+    expanded: true,
+    subItems: [
+      { id: 'review_summary', label: '评审总结', icon: null }
+    ]
   },
   {
     id: 'resource_config',

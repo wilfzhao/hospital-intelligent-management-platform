@@ -14,7 +14,10 @@ import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
-import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS } from './constants';
+import IndicatorAnalysis from './components/IndicatorAnalysis';
+import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
+import ReviewSummary from './components/ReviewSummary';
+import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS } from './constants';
 import { Plan } from './types';
 import { Settings } from 'lucide-react';
 
@@ -48,7 +51,7 @@ const App: React.FC = () => {
       return HOSPITAL_REVIEW_SIDEBAR_ITEMS;
     }
     if (activeModule === '指标管理中心') {
-      return [];
+      return INDICATOR_MANAGEMENT_SIDEBAR_ITEMS;
     }
     // Default to SIDEBAR_ITEMS for '管理配置'
     return SIDEBAR_ITEMS;
@@ -61,9 +64,9 @@ const App: React.FC = () => {
     if (moduleName === '党委政务督办平台') {
       setCurrentView(SUPERVISION_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '医院等级评审') {
-      setCurrentView(HOSPITAL_REVIEW_SIDEBAR_ITEMS[0].id);
+      setCurrentView('review_summary');
     } else if (moduleName === '指标管理中心') {
-      setCurrentView('default_view'); 
+      setCurrentView(INDICATOR_MANAGEMENT_SIDEBAR_ITEMS[0].id); 
     } else if (moduleName === '运营决策中心') {
       setCurrentView('odc_dashboard'); // Dashboard view for ODC
     } else if (moduleName === '管理配置') {
@@ -81,7 +84,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEditReport = (id: string) => {
+  const handleEditReport = () => {
     setCurrentView('report_editor');
   };
 
@@ -140,6 +143,8 @@ const App: React.FC = () => {
       // --- Hospital Review Views ---
       case 'report_center':
         return <ReportCenter onOpenEditor={() => setCurrentView('report_editor')} />;
+      case 'review_summary':
+        return <ReviewSummary />;
 
       case 'review_overview':
       case 'resource_config':
@@ -149,7 +154,7 @@ const App: React.FC = () => {
       case 'key_tech':
       case 'self_assessment':
       case 'issue_list':
-      case 'continuous_improvement':
+      case 'continuous_improvement': {
          // Placeholder for new pages
          const activeItem = HOSPITAL_REVIEW_SIDEBAR_ITEMS.find(i => i.id === currentView);
          return (
@@ -161,6 +166,26 @@ const App: React.FC = () => {
                 <p>该功能模块正在开发中...</p>
             </div>
          );
+      }
+
+      case 'indicator_analysis':
+        return <IndicatorAnalysis onAddSystem={() => setCurrentView('indicator_analysis_editor')} />;
+      case 'indicator_analysis_editor':
+        return <IndicatorAnalysisEditor onBack={() => setCurrentView('indicator_analysis')} />;
+
+      case 'indicator_library':
+      case 'indicator_reporting': {
+         const activeIndicatorItem = INDICATOR_MANAGEMENT_SIDEBAR_ITEMS.find(i => i.id === currentView);
+         return (
+            <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm h-full p-8 items-center justify-center text-gray-500">
+                <div className="bg-blue-50 p-4 rounded-full mb-4">
+                    {activeIndicatorItem?.icon}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{activeIndicatorItem?.label}</h2>
+                <p>该功能模块正在开发中...</p>
+            </div>
+         );
+      }
 
       default:
         return (
@@ -189,7 +214,7 @@ const App: React.FC = () => {
   }
 
   // Hide sidebar for full-page dashboards like ODC, or if sidebar items are empty
-  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'featured_plan_config' && currentView !== 'odc_dashboard';
+  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'featured_plan_config' && currentView !== 'odc_dashboard' && currentView !== 'indicator_analysis_editor';
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">
@@ -209,8 +234,8 @@ const App: React.FC = () => {
         <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${
             shouldShowSidebar 
                 ? '' 
-                : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config')
-                    ? 'w-full' // Remove max-width for full-screen views
+                : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config' || currentView === 'associate_indicators' || currentView === 'indicator_analysis_editor')
+                    ? 'w-full !p-0' // Remove max-width and padding for full-screen views
                     : 'max-w-7xl mx-auto w-full'
         }`}>
           {renderContent()}

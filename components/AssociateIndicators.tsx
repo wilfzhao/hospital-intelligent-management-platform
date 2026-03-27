@@ -35,16 +35,18 @@ interface AssociatedIndicator {
   displayName: string; // 指标展示名
   sort: number;
   type: 'basic' | 'composite'; // 基础指标 | 复合指标
+  dirId: string;
+  isChecked: boolean; // 是否核对
 }
 
 const MOCK_INDICATORS: AssociatedIndicator[] = [
-  { id: 'i1', name: '测试院级填报指标', displayName: '', sort: 0, type: 'basic' },
-  { id: 'i2', name: '指标填报（半年）', displayName: '', sort: 0, type: 'basic' },
-  { id: 'i3', name: '指标权限测试（基础指标手动采集二）', displayName: '', sort: 0, type: 'basic' },
-  { id: 'i4', name: '指标权限测试（基础指标手动采集一）', displayName: '', sort: 0, type: 'basic' },
-  { id: 'i5', name: '指标权限测试（复合指标）', displayName: '', sort: 0, type: 'composite' },
-  { id: 'i6', name: '指标权限测试（基础指标自动采集二）', displayName: '', sort: 0, type: 'basic' },
-  { id: 'i7', name: '指标权限测试（基础指标自动采集一）', displayName: '', sort: 0, type: 'basic' },
+  { id: 'i1', name: '测试院级填报指标', displayName: '', sort: 0, type: 'basic', dirId: 'dir-1-2', isChecked: true },
+  { id: 'i2', name: '指标填报（半年）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-1-2', isChecked: false },
+  { id: 'i3', name: '指标权限测试（基础指标手动采集二）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-2', isChecked: true },
+  { id: 'i4', name: '指标权限测试（基础指标手动采集一）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-2', isChecked: false },
+  { id: 'i5', name: '指标权限测试（复合指标）', displayName: '', sort: 0, type: 'composite', dirId: 'dir-3', isChecked: true },
+  { id: 'i6', name: '指标权限测试（基础指标自动采集二）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-4', isChecked: false },
+  { id: 'i7', name: '指标权限测试（基础指标自动采集一）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-4', isChecked: true },
 ];
 
 interface AssociateIndicatorsProps {
@@ -56,6 +58,11 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set(['dir-1', 'dir-1-1']));
   const [selectedDirId, setSelectedDirId] = useState<string>('dir-1-2');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  
+  // Filter State
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
+  const [filterChecked, setFilterChecked] = useState<string>('all');
   
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -75,11 +82,20 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
     setSelectedRows(newSet);
   };
 
+  const filteredIndicators = MOCK_INDICATORS.filter(i => {
+    const matchDir = selectedDirId === 'all' || i.dirId === selectedDirId;
+    const matchType = filterType === 'all' || i.type === filterType;
+    const matchChecked = filterChecked === 'all' || 
+                         (filterChecked === 'checked' && i.isChecked) || 
+                         (filterChecked === 'unchecked' && !i.isChecked);
+    return matchDir && matchType && matchChecked;
+  });
+
   const toggleAll = () => {
-    if (selectedRows.size === MOCK_INDICATORS.length) {
+    if (selectedRows.size === filteredIndicators.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(MOCK_INDICATORS.map(i => i.id)));
+      setSelectedRows(new Set(filteredIndicators.map(i => i.id)));
     }
   };
 
@@ -177,6 +193,19 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
           
           {/* Directory List */}
           <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+            <div 
+              className={`
+                group flex items-center justify-between px-3 py-2 cursor-pointer text-sm transition-colors rounded-md mx-2 mb-1
+                ${selectedDirId === 'all' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'}
+              `}
+              onClick={() => setSelectedDirId('all')}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 invisible"></div>
+                <FolderOpen size={16} className={selectedDirId === 'all' ? "text-blue-400" : "text-gray-400"} />
+                <span className="truncate font-medium">全部指标</span>
+              </div>
+            </div>
             {MOCK_DIRECTORIES.map(dir => renderDirectory(dir))}
           </div>
           
@@ -185,7 +214,7 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
         {/* 3. Right Main Content */}
         <div className="flex-1 flex flex-col min-w-0 bg-white m-3 rounded-lg shadow-sm border border-gray-100 overflow-hidden">
            
-           {/* Toolbar */}
+            {/* Toolbar */}
            <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                  <div className="flex rounded border border-gray-200 overflow-hidden bg-white shadow-sm focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
@@ -198,7 +227,14 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
                         搜索
                     </button>
                  </div>
-                 <button className="p-2 border border-gray-200 rounded bg-white text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors shadow-sm">
+                 <button 
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`p-2 border rounded transition-colors shadow-sm ${
+                      isFilterOpen
+                        ? 'border-gray-300 bg-gray-100 text-gray-700' 
+                        : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                 >
                     <Filter size={16} />
                  </button>
               </div>
@@ -220,6 +256,85 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
               </div>
            </div>
 
+           {/* Expanded Filter Panel */}
+           {isFilterOpen && (
+             <div className="bg-gray-50 p-4 border-b border-gray-100 flex items-center justify-between gap-6 flex-wrap mb-3">
+               <div className="flex items-center gap-8 flex-1">
+                 {/* Indicator Type */}
+                 <div className="flex items-center gap-3">
+                   <label className="text-sm text-gray-600 whitespace-nowrap">指标类型:</label>
+                   <select 
+                     value={filterType}
+                     onChange={(e) => setFilterType(e.target.value)}
+                     className="w-48 border border-gray-200 rounded text-sm px-3 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+                   >
+                     <option value="all">全部</option>
+                     <option value="basic">基础指标</option>
+                     <option value="composite">复合指标</option>
+                   </select>
+                 </div>
+
+                 {/* Is Checked */}
+                 <div className="flex items-center gap-3">
+                   <label className="text-sm text-gray-600 whitespace-nowrap">是否核对:</label>
+                   <div className="flex items-center gap-4">
+                     <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                       <input 
+                         type="radio" 
+                         name="filterCheckedInline" 
+                         value="all" 
+                         checked={filterChecked === 'all'}
+                         onChange={(e) => setFilterChecked(e.target.value)}
+                         className="text-blue-600 focus:ring-blue-500"
+                       />
+                       全部
+                     </label>
+                     <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                       <input 
+                         type="radio" 
+                         name="filterCheckedInline" 
+                         value="checked" 
+                         checked={filterChecked === 'checked'}
+                         onChange={(e) => setFilterChecked(e.target.value)}
+                         className="text-blue-600 focus:ring-blue-500"
+                       />
+                       是
+                     </label>
+                     <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                       <input 
+                         type="radio" 
+                         name="filterCheckedInline" 
+                         value="unchecked" 
+                         checked={filterChecked === 'unchecked'}
+                         onChange={(e) => setFilterChecked(e.target.value)}
+                         className="text-blue-600 focus:ring-blue-500"
+                       />
+                       否
+                     </label>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Action Buttons */}
+               <div className="flex items-center gap-3">
+                 <button 
+                   onClick={() => {
+                     setFilterType('all');
+                     setFilterChecked('all');
+                   }}
+                   className="px-4 py-1.5 text-sm text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 rounded transition-colors shadow-sm"
+                 >
+                   重 置
+                 </button>
+                 <button 
+                   className="px-4 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors shadow-sm"
+                 >
+                   搜 索
+                 </button>
+               </div>
+             </div>
+           )}
+
            {/* Table */}
            <div className="flex-1 overflow-auto">
              <table className="w-full text-left border-collapse">
@@ -227,8 +342,8 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
                  <tr>
                    <th className="p-4 w-12 border-b border-gray-100">
                       <Checkbox 
-                        checked={selectedRows.size === MOCK_INDICATORS.length && MOCK_INDICATORS.length > 0} 
-                        indeterminate={selectedRows.size > 0 && selectedRows.size < MOCK_INDICATORS.length}
+                        checked={selectedRows.size === filteredIndicators.length && filteredIndicators.length > 0} 
+                        indeterminate={selectedRows.size > 0 && selectedRows.size < filteredIndicators.length}
                         onChange={toggleAll}
                       />
                    </th>
@@ -236,18 +351,26 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
                    <th className="p-4 text-xs font-bold text-gray-500 border-b border-gray-100">指标展示名</th>
                    <th className="p-4 text-xs font-bold text-gray-500 border-b border-gray-100 w-20">排序</th>
                    <th className="p-4 text-xs font-bold text-gray-500 border-b border-gray-100 w-32">指标类型</th>
+                   <th className="p-4 text-xs font-bold text-gray-500 border-b border-gray-100 w-24 text-center">是否核对</th>
                    <th className="p-4 text-xs font-bold text-gray-500 border-b border-gray-100 w-64 text-center">操作</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-gray-50">
-                 {MOCK_INDICATORS.map((item) => (
-                   <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
-                     <td className="p-4">
-                        <Checkbox 
-                           checked={selectedRows.has(item.id)}
-                           onChange={() => toggleRow(item.id)}
-                        />
+                 {filteredIndicators.length === 0 ? (
+                   <tr>
+                     <td colSpan={6} className="p-8 text-center text-gray-400">
+                       该目录下暂无指标
                      </td>
+                   </tr>
+                 ) : (
+                   filteredIndicators.map((item) => (
+                     <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                       <td className="p-4">
+                          <Checkbox 
+                             checked={selectedRows.has(item.id)}
+                             onChange={() => toggleRow(item.id)}
+                          />
+                       </td>
                      <td className="p-4 text-sm text-blue-600 font-medium cursor-pointer hover:underline">
                         {item.name}
                      </td>
@@ -267,6 +390,15 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
                         </span>
                      </td>
                      <td className="p-4 text-center">
+                        <span className={`inline-block px-2 py-0.5 text-xs rounded border ${
+                            item.isChecked 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                              : 'bg-rose-50 text-rose-600 border-rose-100'
+                        }`}>
+                           {item.isChecked ? '是' : '否'}
+                        </span>
+                     </td>
+                     <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-3 text-sm">
                            <button 
                              onClick={() => handleEditClick(item)}
@@ -280,7 +412,8 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
                         </div>
                      </td>
                    </tr>
-                 ))}
+                 ))
+                 )}
                </tbody>
              </table>
              

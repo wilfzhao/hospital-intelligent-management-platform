@@ -4,11 +4,8 @@ import {
   GripVertical, 
   Play, 
   X, 
-  CheckSquare, 
-  Square,
   Table as TableIcon,
   Filter,
-  Settings2,
   Plus,
   Search,
   ChevronDown,
@@ -181,14 +178,6 @@ export default function AnalysisTableWidget({ isConfiguring, onReconfigure, onGe
     setSelectedIndicators(tempSelected);
     setIsModalOpen(false);
     handleSetShowPreview(false);
-  };
-
-  const toggleTempIndicator = (indicator: string) => {
-    if (tempSelected.includes(indicator)) {
-      setTempSelected(tempSelected.filter(i => i !== indicator));
-    } else {
-      setTempSelected([...tempSelected, indicator]);
-    }
   };
 
   const removeIndicator = (indicator: string) => {

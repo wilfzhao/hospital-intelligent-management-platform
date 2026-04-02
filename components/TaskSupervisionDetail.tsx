@@ -108,7 +108,7 @@ interface Phase {
   attachments?: { name: string; size: string }[];
 }
 
-export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ taskId, onBack }) => {
+export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ onBack }) => {
   const [phases, setPhases] = useState<Phase[]>(MOCK_PHASES);
   const [traces, setTraces] = useState<Trace[]>(MOCK_TRACES);
   const [modalType, setModalType] = useState<'edit' | 'fill' | 'audit' | 'review' | null>(null);
@@ -447,7 +447,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
           </h3>
           
           <div className="relative border-l-2 border-gray-100 ml-4 space-y-8">
-            {traces.map((trace, index) => (
+            {traces.map((trace) => (
               <div key={trace.id} className="relative pl-8">
                 {/* Timeline icon */}
                 <div className={`absolute -left-[17px] top-0 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center ${getActionColor(trace.action)}`}>
@@ -619,19 +619,19 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
                 <div className="text-sm text-gray-700">{editingPhase.content}</div>
               </div>
 
-              {(modalType === 'audit' || modalType === 'review') && (editingPhase as any).progressDescription && (
+              {(modalType === 'audit' || modalType === 'review') && (editingPhase as Phase & { progressDescription?: string }).progressDescription && (
                 <div className="p-4 border border-blue-100 bg-blue-50/50 rounded-lg space-y-3 mb-4">
                   <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
                     <FileEdit size={16} className="text-blue-600" />
                     主办部门填报进展
                   </h4>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{(editingPhase as any).progressDescription}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{(editingPhase as Phase & { progressDescription?: string }).progressDescription}</p>
                   
                   {editingPhase.attachments && editingPhase.attachments.length > 0 && (
                     <div className="pt-2 border-t border-blue-100/50">
                       <div className="text-xs font-medium text-gray-500 mb-2">佐证材料：</div>
                       <div className="space-y-2">
-                        {editingPhase.attachments?.map((file: { name: string; size: string }, idx: number) => (
+                        {editingPhase.attachments?.map((file, idx: number) => (
                           <div key={idx} className="flex items-center gap-2 p-2 bg-white border border-gray-200 rounded-md shadow-sm">
                             <FileText size={16} className="text-blue-500" />
                             <span className="text-sm text-gray-700 flex-1 truncate">{file.name}</span>
@@ -745,7 +745,7 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ ta
                 </>
               ) : (
                 <button 
-                  onClick={() => handleActionSubmit(modalType)}
+                  onClick={() => handleActionSubmit(modalType as 'fill' | 'review')}
                   disabled={modalType === 'review' && (!actionComment || !progressStatus)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >

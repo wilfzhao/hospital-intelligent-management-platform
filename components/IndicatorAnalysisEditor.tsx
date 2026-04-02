@@ -13,6 +13,7 @@ import AnalysisTableWidget from './AnalysisTableWidget';
 
 interface EditorProps {
   onBack: () => void;
+  onSave: (name: string) => void;
 }
 
 type ComponentType = 'table' | 'bar' | 'line';
@@ -24,9 +25,17 @@ interface CanvasComponent {
   isConfiguring?: boolean;
 }
 
-export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
+export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps) {
   const [canvasItems, setCanvasItems] = useState<CanvasComponent[]>([]);
   const [systemTitle, setSystemTitle] = useState('新增指标分析体系');
+
+  const handleSave = () => {
+    if (!systemTitle.trim()) {
+      alert('请输入体系名称');
+      return;
+    }
+    onSave(systemTitle);
+  };
 
   const updateComponentTitle = (id: string, newTitle: string) => {
     setCanvasItems(canvasItems.map(item => 
@@ -77,6 +86,7 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
             取消
           </button>
           <button 
+            onClick={handleSave}
             className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-slate-400"
           >
             <Save size={16} />
@@ -138,7 +148,7 @@ export default function IndicatorAnalysisEditor({ onBack }: EditorProps) {
               </div>
             ) : (
               <div className="grid grid-cols-12 gap-6 relative z-10">
-                {canvasItems.map((item, index) => (
+                {canvasItems.map((item) => (
                   <div 
                     key={item.id} 
                     className={`bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden group hover:shadow-md hover:border-slate-300 transition-all duration-200 ${

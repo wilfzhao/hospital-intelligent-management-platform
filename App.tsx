@@ -17,14 +17,17 @@ import { SupervisionDashboard } from './components/SupervisionDashboard';
 import IndicatorAnalysis from './components/IndicatorAnalysis';
 import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
 import ReviewSummary from './components/ReviewSummary';
-import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS } from './constants';
-import { Plan } from './types';
+import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS, MOCK_ANALYSIS_SYSTEMS } from './constants';
+import { Plan, AnalysisSystem } from './types';
 import { Settings } from 'lucide-react';
 
 const App: React.FC = () => {
   // Global Navigation State
   const [activeModule, setActiveModule] = useState('管理配置');
   const [currentView, setCurrentView] = useState('plan_mgmt');
+
+  // Analysis Systems State
+  const [analysisSystems, setAnalysisSystems] = useState<AnalysisSystem[]>(MOCK_ANALYSIS_SYSTEMS);
 
   // Role Management State
   const [activeRoleId, setActiveRoleId] = useState('r4');
@@ -97,6 +100,16 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSaveAnalysisSystem = (name: string) => {
+    const newSystem: AnalysisSystem = {
+      id: Date.now().toString(),
+      name,
+      url: `http://hospital.com/analysis/${Date.now()}` // Mock URL
+    };
+    setAnalysisSystems([newSystem, ...analysisSystems]);
+    setCurrentView('indicator_analysis');
+  };
+
   const renderContent = () => {
     switch (currentView) {
       // --- Supervision Platform Views ---
@@ -129,7 +142,12 @@ const App: React.FC = () => {
       case 'report_template':
         return <ReportTemplates onEdit={handleEditReport} />;
       case 'report_editor':
-        return <ReportEditor onBack={() => setCurrentView('report_template')} />;
+        return (
+          <ReportEditor 
+            onBack={() => setCurrentView('report_template')} 
+            analysisSystems={analysisSystems}
+          />
+        );
       case 'indicator_auth':
         return (
           <>
@@ -169,9 +187,19 @@ const App: React.FC = () => {
       }
 
       case 'indicator_analysis':
-        return <IndicatorAnalysis onAddSystem={() => setCurrentView('indicator_analysis_editor')} />;
+        return (
+          <IndicatorAnalysis 
+            onAddSystem={() => setCurrentView('indicator_analysis_editor')} 
+            analysisSystems={analysisSystems}
+          />
+        );
       case 'indicator_analysis_editor':
-        return <IndicatorAnalysisEditor onBack={() => setCurrentView('indicator_analysis')} />;
+        return (
+          <IndicatorAnalysisEditor 
+            onBack={() => setCurrentView('indicator_analysis')} 
+            onSave={handleSaveAnalysisSystem}
+          />
+        );
 
       case 'indicator_library':
       case 'indicator_reporting': {

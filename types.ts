@@ -10,6 +10,16 @@ export interface SidebarItem {
   subItems?: SidebarItem[];
 }
 
+export interface AssociatedIndicator {
+  id: string;
+  name: string;
+  displayName: string;
+  sort: number;
+  type: 'basic' | 'composite';
+  dirId?: string;
+  isChecked?: boolean;
+}
+
 export interface Role {
   id: string;
   name: string;
@@ -61,6 +71,12 @@ export interface Department {
   id: string;
   name: string;
   children?: Department[];
+}
+
+export interface AnalysisSystem {
+  id: string;
+  name: string;
+  url: string;
 }
 
 export interface SpecialPermission {

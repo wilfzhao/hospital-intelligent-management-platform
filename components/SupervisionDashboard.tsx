@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -5,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   LayoutDashboard, CheckCircle2, Clock, AlertTriangle, 
-  TrendingUp, Activity, FileText, Users 
+  Activity, FileText, Users 
 } from 'lucide-react';
 
 // Mock Data
@@ -47,8 +48,6 @@ const RECENT_ALERTS = [
   { id: 2, task: '2026年度医疗质量安全专项检查', dept: '医务处', status: '进度滞后', time: '5小时前', type: 'danger' },
   { id: 5, task: '重点专科建设资金拨付审批', dept: '财务处', status: '即将逾期', time: '8小时前', type: 'warning' },
 ];
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export const SupervisionDashboard: React.FC = () => {
   return (

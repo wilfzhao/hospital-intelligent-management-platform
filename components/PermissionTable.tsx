@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { TabType, Indicator, Department, SpecialPermission } from '../types';
 import { INDICATORS, ROLES, DEPARTMENTS } from '../constants';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
 import SpecialPermissionModal from './SpecialPermissionModal';
-import { Search, Info, ChevronRight, ChevronDown, Shield, Users, Building, AlertCircle, Edit2, RotateCcw, CheckCircle2, LayoutGrid, Check, FolderTree, ShieldAlert, Plus, Trash2 } from 'lucide-react';
+import { Info, ChevronRight, ChevronDown, Shield, Edit2, Check, FolderTree, ShieldAlert, Plus, Trash2 } from 'lucide-react';
 
 type DataScope = 'department' | 'hospital' | 'custom';
 
@@ -247,7 +247,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
         if (currentRoleDefaultScope === 'hospital') return { checked: true, indeterminate: false };
         
         // For department scope, we check if the mock ID is in the children
-        let targetIds = currentSelectedIds;
+        const targetIds = currentSelectedIds;
         // In department scope, we only have one ID selected, so groups will generally be indeterminate or unchecked
         // The filtering logic below handles this correctly for both single and multiple selections
         
@@ -392,7 +392,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
 
   const cascadeUpdate = (nodes: Indicator[], key: keyof Indicator, value: boolean): Indicator[] => {
     return nodes.map((node) => {
-      let newNode = applyDependencies(node, key, value);
+      const newNode = applyDependencies(node, key, value);
       if (hasChildren(newNode)) {
         newNode.children = cascadeUpdate(newNode.children!, key, value);
       }
@@ -453,7 +453,7 @@ const PermissionTable: React.FC<PermissionTableProps> = ({ activeRoleId }) => {
           : (node.id === targetId || node.name === targetName);
 
         if (isTargetMatch) {
-          let updatedNode = applyDependencies(node, targetKey, nextValue);
+          const updatedNode = applyDependencies(node, targetKey, nextValue);
           if (hasChildren(updatedNode)) {
              updatedNode.children = cascadeUpdate(updatedNode.children!, targetKey, nextValue);
           }

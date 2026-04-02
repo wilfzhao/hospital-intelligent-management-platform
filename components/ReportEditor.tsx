@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   ChevronLeft, Calendar, Settings, Eye, Search, 
   ChevronRight, ChevronDown, Type, List, AlignLeft, AlignCenter, AlignRight,
   Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon, Table as TableIcon, 
   Trash2, Info, X, Minus, Plus, BarChart as BarChartIcon,
-  Wand2, Undo, Redo,
-  LayoutGrid, ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
   Database, FileCode, Activity,
-  Loader2, Check, Send, Sparkles, Bell, Clock, Globe, FileText as FileIcon, CalendarDays
+  Send, Undo, Redo, Wand2, Clock, Globe, File as FileIcon, CalendarDays,
+  ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
+  Sparkles, Bell, Loader2, Check
 } from 'lucide-react';
 import { PLANS } from '../constants';
+import { AnalysisSystem } from '../types';
 
 // TipTap Imports
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
@@ -38,6 +39,7 @@ import TableHeader from '@tiptap/extension-table-header';
 
 interface ReportEditorProps {
   onBack: () => void;
+  analysisSystems: AnalysisSystem[];
 }
 
 interface ChartSettings {
@@ -526,6 +528,7 @@ const ChartComponent = (props: NodeViewProps) => {
 
       {/* Settings Modal (Portal would be better, but inline works for this demo) */}
       <ChartSettingsModal 
+        key={isSettingsOpen ? `open-${settings.title || 'new'}` : 'closed'}
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         initialSettings={settings}
@@ -563,13 +566,6 @@ const ChartExtension = Node.create({
 const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose, initialSettings, onSave }) => {
   const [title, setTitle] = useState(initialSettings.title);
   const [periods, setPeriods] = useState(initialSettings.periods);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTitle(initialSettings.title);
-      setPeriods(initialSettings.periods);
-    }
-  }, [isOpen, initialSettings]);
 
   if (!isOpen) return null;
 
@@ -648,7 +644,8 @@ const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose
 // 5. MAIN EDITOR COMPONENT
 // ----------------------------------------------------------------------
 
-const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
+const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) => {
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'indicator' | 'analysis'>('indicator');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['p4']));
   const [timeParam, setTimeParam] = useState<string | null>(null);
   const [isTimeParamOpen, setIsTimeParamOpen] = useState(false);
@@ -710,7 +707,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
   };
 
   const handleInsertTable = () => {
-    // Cast to any to avoid TypeScript error about 'insertTable' not existing on ChainedCommands
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (editor?.chain().focus() as any)?.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
   
@@ -794,10 +791,20 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
         {/* Sidebar */}
         <aside className="w-[280px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 z-10">
           <div className="flex border-b border-gray-100">
-             <div className="flex-1 py-3 text-sm font-medium text-center text-blue-600 relative cursor-default">
+             <button 
+               onClick={() => setActiveSidebarTab('indicator')}
+               className={`flex-1 py-3 text-sm font-medium text-center relative transition-colors ${activeSidebarTab === 'indicator' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+             >
                指标
-               <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
-             </div>
+               {activeSidebarTab === 'indicator' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+             </button>
+             <button 
+               onClick={() => setActiveSidebarTab('analysis')}
+               className={`flex-1 py-3 text-sm font-medium text-center relative transition-colors ${activeSidebarTab === 'analysis' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+             >
+               分析体系
+               {activeSidebarTab === 'analysis' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+             </button>
           </div>
           <div className="p-3 border-b border-gray-50">
              <div className="relative">
@@ -806,98 +813,120 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
              </div>
           </div>
           <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
-             {PLANS.map((plan) => (
-                <div key={plan.id}>
-                   <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer text-sm text-gray-700" onClick={() => toggleExpand(plan.id)}>
-                      {expandedItems.has(plan.id) ? <ChevronDown size={14} className="text-gray-400"/> : <ChevronRight size={14} className="text-gray-400"/>}
-                      <span className="truncate">{plan.name}</span>
-                   </div>
-                   {expandedItems.has(plan.id) && (
-                      <div className="pl-4 mt-1">
-                          {/* Indicator Node (Parent) */}
-                          <div className="relative group/indicator">
-                             <div 
-                               className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer select-none"
-                               onClick={() => setIndicatorExpanded(!indicatorExpanded)}
-                             >
-                                 <ChevronDown size={14} className={`text-gray-400 transition-transform ${indicatorExpanded ? '' : '-rotate-90'}`} />
-                                 <span className="truncate font-medium">住院患者身体约束率</span>
-                             </div>
-                             
-                             {/* Children Container */}
-                             {indicatorExpanded && (
-                               <div className="relative ml-2 pl-4 border-l border-gray-200 my-1 space-y-1 animate-in slide-in-from-top-2 fade-in duration-200">
-                                   {/* Item 1: Indicator Value */}
-                                   <div 
-                                     className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
-                                     onDoubleClick={() => handleInsertText('12.5%')}
-                                     title="双击插入数值"
-                                   >
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-3 flex justify-center items-center">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
-                                         </div>
-                                         <span className="text-gray-600 font-medium group-hover/item:text-blue-700">指标值</span>
-                                      </div>
-                                   </div>
-
-                                   {/* Item 2: YoY */}
-                                   <div className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
-                                     onDoubleClick={() => handleInsertText('增长2.1%')}
-                                     title="双击插入数值"
-                                   >
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-3 flex justify-center items-center">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
-                                         </div>
-                                         <span className="text-gray-600 font-medium group-hover/item:text-blue-700">同比</span>
-                                      </div>
-                                   </div>
-
-                                   {/* Item 3: QoQ */}
-                                   <div className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
-                                     onDoubleClick={() => handleInsertText('下降0.5%')}
-                                     title="双击插入数值"
-                                   >
-                                      <div className="flex items-center gap-2">
-                                         <div className="w-3 flex justify-center items-center">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
-                                         </div>
-                                         <span className="text-gray-600 font-medium group-hover/item:text-blue-700">环比</span>
-                                      </div>
-                                   </div>
-
-                                   {/* Item 4: Time Chart */}
-                                   <div 
-                                     className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs mt-1.5 border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
-                                     onDoubleClick={handleInsertChart}
-                                     title="双击插入图表"
-                                   >
-                                      <div className="flex items-center gap-2">
-                                         <BarChartIcon size={14} className="text-purple-500" />
-                                         <span className="text-gray-700 font-medium group-hover/item:text-blue-700">时间分析趋势图</span>
-                                      </div>
-                                   </div>
-
-                                   {/* Item 5: Dept Chart */}
-                                   <div 
-                                     className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
-                                     onDoubleClick={handleInsertChart}
-                                     title="双击插入图表"
-                                   >
-                                      <div className="flex items-center gap-2">
-                                         <BarChartIcon size={14} className="text-purple-500" />
-                                         <span className="text-gray-700 font-medium group-hover/item:text-blue-700">科室分析趋势图</span>
-                                      </div>
-                                   </div>
-
+             {activeSidebarTab === 'indicator' ? (
+               PLANS.map((plan) => (
+                  <div key={plan.id}>
+                     <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer text-sm text-gray-700" onClick={() => toggleExpand(plan.id)}>
+                        {expandedItems.has(plan.id) ? <ChevronDown size={14} className="text-gray-400"/> : <ChevronRight size={14} className="text-gray-400"/>}
+                        <span className="truncate">{plan.name}</span>
+                     </div>
+                     {expandedItems.has(plan.id) && (
+                        <div className="pl-4 mt-1">
+                            {/* Indicator Node (Parent) */}
+                            <div className="relative group/indicator">
+                               <div 
+                                 className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded cursor-pointer select-none"
+                                 onClick={() => setIndicatorExpanded(!indicatorExpanded)}
+                               >
+                                   <ChevronDown size={14} className={`text-gray-400 transition-transform ${indicatorExpanded ? '' : '-rotate-90'}`} />
+                                   <span className="truncate font-medium">住院患者身体约束率</span>
                                </div>
-                             )}
-                          </div>
-                      </div>
-                   )}
-                </div>
-             ))}
+                               
+                               {/* Children Container */}
+                               {indicatorExpanded && (
+                                 <div className="relative ml-2 pl-4 border-l border-gray-200 my-1 space-y-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                                     {/* Item 1: Indicator Value */}
+                                     <div 
+                                       className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
+                                       onDoubleClick={() => handleInsertText('12.5%')}
+                                       title="双击插入数值"
+                                     >
+                                        <div className="flex items-center gap-2">
+                                           <div className="w-3 flex justify-center items-center">
+                                              <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
+                                           </div>
+                                           <span className="text-gray-600 font-medium group-hover/item:text-blue-700">指标值</span>
+                                        </div>
+                                     </div>
+  
+                                     {/* Item 2: YoY */}
+                                     <div className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
+                                       onDoubleClick={() => handleInsertText('增长2.1%')}
+                                       title="双击插入数值"
+                                     >
+                                        <div className="flex items-center gap-2">
+                                           <div className="w-3 flex justify-center items-center">
+                                              <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
+                                           </div>
+                                           <span className="text-gray-600 font-medium group-hover/item:text-blue-700">同比</span>
+                                        </div>
+                                     </div>
+  
+                                     {/* Item 3: QoQ */}
+                                     <div className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs select-none border border-transparent hover:border-blue-100 hover:shadow-sm transition-all"
+                                       onDoubleClick={() => handleInsertText('下降0.5%')}
+                                       title="双击插入数值"
+                                     >
+                                        <div className="flex items-center gap-2">
+                                           <div className="w-3 flex justify-center items-center">
+                                              <div className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover/item:bg-blue-500 transition-colors"></div>
+                                           </div>
+                                           <span className="text-gray-600 font-medium group-hover/item:text-blue-700">环比</span>
+                                        </div>
+                                     </div>
+  
+                                     {/* Item 4: Time Chart */}
+                                     <div 
+                                       className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs mt-1.5 border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
+                                       onDoubleClick={handleInsertChart}
+                                       title="双击插入图表"
+                                     >
+                                        <div className="flex items-center gap-2">
+                                           <BarChartIcon size={14} className="text-purple-500" />
+                                           <span className="text-gray-700 font-medium group-hover/item:text-blue-700">时间分析趋势图</span>
+                                        </div>
+                                     </div>
+  
+                                     {/* Item 5: Dept Chart */}
+                                     <div 
+                                       className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
+                                       onDoubleClick={handleInsertChart}
+                                       title="双击插入图表"
+                                     >
+                                        <div className="flex items-center gap-2">
+                                           <BarChartIcon size={14} className="text-purple-500" />
+                                           <span className="text-gray-700 font-medium group-hover/item:text-blue-700">科室分析趋势图</span>
+                                        </div>
+                                     </div>
+  
+                                 </div>
+                               )}
+                            </div>
+                        </div>
+                     )}
+                  </div>
+               ))
+             ) : (
+               <div className="space-y-1">
+                 {analysisSystems.map((system) => (
+                   <div 
+                     key={system.id} 
+                     className="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer group transition-colors border border-transparent hover:border-blue-100"
+                     onDoubleClick={() => handleInsertText(system.name)}
+                     title="双击插入分析体系名称"
+                   >
+                     <div className="w-8 h-8 rounded bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:text-blue-500 transition-colors">
+                       <Activity size={16} />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <div className="text-sm text-gray-700 font-medium truncate group-hover:text-blue-700">{system.name}</div>
+                       <div className="text-[10px] text-gray-400 truncate">分析体系</div>
+                     </div>
+                     <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
+                   </div>
+                 ))}
+               </div>
+             )}
           </div>
         </aside>
 
@@ -932,6 +961,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
                     {editor.isActive('table') && (
                       <>
                         <div className="w-px h-4 bg-gray-300 mx-1"></div>
+                        {/* eslint-disable @typescript-eslint/no-explicit-any */}
                         <button onClick={() => (editor.chain().focus() as any).addColumnBefore().run()} className="p-1.5 hover:bg-white rounded text-gray-600" title="左侧插入列"><ArrowDownToLine size={16} className="rotate-90" /></button>
                         <button onClick={() => (editor.chain().focus() as any).addColumnAfter().run()} className="p-1.5 hover:bg-white rounded text-gray-600" title="右侧插入列"><ArrowRightToLine size={16} className="rotate-90" /></button>
                         <button onClick={() => (editor.chain().focus() as any).deleteColumn().run()} className="p-1.5 hover:bg-white rounded text-gray-600" title="删除列"><Columns size={16} strokeWidth={1.5} /><span className="text-[10px] absolute top-0 right-0 text-red-500 font-bold">x</span></button>
@@ -944,6 +974,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
                         <button onClick={() => (editor.chain().focus() as any).splitCell().run()} className="p-1.5 hover:bg-white rounded text-gray-600" title="拆分单元格"><Split size={16} /></button>
                         
                         <button onClick={() => (editor.chain().focus() as any).deleteTable().run()} className="p-1.5 hover:bg-white rounded text-red-500" title="删除表格"><Trash2 size={16} /></button>
+                        {/* eslint-enable @typescript-eslint/no-explicit-any */}
                       </>
                     )}
                  </div>

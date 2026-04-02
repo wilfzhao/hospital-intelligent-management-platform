@@ -1,16 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Minus, ChevronDown } from 'lucide-react';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
-
-interface AssociatedIndicator {
-  id: string;
-  name: string;
-  displayName: string;
-  sort: number;
-  type: 'basic' | 'composite';
-}
+import { AssociatedIndicator } from '../types';
 
 interface EditIndicatorModalProps {
   isOpen: boolean;
@@ -42,9 +35,6 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
   const [showMobile, setShowMobile] = useState(false);
   
   const [isKeyMonitor, setIsKeyMonitor] = useState(false);
-  
-  // Dimensions (mock)
-  const [dimensions, setDimensions] = useState<string[]>([]);
   
   // Associated Indicators
   const [numerator, setNumerator] = useState('指标权限测试（基础指标手动采集一）');

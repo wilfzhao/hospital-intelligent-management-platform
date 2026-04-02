@@ -1,27 +1,13 @@
 import React, { useState } from 'react';
 import { Search, Plus, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-
-// --- Types ---
-interface AnalysisSystem {
-  id: string;
-  name: string;
-  url: string;
-}
-
-// --- Mock Data ---
-const MOCK_DATA: AnalysisSystem[] = [
-  { id: '1', name: '出院手术患者分析', url: 'http://zjeuzlikyp.ru/wgtmveywft' },
-  { id: '2', name: '次均药费分析', url: 'http://wrpbxx.ag/wymmpfg' },
-  { id: '3', name: '出院手术患者分析', url: 'http://shvdwpjh.bn/rvcsxvkbhe' },
-  { id: '4', name: '出院手术患者分析', url: 'http://kslmcapmu.sz/ulvlfmk' },
-  { id: '5', name: '出院手术患者分析', url: 'http://svxkqxh.ie/tpihro' },
-];
+import { AnalysisSystem } from '../types';
 
 interface IndicatorAnalysisProps {
   onAddSystem?: () => void;
+  analysisSystems: AnalysisSystem[];
 }
 
-export default function IndicatorAnalysis({ onAddSystem }: IndicatorAnalysisProps) {
+export default function IndicatorAnalysis({ onAddSystem, analysisSystems }: IndicatorAnalysisProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
@@ -68,7 +54,7 @@ export default function IndicatorAnalysis({ onAddSystem }: IndicatorAnalysisProp
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {MOCK_DATA.map((item) => (
+                  {analysisSystems.map((item) => (
                     <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="p-4 text-sm text-gray-800">{item.name}</td>
                       <td className="p-4 text-sm text-[#38bdf8] hover:underline cursor-pointer">{item.url}</td>

@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { X, Search, ChevronRight, ChevronDown, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { DEPARTMENTS } from '../constants';
 import { Checkbox } from './ui/Checkbox';
 
@@ -53,7 +53,7 @@ const DepartmentSelectModal: React.FC<DepartmentSelectModalProps> = ({
   const renderDepartmentTree = () => {
     // Flatten logic for search
     if (searchTerm) {
-        let results: { id: string; name: string; path: string }[] = [];
+        const results: { id: string; name: string; path: string }[] = [];
         DEPARTMENTS.forEach(parent => {
             if (parent.children) {
                 parent.children.forEach(child => {

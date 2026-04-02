@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, Edit, Trash2, ChevronDown, ChevronRight, Calendar, CheckCircle2, Clock, AlertCircle, Eye, Upload, X } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2, ChevronDown, ChevronRight, Calendar, Upload, X } from 'lucide-react';
 import { TaskSupervisionDetail } from './TaskSupervisionDetail';
 
 // Mock Data

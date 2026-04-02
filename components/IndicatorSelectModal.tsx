@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Search, ChevronRight, ChevronDown, AlertCircle, FileText, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { INDICATORS } from '../constants';
 import { Checkbox } from './ui/Checkbox';
@@ -12,6 +12,31 @@ interface IndicatorSelectModalProps {
   initialSelection: string[];
   disabledIds?: string[]; // IDs that cannot be selected
 }
+
+// Helper to get all leaf nodes (actual indicators)
+const getLeafNodes = (nodes: Indicator[]): Indicator[] => {
+  let leaves: Indicator[] = [];
+  nodes.forEach(node => {
+    if (!node.children || node.children.length === 0) {
+      leaves.push(node);
+    } else {
+      leaves = leaves.concat(getLeafNodes(node.children));
+    }
+  });
+  return leaves;
+};
+
+// Helper to find a category node by ID
+const findCategoryNode = (nodes: Indicator[], id: string): Indicator | null => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findCategoryNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 const IndicatorSelectModal: React.FC<IndicatorSelectModalProps> = ({ 
   isOpen, 
@@ -38,31 +63,6 @@ const IndicatorSelectModal: React.FC<IndicatorSelectModalProps> = ({
       newExpanded.add(id);
     }
     setExpandedCategoryIds(newExpanded);
-  };
-
-  // Helper to get all leaf nodes (actual indicators)
-  const getLeafNodes = (nodes: Indicator[]): Indicator[] => {
-    let leaves: Indicator[] = [];
-    nodes.forEach(node => {
-      if (!node.children || node.children.length === 0) {
-        leaves.push(node);
-      } else {
-        leaves = leaves.concat(getLeafNodes(node.children));
-      }
-    });
-    return leaves;
-  };
-
-  // Helper to find a category node by ID
-  const findCategoryNode = (nodes: Indicator[], id: string): Indicator | null => {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.children) {
-        const found = findCategoryNode(node.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
   };
 
   // Get all indicators to display in the right pane

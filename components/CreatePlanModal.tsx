@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Link as LinkIcon, FileText, ChevronDown, Plus, Check, ArrowRight, Layers, Award, Target, Clock, Calendar } from 'lucide-react';
+import { X, ChevronDown, Plus, Check, ArrowRight, Layers, Award, Target, Clock } from 'lucide-react';
 import { Toggle } from './ui/Toggle';
 import { Checkbox } from './ui/Checkbox';
 import { Plan } from '../types';
@@ -299,7 +299,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
                                 <select 
                                     className="w-full border border-purple-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-purple-500 text-gray-700 shadow-sm"
                                     value={target}
-                                    onChange={(e) => setTarget(e.target.value as any)}
+                                    onChange={(e) => setTarget(e.target.value as 'department' | 'discipline' | 'person')}
                                 >
                                     <option value="department">科室</option>
                                     <option value="discipline">学科</option>
@@ -314,7 +314,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
                                 <select 
                                     className="w-full border border-purple-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-purple-500 text-gray-700 shadow-sm"
                                     value={cycle}
-                                    onChange={(e) => setCycle(e.target.value as any)}
+                                    onChange={(e) => setCycle(e.target.value as 'year' | 'quarter' | 'month')}
                                 >
                                     <option value="year">年度</option>
                                     <option value="quarter">季度</option>

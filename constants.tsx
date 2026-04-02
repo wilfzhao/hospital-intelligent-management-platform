@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { 
-  LayoutDashboard, FileText, Database, Settings, BarChart, Users, ClipboardList, Layout,
+  LayoutDashboard, FileText, Database, Settings, BarChart, ClipboardList, Layout,
   Activity, Target, Zap, ClipboardCheck, ListTodo, TrendingUp, PieChart
 } from 'lucide-react';
-import { Indicator, Role, SidebarItem, Plan, ReportTemplate, ReportDocument, Department } from './types';
+import { Indicator, Role, SidebarItem, Plan, ReportTemplate, ReportDocument, Department, AnalysisSystem } from './types';
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
@@ -307,4 +307,12 @@ export const DEPARTMENTS: Department[] = [
       { id: 'd3-4', name: '超声科' },
     ]
   }
+];
+
+export const MOCK_ANALYSIS_SYSTEMS: AnalysisSystem[] = [
+  { id: '1', name: '出院手术患者分析', url: 'http://zjeuzlikyp.ru/wgtmveywft' },
+  { id: '2', name: '次均药费分析', url: 'http://wrpbxx.ag/wymmpfg' },
+  { id: '3', name: '出院手术患者分析', url: 'http://shvdwpjh.bn/rvcsxvkbhe' },
+  { id: '4', name: '出院手术患者分析', url: 'http://kslmcapmu.sz/ulvlfmk' },
+  { id: '5', name: '出院手术患者分析', url: 'http://svxkqxh.ie/tpihro' },
 ];

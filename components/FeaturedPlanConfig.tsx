@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, Users, Layers, Info, Search, ChevronRight, ChevronDown, 
   Check, X, Filter, Plus, Trash2, Edit2, Target, Percent, AlertCircle, 
-  MoreHorizontal, FileText, Hash, Trophy, Settings
+  FileText, Hash, Trophy
 } from 'lucide-react';
 import { Plan, Department, Indicator } from '../types';
 import { DEPARTMENTS, INDICATORS } from '../constants';
@@ -86,6 +86,29 @@ const INITIAL_DIMENSIONS: DimensionNode[] = [
     children: []
   }
 ];
+
+// --- Helper Functions ---
+const findDimensionNode = (nodes: DimensionNode[], id: string): DimensionNode | undefined => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findDimensionNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
+
+const findParentNode = (nodes: DimensionNode[], childId: string): DimensionNode | null => {
+  for (const node of nodes) {
+    if (node.children) {
+      if (node.children.some(child => child.id === childId)) return node;
+      const found = findParentNode(node.children, childId);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, onBack }) => {
   const [activeTab, setActiveTab] = useState<'targets' | 'dimensions'>('targets');
@@ -192,30 +215,6 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setExpandedDimIds(newSet);
-  };
-
-  // Helper to find a node and its parent
-  const findDimensionNode = (nodes: DimensionNode[], id: string): DimensionNode | undefined => {
-    for (const node of nodes) {
-      if (node.id === id) return node;
-      if (node.children) {
-        const found = findDimensionNode(node.children, id);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  };
-
-  // Helper to find parent node
-  const findParentNode = (nodes: DimensionNode[], childId: string): DimensionNode | null => {
-    for (const node of nodes) {
-      if (node.children) {
-        if (node.children.some(child => child.id === childId)) return node;
-        const found = findParentNode(node.children, childId);
-        if (found) return found;
-      }
-    }
-    return null;
   };
 
   const updateDimensionNode = (id: string, updates: Partial<DimensionNode>) => {
@@ -525,7 +524,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
           maxDimWeight: 100 - siblingsWeight,
           maxDimScore: baseScore - siblingsScore
       };
-  }, [dimensions, currentSelectedDimension, planTotalScore]);
+  }, [dimensions, planTotalScore, currentSelectedDimension]);
 
   // --- Render Helpers ---
 

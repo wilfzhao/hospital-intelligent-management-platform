@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Check, Building, Users, Settings } from 'lucide-react';
-import { SpecialPermission } from '../types';
+import { SpecialPermission, Indicator } from '../types';
 import DepartmentSelectModal from './DepartmentSelectModal';
 import IndicatorSelectModal from './IndicatorSelectModal';
 import { INDICATORS } from '../constants';
@@ -52,7 +52,7 @@ const SpecialPermissionModal: React.FC<SpecialPermissionModalProps> = ({
   // Helper to count names for display
   const getIndicatorNames = () => {
     // Flatten logic just to find names (simple search)
-    const findName = (nodes: any[], id: string): string | null => {
+    const findName = (nodes: Indicator[], id: string): string | null => {
       for (const node of nodes) {
         if (node.id === id) return node.name;
         if (node.children) {

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Search, FileText, Award, Layers, Target, Clock, Filter, Grid, List } from 'lucide-react';
+import { Plus, Search, FileText, Award, Layers, Target, Clock } from 'lucide-react';
 import { PLANS } from '../constants';
 import { Plan } from '../types';
 import CreatePlanModal from './CreatePlanModal';

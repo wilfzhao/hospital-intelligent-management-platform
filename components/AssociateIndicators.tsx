@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { 
   ArrowLeft, Search, Plus, MoreHorizontal, Filter, 
   ChevronRight, ChevronDown, FileText, Folder, FolderOpen,
-  ChevronLeft, ChevronsLeft, ChevronsRight
+  ChevronLeft
 } from 'lucide-react';
 import { Checkbox } from './ui/Checkbox';
 import { EditIndicatorModal } from './EditIndicatorModal';
+import { AssociatedIndicator } from '../types';
 
 // Mock Data for Directory Tree
 interface Directory {
@@ -29,16 +30,6 @@ const MOCK_DIRECTORIES: Directory[] = [
 ];
 
 // Mock Data for Indicators
-interface AssociatedIndicator {
-  id: string;
-  name: string;
-  displayName: string; // 指标展示名
-  sort: number;
-  type: 'basic' | 'composite'; // 基础指标 | 复合指标
-  dirId: string;
-  isChecked: boolean; // 是否核对
-}
-
 const MOCK_INDICATORS: AssociatedIndicator[] = [
   { id: 'i1', name: '测试院级填报指标', displayName: '', sort: 0, type: 'basic', dirId: 'dir-1-2', isChecked: true },
   { id: 'i2', name: '指标填报（半年）', displayName: '', sort: 0, type: 'basic', dirId: 'dir-1-2', isChecked: false },
@@ -104,7 +95,7 @@ export const AssociateIndicators: React.FC<AssociateIndicatorsProps> = ({ planNa
     setIsEditModalOpen(true);
   };
 
-  const handleEditConfirm = (data: any) => {
+  const handleEditConfirm = (data: AssociatedIndicator) => {
     // In a real app, update logic here
     console.log('Update indicator:', editingIndicator?.id, data);
     setIsEditModalOpen(false);

@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { Link, Info, AlertCircle, Database } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, Info, Database } from 'lucide-react';
 
 const BaseConfig: React.FC = () => {
   const [activeTab, setActiveTab] = useState('platform');

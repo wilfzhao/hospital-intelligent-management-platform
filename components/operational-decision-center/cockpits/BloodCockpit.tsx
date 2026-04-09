@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { 
-  AlertCircle, Droplets, Activity, TrendingUp, BarChart3, PieChart as PieChartIcon 
+  AlertCircle, Droplets, TrendingUp, PieChart as PieChartIcon 
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, 
@@ -12,9 +12,7 @@ interface BloodCockpitProps {
   selectedCampus: string;
 }
 
-const BloodCockpit: React.FC<BloodCockpitProps> = ({
-  selectedCampus
-}) => {
+const BloodCockpit: React.FC<BloodCockpitProps> = () => {
   const bloodInventoryData = [
     { type: 'A型', red: 15, plasma: 25, plate: 5, cryo: 10 },
     { type: 'B型', red: 18, plasma: 22, plate: 4, cryo: 8 },

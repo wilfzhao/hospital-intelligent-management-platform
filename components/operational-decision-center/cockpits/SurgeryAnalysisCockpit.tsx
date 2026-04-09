@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { 
-  ChevronLeft, Clock, Activity, Users, TrendingUp, BarChart3, PieChart as PieChartIcon 
+  ChevronLeft, Clock, Activity, TrendingUp, BarChart3
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, 
-  AreaChart, Area, Legend, PieChart as RePieChart, Pie 
+  AreaChart, Area, Legend
 } from 'recharts';
 
 interface SurgeryAnalysisCockpitProps {

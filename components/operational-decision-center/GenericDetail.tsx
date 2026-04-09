@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { BarChart3, TrendingUp, AlertCircle, ChevronRight } from 'lucide-react';
 

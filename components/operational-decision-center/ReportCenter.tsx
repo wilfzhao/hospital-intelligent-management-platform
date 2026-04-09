@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  FileText, Search, RotateCcw, LayoutGrid, List, RefreshCw, ChevronDown, Check, Calendar
+  Search, RotateCcw, LayoutGrid, List, RefreshCw, ChevronDown, Check, Calendar
 } from 'lucide-react';
 
 // Mock Data for Department Selector

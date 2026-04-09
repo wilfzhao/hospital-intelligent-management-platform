@@ -16,6 +16,8 @@ import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
 import IndicatorAnalysis from './components/IndicatorAnalysis';
 import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
+import { IndicatorAnalysisComponents } from './components/IndicatorAnalysisComponents';
+import { IndicatorComponentEditor } from './components/IndicatorComponentEditor';
 import ReviewSummary from './components/ReviewSummary';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS, MOCK_ANALYSIS_SYSTEMS } from './constants';
 import { Plan, AnalysisSystem } from './types';
@@ -107,7 +109,7 @@ const App: React.FC = () => {
       url: `http://hospital.com/analysis/${Date.now()}` // Mock URL
     };
     setAnalysisSystems([newSystem, ...analysisSystems]);
-    setCurrentView('indicator_analysis');
+    setCurrentView('indicator_analysis_system');
   };
 
   const renderContent = () => {
@@ -186,7 +188,7 @@ const App: React.FC = () => {
          );
       }
 
-      case 'indicator_analysis':
+      case 'indicator_analysis_system':
         return (
           <IndicatorAnalysis 
             onAddSystem={() => setCurrentView('indicator_analysis_editor')} 
@@ -196,14 +198,31 @@ const App: React.FC = () => {
       case 'indicator_analysis_editor':
         return (
           <IndicatorAnalysisEditor 
-            onBack={() => setCurrentView('indicator_analysis')} 
+            onBack={() => setCurrentView('indicator_analysis_system')} 
             onSave={handleSaveAnalysisSystem}
           />
         );
 
+      case 'indicator_analysis_components':
+        return <IndicatorAnalysisComponents onAddComponent={() => setCurrentView('indicator_component_editor')} />;
+
+      case 'indicator_component_editor':
+        return <IndicatorComponentEditor onBack={() => setCurrentView('indicator_analysis_components')} />;
+
       case 'indicator_library':
       case 'indicator_reporting': {
-         const activeIndicatorItem = INDICATOR_MANAGEMENT_SIDEBAR_ITEMS.find(i => i.id === currentView);
+         let activeIndicatorItem = INDICATOR_MANAGEMENT_SIDEBAR_ITEMS.find(i => i.id === currentView);
+         if (!activeIndicatorItem) {
+           for (const item of INDICATOR_MANAGEMENT_SIDEBAR_ITEMS) {
+             if (item.subItems) {
+               const subItem = item.subItems.find(sub => sub.id === currentView);
+               if (subItem) {
+                 activeIndicatorItem = subItem;
+                 break;
+               }
+             }
+           }
+         }
          return (
             <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm h-full p-8 items-center justify-center text-gray-500">
                 <div className="bg-blue-50 p-4 rounded-full mb-4">
@@ -262,7 +281,7 @@ const App: React.FC = () => {
         <main className={`flex-1 p-4 flex gap-4 overflow-hidden ${
             shouldShowSidebar 
                 ? '' 
-                : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config' || currentView === 'associate_indicators' || currentView === 'indicator_analysis_editor')
+                : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config' || currentView === 'associate_indicators' || currentView === 'indicator_analysis_editor' || currentView === 'indicator_component_editor')
                     ? 'w-full !p-0' // Remove max-width and padding for full-screen views
                     : 'max-w-7xl mx-auto w-full'
         }`}>

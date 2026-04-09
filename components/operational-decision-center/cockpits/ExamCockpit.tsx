@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { 
-  ChevronLeft, Users, Hourglass, Calendar, BarChart3, PieChart as PieChartIcon 
+  ChevronLeft, Users, Hourglass, Calendar
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, 
-  AreaChart, Area, Line, Legend, PieChart as RePieChart, Pie, LabelList 
+  AreaChart, Area, Line, Legend, PieChart as RePieChart, Pie
 } from 'recharts';
 
 interface ExamCockpitProps {
@@ -15,6 +15,60 @@ interface ExamCockpitProps {
   workloadDrillDown: string | null;
   setWorkloadDrillDown: (drillDown: string | null) => void;
 }
+
+// Helper for Panel Title
+const PanelTitle = ({ title }: { title: string }) => (
+  <div className="flex items-center gap-2 mb-4 relative">
+    <div className="absolute -left-4 top-0 bottom-0 w-1 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div>
+    <div className="absolute left-0 bottom-0 w-32 h-[1px] bg-gradient-to-r from-cyan-400 to-transparent"></div>
+    <h3 className="text-lg font-bold text-white tracking-wider italic">{title}</h3>
+  </div>
+);
+
+// Helper for KPI Box
+const KpiBox = ({ title, value, unit, trend, trendValue, icon, campusData }: {
+  title: string;
+  value: number | string;
+  unit?: string;
+  trend: 'up' | 'down';
+  trendValue: string;
+  icon?: React.ReactNode;
+  campusData?: { name: string; value: number | string }[] | null;
+}) => (
+  <div className="relative group overflow-hidden bg-cyan-500/5 border border-cyan-500/10 rounded-lg p-3 transition-all hover:bg-cyan-500/10 hover:border-cyan-500/30">
+    <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition-opacity">
+      {icon}
+    </div>
+    <div className="flex flex-col gap-1 relative z-10">
+      <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+        <div className="w-1 h-3 bg-cyan-500 rounded-full"></div>
+        {title}
+      </div>
+      <div className="flex items-baseline gap-1 my-1">
+        <span className="text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors">{value}</span>
+        {unit && <span className="text-xs text-slate-500">{unit}</span>}
+      </div>
+      
+      {campusData ? (
+        <div className="grid grid-cols-3 gap-1 mt-1 py-1 border-t border-white/5">
+          {campusData.map((c: { name: string; value: number | string }) => (
+            <div key={c.name} className="flex flex-col">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider">{c.name}</span>
+              <span className="text-xs font-semibold text-cyan-400/90">{c.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 text-[10px] mt-1">
+          <span className={trend === 'up' ? 'text-rose-500' : 'text-emerald-500'}>
+            {trend === 'up' ? '↑' : '↓'} {trendValue}%
+          </span>
+          <span className="text-slate-500">较昨日</span>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 const ExamCockpit: React.FC<ExamCockpitProps> = ({
   onBack,
@@ -105,60 +159,6 @@ const ExamCockpit: React.FC<ExamCockpitProps> = ({
     '门诊收入': { '全院': 2736, '天河': 1000, '珠玑': 900, '同德': 836 },
     '住院收入': { '全院': 2736, '天河': 1000, '珠玑': 900, '同德': 836 },
   };
-
-  // Helper for Panel Title
-  const PanelTitle = ({ title }: { title: string }) => (
-    <div className="flex items-center gap-2 mb-4 relative">
-      <div className="absolute -left-4 top-0 bottom-0 w-1 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></div>
-      <div className="absolute left-0 bottom-0 w-32 h-[1px] bg-gradient-to-r from-cyan-400 to-transparent"></div>
-      <h3 className="text-lg font-bold text-white tracking-wider italic">{title}</h3>
-    </div>
-  );
-
-  // Helper for KPI Box
-  const KpiBox = ({ title, value, unit, trend, trendValue, icon, campusData }: {
-    title: string;
-    value: number | string;
-    unit?: string;
-    trend: 'up' | 'down';
-    trendValue: string;
-    icon?: React.ReactNode;
-    campusData?: { name: string; value: number | string }[] | null;
-  }) => (
-    <div className="relative group overflow-hidden bg-cyan-500/5 border border-cyan-500/10 rounded-lg p-3 transition-all hover:bg-cyan-500/10 hover:border-cyan-500/30">
-      <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition-opacity">
-        {icon}
-      </div>
-      <div className="flex flex-col gap-1 relative z-10">
-        <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-          <div className="w-1 h-3 bg-cyan-500 rounded-full"></div>
-          {title}
-        </div>
-        <div className="flex items-baseline gap-1 my-1">
-          <span className="text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors">{value}</span>
-          {unit && <span className="text-xs text-slate-500">{unit}</span>}
-        </div>
-        
-        {campusData ? (
-          <div className="grid grid-cols-3 gap-1 mt-1 py-1 border-t border-white/5">
-            {campusData.map((c: { name: string; value: number | string }) => (
-              <div key={c.name} className="flex flex-col">
-                <span className="text-[9px] text-slate-500 uppercase tracking-wider">{c.name}</span>
-                <span className="text-xs font-semibold text-cyan-400/90">{c.value}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 text-[10px] mt-1">
-            <span className={trend === 'up' ? 'text-rose-500' : 'text-emerald-500'}>
-              {trend === 'up' ? '↑' : '↓'} {trendValue}%
-            </span>
-            <span className="text-slate-500">较昨日</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="w-full flex-1 min-h-0 bg-[#050b14] text-white p-6 pb-24 space-y-6 font-sans relative overflow-y-auto">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  RotateCcw, Search, TrendingUp, Activity, PieChart as PieChartIcon, Users, Clock, FileText
+  RotateCcw, Search, TrendingUp, Activity, PieChart as PieChartIcon, Users, Clock
 } from 'lucide-react';
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 
@@ -133,17 +133,6 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
           <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 同比 {data.income.yoy}</div>
         </div>
         <div 
-          onClick={() => setDrillDownConfig({isOpen: true, title: '医生人均检查量', type: 'kpi'})}
-          className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
-        >
-          <div className="text-sm font-medium text-gray-500 mb-1">医生人均检查量</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-2xl font-bold text-gray-900">{data.efficiency.avgPerDoctor}</div>
-            <div className="text-xs text-gray-500">人次/天</div>
-          </div>
-          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月提升 3 人次</div>
-        </div>
-        <div 
           onClick={() => setDrillDownConfig({isOpen: true, title: '医生人均治疗量', type: 'kpi'})}
           className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
         >
@@ -153,6 +142,17 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
             <div className="text-xs text-gray-500">人次/天</div>
           </div>
           <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月提升 1.5 人次</div>
+        </div>
+        <div 
+          onClick={() => setDrillDownConfig({isOpen: true, title: '医生人均检查量', type: 'kpi'})}
+          className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
+        >
+          <div className="text-sm font-medium text-gray-500 mb-1">医生人均检查量</div>
+          <div className="flex items-baseline gap-2">
+            <div className="text-2xl font-bold text-gray-900">{data.efficiency.avgPerDoctor}</div>
+            <div className="text-xs text-gray-500">人次/天</div>
+          </div>
+          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月提升 3 人次</div>
         </div>
         <div 
           onClick={() => setDrillDownConfig({isOpen: true, title: '平均检查时长', type: 'kpi'})}
@@ -166,28 +166,6 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
           <div className="text-xs font-medium mt-2 text-gray-500">较上月缩短 1.2 分钟</div>
         </div>
         <div 
-          onClick={() => setDrillDownConfig({isOpen: true, title: '平均等候时长', type: 'kpi'})}
-          className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
-        >
-          <div className="text-sm font-medium text-gray-500 mb-1">平均等候时长</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-2xl font-bold text-gray-900">{data.efficiency.avgWaitTime}</div>
-            <div className="text-xs text-gray-500">分钟</div>
-          </div>
-          <div className="text-xs font-medium mt-2 text-rose-500 flex items-center gap-1"><TrendingUp size={12}/> 较上月增加 5 分钟</div>
-        </div>
-        <div 
-          onClick={() => setDrillDownConfig({isOpen: true, title: '检查预约等待时长', type: 'kpi'})}
-          className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
-        >
-          <div className="text-sm font-medium text-gray-500 mb-1">检查预约等待时长</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-2xl font-bold text-gray-900">{data.efficiency.avgAppointmentWaitTime}</div>
-            <div className="text-xs text-gray-500">天</div>
-          </div>
-          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月缩短 0.5 天</div>
-        </div>
-        <div 
           onClick={() => setDrillDownConfig({isOpen: true, title: '无痛占比', type: 'kpi'})}
           className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
         >
@@ -196,7 +174,7 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
             <div className="text-2xl font-bold text-gray-900">{data.quality.painlessRatio}</div>
             <div className="text-xs text-gray-500">%</div>
           </div>
-          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上年提升 4.5%</div>
+          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月提升 4.5%</div>
         </div>
         <div 
           onClick={() => setDrillDownConfig({isOpen: true, title: '当日报到至检查等待时长', type: 'kpi'})}
@@ -208,6 +186,17 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
             <div className="text-xs text-gray-500">分钟</div>
           </div>
           <div className="text-xs font-medium mt-2 text-rose-500 flex items-center gap-1"><TrendingUp size={12}/> 较上月增加 3 分钟</div>
+        </div>
+        <div 
+          onClick={() => setDrillDownConfig({isOpen: true, title: '检查预约等待时长', type: 'kpi'})}
+          className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
+        >
+          <div className="text-sm font-medium text-gray-500 mb-1">检查预约等待时长</div>
+          <div className="flex items-baseline gap-2">
+            <div className="text-2xl font-bold text-gray-900">{data.efficiency.avgAppointmentWaitTime}</div>
+            <div className="text-xs text-gray-500">天</div>
+          </div>
+          <div className="text-xs font-medium mt-2 text-emerald-600 flex items-center gap-1"><TrendingUp size={12}/> 较上月缩短 0.5 天</div>
         </div>
         <div 
           onClick={() => setDrillDownConfig({isOpen: true, title: '阳性率', type: 'kpi'})}
@@ -313,7 +302,27 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
           </h3>
           <div className="space-y-6">
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">无痛 vs 普通占比</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">收费类型分布 (按收入)</h4>
+              <div className="h-[150px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { name: '检查', value: 1800 },
+                    { name: '治疗', value: 1200 },
+                    { name: '耗材', value: 800 },
+                    { name: '手术', value: 600 },
+                    { name: '病理', value: 400 },
+                  ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">无痛 vs 普通占比 (按人次)</h4>
               <div className="h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RePieChart>
@@ -334,27 +343,7 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">收费类型分布</h4>
-              <div className="h-[150px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={[
-                    { name: '检查', value: 1800 },
-                    { name: '治疗', value: 1200 },
-                    { name: '耗材', value: 800 },
-                    { name: '手术', value: 600 },
-                    { name: '病理', value: 400 },
-                  ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                    <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">手术分级占比</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">手术分级占比 (按人次)</h4>
               <div className="h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RePieChart>
@@ -499,7 +488,7 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
                 </div>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">预约等候时长分布</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">预约等候时长分布 (天)</h4>
                 <div className="h-[150px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[
@@ -516,12 +505,13 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
                 </div>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">检查操作时长趋势</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">检查操作时长趋势 (分钟)</h4>
                 <div className="h-[150px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[
-                      { name: '1周', value: 22 }, { name: '2周', value: 21 },
-                      { name: '3周', value: 20.5 }, { name: '4周', value: 20 },
+                      { name: '1月', value: 22 }, { name: '2月', value: 21 },
+                      { name: '3月', value: 20.5 }, { name: '4月', value: 20 },
+                      { name: '5月', value: 19.5 }, { name: '6月', value: 19 },
                     ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />

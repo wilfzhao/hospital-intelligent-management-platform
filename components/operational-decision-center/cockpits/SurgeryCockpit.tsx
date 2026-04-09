@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { 
   ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, 
-  AreaChart, Area, Legend, PieChart as RePieChart, Pie, LabelList 
+  AreaChart, Area, Legend, PieChart as RePieChart, Pie 
 } from 'recharts';
 
 interface SurgeryCockpitProps {
@@ -67,15 +67,6 @@ const SurgeryCockpit: React.FC<SurgeryCockpitProps> = ({
     { name: '四级', value: 40, color: '#1d4ed8' },
   ];
 
-  const surgeryTrendData = [
-    { date: '03-18', value: 25, previous: 22 },
-    { date: '03-19', value: 32, previous: 28 },
-    { date: '03-20', value: 28, previous: 30 },
-    { date: '03-21', value: 35, previous: 32 },
-    { date: '03-22', value: 30, previous: 31 },
-    { date: '03-23', value: 15, previous: 18 },
-    { date: '03-24', value: 22, previous: 20 },
-  ];
 
   return (
     <div className="w-full bg-[#0f172a] flex-1 min-h-0 text-white p-6 pb-24 space-y-6 overflow-y-auto">

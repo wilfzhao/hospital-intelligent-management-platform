@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { 
   Clock, RefreshCw, FileText, Users, Activity, TrendingUp, 
@@ -5,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   CartesianGrid, XAxis, YAxis, Tooltip, Legend, LineChart, Line, 
-  ResponsiveContainer, BarChart, Bar, AreaChart, Area, Cell, LabelList, ReferenceLine
+  ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine
 } from 'recharts';
 
 interface EmergencyThemeProps {

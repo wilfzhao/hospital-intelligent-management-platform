@@ -77,6 +77,19 @@ export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [
     id: 'indicator_analysis',
     label: '指标分析',
     icon: <BarChart size={20} />,
+    expanded: true,
+    subItems: [
+      {
+        id: 'indicator_analysis_components',
+        label: '分析组件',
+        icon: <BarChart size={20} />,
+      },
+      {
+        id: 'indicator_analysis_system',
+        label: '分析体系',
+        icon: <BarChart size={20} />,
+      }
+    ]
   },
 ];
 

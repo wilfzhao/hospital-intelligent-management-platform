@@ -141,32 +141,34 @@ const LabCockpit: React.FC<LabCockpitProps> = ({
         <>
           {/* 超TAT紧急提醒 */}
           {overTatAlerts.length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-pulse-slow">
-              <div className="bg-red-500 text-white p-2.5 rounded-lg flex items-center justify-center">
-                <AlertCircle size={24} className="animate-pulse" />
+            <div className="bg-gradient-to-r from-red-500/20 via-red-500/10 to-red-500/20 border-2 border-red-500/50 rounded-2xl p-6 flex items-center gap-8 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse-slow relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,1)]"></div>
+              <div className="bg-red-500 text-white p-4 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                <AlertCircle size={40} className="animate-pulse" />
               </div>
-              <div className="flex-1 flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-red-400 font-bold text-lg leading-none">超TAT紧急提醒</h3>
-                  <span className="text-xs bg-red-500/20 px-2 py-0.5 rounded-full text-red-300 border border-red-500/30">
+              <div className="flex-1 flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-red-400 font-black text-3xl leading-none tracking-tight drop-shadow-[0_0_10px_rgba(239,68,68,0.4)]">超TAT紧急提醒</h3>
+                  <span className="text-sm bg-red-500 px-3 py-1 rounded-full text-white font-bold border border-red-400 shadow-lg animate-bounce">
                     {overTatAlerts.length} 项超时
                   </span>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-1 custom-scrollbar">
+                <div className="flex gap-6 overflow-x-auto pb-2 custom-scrollbar">
                   {overTatAlerts.map((alert, idx) => (
-                    <div key={idx} className="flex-shrink-0 bg-slate-900/80 border border-red-500/30 rounded-lg px-4 py-2 flex items-center gap-4">
-                      <div className="flex flex-col items-center justify-center min-w-[60px]">
-                        <span className="text-red-400 font-bold text-sm">{alert.time}</span>
+                    <div key={idx} className="flex-shrink-0 bg-slate-900/90 border-2 border-red-500/40 rounded-xl px-6 py-4 flex items-center gap-6 shadow-xl hover:border-red-500 transition-all">
+                      <div className="flex flex-col items-center justify-center min-w-[80px]">
+                        <span className="text-red-500 font-black text-xl">{alert.time}</span>
+                        <span className="text-red-400/60 text-[10px] uppercase font-bold tracking-widest">超时时长</span>
                       </div>
-                      <div className="w-px h-8 bg-slate-700"></div>
-                      <div className="flex flex-col justify-center min-w-[120px]">
-                        <span className="text-slate-300 text-xs font-medium mb-0.5">{alert.group}</span>
-                        <span className="text-slate-400 text-[10px]">{alert.item}</span>
+                      <div className="w-px h-12 bg-slate-700"></div>
+                      <div className="flex flex-col justify-center min-w-[140px]">
+                        <span className="text-slate-100 text-base font-bold mb-1">{alert.group}</span>
+                        <span className="text-slate-400 text-xs font-medium">{alert.item}</span>
                       </div>
-                      <div className="w-px h-8 bg-slate-700"></div>
-                      <div className="flex flex-col justify-center min-w-[80px]">
-                        <span className="text-slate-200 font-medium text-sm">{alert.name}</span>
-                        <span className="text-slate-400 text-[10px]">{alert.dept}</span>
+                      <div className="w-px h-12 bg-slate-700"></div>
+                      <div className="flex flex-col justify-center min-w-[100px]">
+                        <span className="text-slate-100 font-bold text-base">{alert.name}</span>
+                        <span className="text-slate-400 text-xs font-medium">{alert.dept}</span>
                       </div>
                     </div>
                   ))}

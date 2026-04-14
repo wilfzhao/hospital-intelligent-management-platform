@@ -192,23 +192,82 @@ const getAiInsight = (name: string, score: number) => {
 
 const MOCK_ASSESSMENTS: AssessmentResult[] = [
   {
-    id: 'a1', schemeId: 'p1', targetId: 't1', targetName: '放射科', rank: 1, totalScore: 96.5,
+    id: 'a1', schemeId: 'p1', targetId: 't2', targetName: '心血管内科', rank: 1, totalScore: 96.5,
     dimensions: {
-      medical: { label: '医疗能力', score: 95, indicators: [] },
-      quality: { label: '质量安全', score: 99, indicators: [] },
-      research: { label: '科研产出', score: 94, indicators: [] },
-      teaching: { label: '教学培养', score: 92, indicators: [] },
-      efficiency: { label: '运营效率', score: 98, indicators: [] }
+      medical: { 
+        label: '医疗能力', score: 95, 
+        indicators: [
+          { id: 'i1', label: 'CMI指数', score: 93, rawValue: '1.62', weight: '40%' },
+          { id: 'i2', label: 'DRG总权重', score: 93, rawValue: '4921', weight: '30%' },
+          { id: 'i3', label: '四级手术占比', score: 96, rawValue: '32.1%', weight: '30%' }
+        ] 
+      },
+      quality: { 
+        label: '质量安全', score: 99, 
+        indicators: [
+          { id: 'i4', label: '低风险死亡率', score: 97, rawValue: '0.01%', weight: '40%' },
+          { id: 'i5', label: 'I类切口感染率', score: 99, rawValue: '0.05%', weight: '30%' },
+          { id: 'i6', label: '甲级病案率', score: 99, rawValue: '98.5%', weight: '30%' }
+        ] 
+      },
+      research: { 
+        label: '科研产出', score: 94, 
+        indicators: [
+          { id: 'i7', label: 'SCI论文影响因子', score: 96, rawValue: '3.8', weight: '50%' },
+          { id: 'i8', label: '国家级课题', score: 95, rawValue: '2', weight: '30%' },
+          { id: 'i9', label: '发明专利', score: 95, rawValue: '2', weight: '20%' }
+        ] 
+      },
+      teaching: { 
+        label: '教学培养', score: 92, 
+        indicators: [
+          { id: 'i10', label: '教学基地评估', score: 94, rawValue: '优秀', weight: '60%' },
+          { id: 'i11', label: '继教项目举办', score: 90, rawValue: '3', weight: '40%' }
+        ] 
+      },
+      efficiency: { 
+        label: '运营效率', score: 98, 
+        indicators: [
+          { id: 'i12', label: '平均住院日', score: 97, rawValue: '8.5天', weight: '50%' },
+          { id: 'i13', label: '次均费用', score: 98, rawValue: '14672', weight: '50%' }
+        ] 
+      }
     }
   },
   {
-    id: 'a2', schemeId: 'p1', targetId: 't2', targetName: '心血管内科', rank: 2, totalScore: 94.5,
+    id: 'a2', schemeId: 'p1', targetId: 't1', targetName: '放射科', rank: 2, totalScore: 94.5,
     dimensions: {
-      medical: { label: '医疗能力', score: 96, indicators: [] },
-      quality: { label: '质量安全', score: 92, indicators: [] },
-      research: { label: '科研产出', score: 98, indicators: [] },
-      teaching: { label: '教学培养', score: 88, indicators: [] },
-      efficiency: { label: '运营效率', score: 95, indicators: [] }
+      medical: { 
+        label: '医疗能力', score: 96, 
+        indicators: [
+          { id: 'i1', label: 'CMI指数', score: 95, rawValue: '1.58', weight: '40%' },
+          { id: 'i2', label: 'DRG总权重', score: 97, rawValue: '5120', weight: '60%' }
+        ] 
+      },
+      quality: { 
+        label: '质量安全', score: 92, 
+        indicators: [
+          { id: 'i3', label: '低风险死亡率', score: 92, rawValue: '0.02%', weight: '100%' }
+        ] 
+      },
+      research: { 
+        label: '科研产出', score: 98, 
+        indicators: [
+          { id: 'i4', label: 'SCI论文', score: 98, rawValue: '5.2', weight: '100%' }
+        ] 
+      },
+      teaching: { 
+        label: '教学培养', score: 88, 
+        indicators: [
+          { id: 'i5', label: '教学评估', score: 88, rawValue: '良好', weight: '100%' }
+        ] 
+      },
+      efficiency: { 
+        label: '运营效率', score: 95, 
+        indicators: [
+          { id: 'i6', label: '平均住院日', score: 95, rawValue: '7.2天', weight: '100%' }
+        ] 
+      }
     }
   },
   {
@@ -7880,27 +7939,27 @@ const OperationalDecisionCenter: React.FC = () => {
                                                                     {['medical', 'quality', 'research', 'teaching', 'efficiency'].map((dimKey) => {
                                                                         const dim = (item.dimensions as any)[dimKey];
                                                                         const colorMap: any = {
-                                                                            medical: { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', bar: 'bg-blue-400' },
-                                                                            quality: { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', bar: 'bg-emerald-400' },
-                                                                            research: { text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', bar: 'bg-purple-400' },
-                                                                            teaching: { text: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', bar: 'bg-cyan-400' },
-                                                                            efficiency: { text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', bar: 'bg-amber-400' },
+                                                                            medical: { text: 'text-blue-600', bg: 'bg-blue-50' },
+                                                                            quality: { text: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                                                            research: { text: 'text-purple-600', bg: 'bg-purple-50' },
+                                                                            teaching: { text: 'text-cyan-600', bg: 'bg-cyan-50' },
+                                                                            efficiency: { text: 'text-orange-500', bg: 'bg-orange-50' },
                                                                         };
                                                                         const theme = colorMap[dimKey];
                                                                         return (
-                                                                            <div key={dimKey} className="flex flex-col gap-3">
-                                                                                <div className={`px-4 py-2 rounded-t-xl border-x border-t flex justify-between items-center ${theme.bg} ${theme.border} ${theme.text}`}>
-                                                                                    <span className="font-bold text-xs">{dim.label}</span>
-                                                                                    <span className="font-mono font-bold">{dim.score}</span>
+                                                                            <div key={dimKey} className="flex flex-col rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+                                                                                <div className={`px-4 py-3 flex justify-between items-center ${theme.bg}`}>
+                                                                                    <span className={`font-bold text-sm ${theme.text}`}>{dim.label}</span>
+                                                                                    <span className={`font-bold text-xl ${theme.text}`}>{dim.score}</span>
                                                                                 </div>
-                                                                                <div className={`flex-1 p-3 space-y-4 bg-white border-x border-b rounded-b-xl shadow-sm ${theme.border}`}>
+                                                                                <div className="flex-1 p-4 space-y-5">
                                                                                     {dim.indicators && dim.indicators.length > 0 ? dim.indicators.map((ind: any) => (
                                                                                         <div key={ind.id} className="space-y-2">
                                                                                             <div className="flex justify-between items-baseline">
-                                                                                                <span className="text-xs font-bold text-gray-700">{ind.label}</span>
-                                                                                                <span className="text-xs font-bold text-gray-900">{ind.score}分</span>
+                                                                                                <span className="text-sm font-medium text-gray-700">{ind.label}</span>
+                                                                                                <span className="text-sm font-bold text-gray-800">{ind.score}分</span>
                                                                                             </div>
-                                                                                            <div className="flex justify-between text-[10px] text-gray-400">
+                                                                                            <div className="flex justify-between text-xs text-gray-400">
                                                                                                 <span>值: {ind.rawValue}</span>
                                                                                                 <span>权: {ind.weight}</span>
                                                                                             </div>
@@ -7909,12 +7968,12 @@ const OperationalDecisionCenter: React.FC = () => {
                                                                                                     initial={{ width: 0 }}
                                                                                                     animate={{ width: `${ind.score}%` }}
                                                                                                     transition={{ duration: 1, ease: "easeOut" }}
-                                                                                                    className={`h-full ${theme.bar}`}
+                                                                                                    className="h-full bg-emerald-400"
                                                                                                 />
                                                                                             </div>
                                                                                         </div>
                                                                                     )) : (
-                                                                                        <div className="text-[10px] text-gray-400 text-center py-4">暂无指标明细数据</div>
+                                                                                        <div className="text-xs text-gray-400 text-center py-4">暂无指标明细数据</div>
                                                                                     )}
                                                                                 </div>
                                                                             </div>

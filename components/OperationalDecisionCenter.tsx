@@ -1,16 +1,463 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  LayoutDashboard, PieChart, BarChart3, FileText, 
+  LayoutDashboard, PieChart, FileText, 
   Activity, GraduationCap, Settings, Layers, Binary,
-  FileBarChart, ArrowRight, TrendingUp,
-  ChevronRight, ChevronDown, LayoutGrid, Home, Search, ChevronLeft
+  FileBarChart, ArrowRight,
+  ChevronRight, Home, Search, ChevronLeft
 } from 'lucide-react';
 import {
   PieChart as RePieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area, Legend, ReferenceLine, LabelList
+  LineChart, Line, AreaChart, Area, Legend, ReferenceLine, LabelList,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, ScatterChart, ReferenceArea, Scatter, Treemap
 } from 'recharts';
-import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Filter, Users, Hourglass, User, ArrowUpDown, X, Pill, PieChart as PieChartIcon, CheckCircle, ArrowLeft, Target } from 'lucide-react';
+import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Filter, Users, Hourglass, User, ArrowUpDown, ArrowDown, X, Pill, PieChart as PieChartIcon, CheckCircle, ArrowLeft, Target, Download, LayoutGrid, TrendingUp, BarChart3, ChevronDown, ChevronUp, Sparkles, Lightbulb, BrainCircuit, ArrowUpRight, ArrowDownRight, Split, Crosshair, GitCommit, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import DeanCockpit from './operational-decision-center/cockpits/DeanCockpit';
+
+// --- Talent Development Types & Helpers ---
+
+type AnalysisView = 'strategy' | 'lateral' | 'longitudinal' | 'matrix';
+type SortField = 'totalScore' | 'medical' | 'quality' | 'research' | 'teaching' | 'efficiency';
+type SortOrder = 'asc' | 'desc';
+
+interface AssessmentResult {
+  id: string;
+  schemeId: string;
+  targetId: string;
+  targetName: string;
+  rank: number;
+  totalScore: number;
+  dimensions: {
+    medical: { label: string; score: number; indicators: any[] };
+    quality: { label: string; score: number; indicators: any[] };
+    research: { label: string; score: number; indicators: any[] };
+    teaching: { label: string; score: number; indicators: any[] };
+    efficiency: { label: string; score: number; indicators: any[] };
+  };
+}
+
+const getCategory = (name: string) => {
+    if (name.includes('内科') || name.includes('儿科') || name.includes('中医')) return '内科系';
+    if (name.includes('外科') || name.includes('骨科') || name.includes('妇产')) return '外科系';
+    if (name.includes('医技') || name.includes('检验') || name.includes('放射')) return '医技系';
+    return '其他';
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+    '内科系': '#0052FF',
+    '外科系': '#10B981',
+    '医技系': '#A855F7',
+    '其他': '#64748B'
+};
+
+const generateHistoryData = (assessment: any) => {
+  const years = ['2020', '2021', '2022', '2023', '2024'];
+  
+  // Use a deterministic seed based on ID for consistency but variety
+  const seed = assessment.id.split('').reduce((a: number, b: string) => a + b.charCodeAt(0), 0);
+  const getVar = (offset: number) => ((seed + offset) % 100) / 100; // 0 to 1
+  
+  // Determine the "growth profile" based on seed
+  // 0: High growth, 1: Moderate growth, 2: Stagnant, 3: Decline
+  const profile = seed % 4;
+  
+  return years.map((year, i) => {
+    const progress = i / 4; // 0 to 1
+    const isLastYear = year === '2024';
+    
+    let baseTrend = 1.0;
+    if (profile === 0) baseTrend = 0.7 + progress * 0.4; // Strong growth (~10% CAGR)
+    else if (profile === 1) baseTrend = 0.85 + progress * 0.2; // Moderate growth (~5% CAGR)
+    else if (profile === 2) baseTrend = 0.95 + progress * 0.05; // Stagnant (~1% CAGR)
+    else baseTrend = 1.0 - progress * 0.1; // Decline (~ -2.5% CAGR)
+
+    // Add dimension-specific variance
+    const mTrend = baseTrend * (0.95 + getVar(10) * 0.1);
+    const qTrend = baseTrend * (0.95 + getVar(20) * 0.1);
+    const rTrend = baseTrend * (0.9 + getVar(30) * 0.2);
+    const tTrend = baseTrend * (0.95 + getVar(40) * 0.1);
+    const eTrend = baseTrend * (0.95 + getVar(50) * 0.1);
+    
+    // For attribution (2024 vs 2023), we want only ONE negative.
+    // Let's make Teaching the only one that drops in the final year.
+    let finalTTrend = tTrend;
+    let finalMTrend = mTrend;
+    let finalQTrend = qTrend;
+    let finalRTrend = rTrend;
+    let finalETrend = eTrend;
+
+    if (isLastYear) {
+        const prevProgress = (i - 1) / 4;
+        const prevBaseTrend = profile === 0 ? 0.7 + prevProgress * 0.4 : 
+                             profile === 1 ? 0.85 + prevProgress * 0.2 :
+                             profile === 2 ? 0.95 + prevProgress * 0.05 :
+                             1.0 - prevProgress * 0.1;
+        
+        const prevTTrend = prevBaseTrend * (0.95 + getVar(40) * 0.1);
+        finalTTrend = prevTTrend - 0.08; // Force drop
+        
+        // Ensure others are slightly higher than previous year to keep Teaching as the only negative
+        finalMTrend = Math.max(mTrend, (prevBaseTrend * (0.95 + getVar(10) * 0.1)) + 0.01);
+        finalQTrend = Math.max(qTrend, (prevBaseTrend * (0.95 + getVar(20) * 0.1)) + 0.01);
+        finalRTrend = Math.max(rTrend, (prevBaseTrend * (0.9 + getVar(30) * 0.2)) + 0.01);
+        finalETrend = Math.max(eTrend, (prevBaseTrend * (0.95 + getVar(50) * 0.1)) + 0.01);
+    }
+
+    const project = (val: number, trend: number) => Math.min(100, Math.max(10, Number((val * trend).toFixed(1))));
+
+    const data: any = {
+      year,
+      medical: project(assessment.dimensions.medical.score, finalMTrend),
+      quality: project(assessment.dimensions.quality.score, finalQTrend),
+      research: project(assessment.dimensions.research.score, finalRTrend),
+      teaching: project(assessment.dimensions.teaching.score, finalTTrend),
+      efficiency: project(assessment.dimensions.efficiency.score, finalETrend),
+    };
+    
+    data.score = Number(((data.medical + data.quality + data.research + data.teaching + data.efficiency) / 5).toFixed(1));
+    
+    return data;
+  });
+};
+
+const generateIndicatorHistory = () => {
+    const years = ['2020', '2021', '2022', '2023', '2024'];
+    const indicators = [
+        { id: 'ind1', name: 'CMI指数', category: '医疗能力', unit: '', format: '0.00' },
+        { id: 'ind2', name: 'DRG总权重', category: '医疗能力', unit: '', format: '0' },
+        { id: 'ind3', name: '四级手术占比', category: '医疗能力', unit: '%', format: '0.0' },
+        { id: 'ind4', name: '低风险死亡率', category: '质量安全', unit: '%', format: '0.00' },
+        { id: 'ind5', name: 'SCI论文数', category: '科研产出', unit: '篇', format: '0' },
+        { id: 'ind6', name: '平均住院日', category: '运营效率', unit: '天', format: '0.0' },
+    ];
+
+    return indicators.map(ind => {
+        const history = years.map((year, i) => {
+            let rawValue = 0;
+            let score = 0;
+            const noise = (Math.random() - 0.5) * 20; // Add significant noise
+            if (ind.id === 'ind1') {
+                rawValue = 1.0 + (i * 0.05) + (Math.random() * 0.1);
+                score = 70 + (rawValue - 1) * 50 + noise;
+            } else if (ind.id === 'ind2') {
+                rawValue = 2000 + (i * 200) + (Math.random() * 100);
+                score = 60 + (rawValue / 4000) * 40 + noise;
+            } else if (ind.id === 'ind3') {
+                rawValue = 15 + (i * 1.5) + Math.random() * 2;
+                score = 50 + rawValue * 1.5 + noise;
+            } else if (ind.id === 'ind4') {
+                rawValue = Math.max(0, 0.5 - (i * 0.05) + Math.random() * 0.1);
+                score = 60 + (0.5 - rawValue) * 100 + noise;
+            } else if (ind.id === 'ind5') {
+                rawValue = Math.floor(2 + (i * i * 0.5));
+                score = 40 + rawValue * 5 + noise; // Lower base for research
+            } else {
+                rawValue = 8 - (i * 0.4) + Math.random();
+                score = 55 + (8 - rawValue) * 10 + noise;
+            }
+            return { year, rawValue: Number(rawValue.toFixed(2)), score: Math.min(100, Math.max(10, Number(score.toFixed(1)))) };
+        });
+        return { ...ind, history };
+    });
+};
+
+const getAiInsight = (name: string, score: number) => {
+    if (score >= 90) {
+        return {
+            status: '卓越领跑',
+            color: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+            iconColor: 'text-emerald-500',
+            analysis: `基于近五年数据分析，${name}处于强劲上升通道，CMI指数与科研产出呈现显著正相关（r=0.85）。学科影响力已辐射至周边省份，核心人才梯队结构稳固，是医院高质量发展的核心引擎。`,
+            suggestion: '建议启动国家级重点专科申报筹备；加大在转化医学领域的投入，鼓励开展多中心临床研究；可作为院内标杆，输出科室管理经验。'
+        };
+    } else if (score >= 80) {
+        return {
+            status: '稳健发展',
+            color: 'text-blue-600 bg-blue-50 border-blue-100',
+            iconColor: 'text-blue-500',
+            analysis: `${name}各项指标保持平稳，但在“四级手术占比”及“高水平论文产出”上遇到瓶颈。运营效率指标优于全院平均水平，但学科创新动力略显不足，存在“吃老本”风险。`,
+            suggestion: '建议引入1-2名学科带头人或高层次科研PI；设立专项基金激励新技术新项目开展；优化亚专科设置，寻求差异化发展路径。'
+        };
+    } else {
+        return {
+            status: '亟待改进',
+            color: 'text-amber-600 bg-amber-50 border-amber-100',
+            iconColor: 'text-amber-500',
+            analysis: `${name}综合绩效评分低于预期，主要受限于人才流失与医疗质量指标波动。DRG总权重增长乏力，且次均费用控制存在压力，运营模式需由粗放向精细化转变。`,
+            suggestion: '建议进行科室管理层改组或进行深度运营诊断；加强医疗质量安全红线管理；重新梳理病种结构，剥离低效业务，聚焦优势病种。'
+        };
+    }
+};
+
+const MOCK_ASSESSMENTS: AssessmentResult[] = [
+  {
+    id: 'a1', schemeId: 'p1', targetId: 't1', targetName: '放射科', rank: 1, totalScore: 96.5,
+    dimensions: {
+      medical: { label: '医疗能力', score: 95, indicators: [] },
+      quality: { label: '质量安全', score: 99, indicators: [] },
+      research: { label: '科研产出', score: 94, indicators: [] },
+      teaching: { label: '教学培养', score: 92, indicators: [] },
+      efficiency: { label: '运营效率', score: 98, indicators: [] }
+    }
+  },
+  {
+    id: 'a2', schemeId: 'p1', targetId: 't2', targetName: '心血管内科', rank: 2, totalScore: 94.5,
+    dimensions: {
+      medical: { label: '医疗能力', score: 96, indicators: [] },
+      quality: { label: '质量安全', score: 92, indicators: [] },
+      research: { label: '科研产出', score: 98, indicators: [] },
+      teaching: { label: '教学培养', score: 88, indicators: [] },
+      efficiency: { label: '运营效率', score: 95, indicators: [] }
+    }
+  },
+  {
+    id: 'a3', schemeId: 'p1', targetId: 't3', targetName: '呼吸内科', rank: 3, totalScore: 93.8,
+    dimensions: {
+      medical: { label: '医疗能力', score: 97, indicators: [] },
+      quality: { label: '质量安全', score: 90, indicators: [] },
+      research: { label: '科研产出', score: 95, indicators: [] },
+      teaching: { label: '教学培养', score: 89, indicators: [] },
+      efficiency: { label: '运营效率', score: 91, indicators: [] }
+    }
+  },
+  {
+    id: 'a4', schemeId: 'p1', targetId: 't4', targetName: '神经外科', rank: 4, totalScore: 91.2,
+    dimensions: {
+      medical: { label: '医疗能力', score: 98, indicators: [] },
+      quality: { label: '质量安全', score: 85, indicators: [] },
+      research: { label: '科研产出', score: 90, indicators: [] },
+      teaching: { label: '教学培养', score: 86, indicators: [] },
+      efficiency: { label: '运营效率', score: 92, indicators: [] }
+    }
+  },
+  {
+    id: 'a5', schemeId: 'p1', targetId: 't5', targetName: '胸外科', rank: 5, totalScore: 88.7,
+    dimensions: {
+      medical: { label: '医疗能力', score: 92, indicators: [] },
+      quality: { label: '质量安全', score: 94, indicators: [] },
+      research: { label: '科研产出', score: 80, indicators: [] },
+      teaching: { label: '教学培养', score: 85, indicators: [] },
+      efficiency: { label: '运营效率', score: 89, indicators: [] }
+    }
+  },
+  {
+    id: 'a6', schemeId: 'p1', targetId: 't6', targetName: '骨科中心', rank: 6, totalScore: 85.4,
+    dimensions: {
+      medical: { label: '医疗能力', score: 88, indicators: [] },
+      quality: { label: '质量安全', score: 90, indicators: [] },
+      research: { label: '科研产出', score: 75, indicators: [] },
+      teaching: { label: '教学培养', score: 82, indicators: [] },
+      efficiency: { label: '运营效率', score: 94, indicators: [] }
+    }
+  },
+  {
+    id: 'a7', schemeId: 'p1', targetId: 't7', targetName: '消化内科', rank: 7, totalScore: 84.2,
+    dimensions: {
+      medical: { label: '医疗能力', score: 85, indicators: [] },
+      quality: { label: '质量安全', score: 88, indicators: [] },
+      research: { label: '科研产出', score: 78, indicators: [] },
+      teaching: { label: '教学培养', score: 84, indicators: [] },
+      efficiency: { label: '运营效率', score: 86, indicators: [] }
+    }
+  },
+  {
+    id: 'a8', schemeId: 'p1', targetId: 't8', targetName: '检验科', rank: 8, totalScore: 81.5,
+    dimensions: {
+      medical: { label: '医疗能力', score: 80, indicators: [] },
+      quality: { label: '质量安全', score: 96, indicators: [] },
+      research: { label: '科研产出', score: 72, indicators: [] },
+      teaching: { label: '教学培养', score: 80, indicators: [] },
+      efficiency: { label: '运营效率', score: 88, indicators: [] }
+    }
+  },
+  {
+    id: 'a9', schemeId: 'p1', targetId: 't9', targetName: '普外科', rank: 9, totalScore: 76.8,
+    dimensions: {
+      medical: { label: '医疗能力', score: 82, indicators: [] },
+      quality: { label: '质量安全', score: 70, indicators: [] },
+      research: { label: '科研产出', score: 65, indicators: [] },
+      teaching: { label: '教学培养', score: 80, indicators: [] },
+      efficiency: { label: '运营效率', score: 85, indicators: [] }
+    }
+  },
+  {
+    id: 'a10', schemeId: 'p1', targetId: 't10', targetName: '妇产科', rank: 10, totalScore: 72.4,
+    dimensions: {
+      medical: { label: '医疗能力', score: 75, indicators: [] },
+      quality: { label: '质量安全', score: 68, indicators: [] },
+      research: { label: '科研产出', score: 60, indicators: [] },
+      teaching: { label: '教学培养', score: 78, indicators: [] },
+      efficiency: { label: '运营效率', score: 82, indicators: [] }
+    }
+  },
+  {
+    id: 'a11', schemeId: 'p1', targetId: 't11', targetName: '儿科', rank: 11, totalScore: 70.5,
+    dimensions: {
+      medical: { label: '医疗能力', score: 72, indicators: [] },
+      quality: { label: '质量安全', score: 65, indicators: [] },
+      research: { label: '科研产出', score: 58, indicators: [] },
+      teaching: { label: '教学培养', score: 85, indicators: [] },
+      efficiency: { label: '运营效率', score: 80, indicators: [] }
+    }
+  },
+  {
+    id: 'a12', schemeId: 'p1', targetId: 't12', targetName: '神经内科', rank: 12, totalScore: 68.2,
+    dimensions: {
+      medical: { label: '医疗能力', score: 70, indicators: [] },
+      quality: { label: '质量安全', score: 62, indicators: [] },
+      research: { label: '科研产出', score: 55, indicators: [] },
+      teaching: { label: '教学培养', score: 75, indicators: [] },
+      efficiency: { label: '运营效率', score: 78, indicators: [] }
+    }
+  },
+  {
+    id: 'a13', schemeId: 'p1', targetId: 't13', targetName: '康复科', rank: 13, totalScore: 75.5,
+    dimensions: {
+      medical: { label: '医疗能力', score: 95, indicators: [] },
+      quality: { label: '质量安全', score: 50, indicators: [] },
+      research: { label: '科研产出', score: 40, indicators: [] },
+      teaching: { label: '教学培养', score: 60, indicators: [] },
+      efficiency: { label: '运营效率', score: 55, indicators: [] }
+    }
+  },
+  {
+    id: 'a14', schemeId: 'p1', targetId: 't14', targetName: '中医科', rank: 14, totalScore: 72.1,
+    dimensions: {
+      medical: { label: '医疗能力', score: 45, indicators: [] },
+      quality: { label: '质量安全', score: 92, indicators: [] },
+      research: { label: '科研产出', score: 35, indicators: [] },
+      teaching: { label: '教学培养', score: 55, indicators: [] },
+      efficiency: { label: '运营效率', score: 60, indicators: [] }
+    }
+  },
+  {
+    id: 'a15', schemeId: 'p1', targetId: 't15', targetName: '心理科', rank: 15, totalScore: 68.4,
+    dimensions: {
+      medical: { label: '医疗能力', score: 40, indicators: [] },
+      quality: { label: '质量安全', score: 45, indicators: [] },
+      research: { label: '科研产出', score: 98, indicators: [] },
+      teaching: { label: '教学培养', score: 50, indicators: [] },
+      efficiency: { label: '运营效率', score: 45, indicators: [] }
+    }
+  }
+];
+
+// --- Custom Ternary Plot Component ---
+interface TernaryDataPoint {
+    id: string;
+    name: string;
+    category: string;
+    v1: number; // Top
+    v2: number; // Right
+    v3: number; // Left
+    prevV1?: number;
+    prevV2?: number;
+    prevV3?: number;
+    [key: string]: any;
+}
+
+const TernaryPlot: React.FC<{ 
+    data: TernaryDataPoint[]; 
+    labels: [string, string, string]; 
+    showTrajectory?: boolean; 
+}> = ({ data, labels, showTrajectory }) => {
+    const [hovered, setHovered] = useState<TernaryDataPoint | null>(null);
+    const S = 300; 
+    const H = S * Math.sqrt(3) / 2;
+    const paddingX = 60;
+    const paddingY = 30; 
+    const width = S + paddingX * 2;
+    const height = H + paddingY * 2;
+
+    const A = { x: width / 2, y: paddingY }; 
+    const B = { x: width / 2 - S / 2, y: paddingY + H }; 
+    const C = { x: width / 2 + S / 2, y: paddingY + H }; 
+
+    const getCoords = (v1: number, v2: number, v3: number) => {
+        const sum = v1 + v2 + v3 || 1;
+        const a = v1 / sum; 
+        const b = v2 / sum; 
+        const c = v3 / sum; 
+        const x = a * A.x + b * C.x + c * B.x;
+        const y = a * A.y + b * C.y + c * B.y;
+        return { x, y };
+    };
+
+    return (
+        <div className="relative w-full h-full flex items-center justify-center select-none">
+            {hovered && (
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute z-10 bg-white/95 backdrop-blur shadow-xl border border-slate-200 p-3 rounded-lg text-xs pointer-events-none"
+                    style={{ left: '50%', top: '10%', transform: 'translateX(-50%)' }}
+                >
+                    <div className="font-bold text-gray-900 mb-1 border-b border-slate-100 pb-1">{hovered.name}</div>
+                    <div className="space-y-1">
+                        <div className="flex justify-between gap-4"><span className="text-slate-500">{labels[0]}:</span> <span className="font-mono font-bold text-blue-600">{(hovered.v1 / (hovered.v1+hovered.v2+hovered.v3) * 100).toFixed(1)}%</span></div>
+                        <div className="flex justify-between gap-4"><span className="text-slate-500">{labels[1]}:</span> <span className="font-mono font-bold text-emerald-600">{(hovered.v2 / (hovered.v1+hovered.v2+hovered.v3) * 100).toFixed(1)}%</span></div>
+                        <div className="flex justify-between gap-4"><span className="text-slate-500">{labels[2]}:</span> <span className="font-mono font-bold text-purple-600">{(hovered.v3 / (hovered.v1+hovered.v2+hovered.v3) * 100).toFixed(1)}%</span></div>
+                    </div>
+                </motion.div>
+            )}
+            
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full max-h-[380px] overflow-visible">
+                <defs>
+                    <marker id="arrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L6,3 z" fill="#94a3b8" opacity="0.6"/>
+                    </marker>
+                </defs>
+                <path d={`M${A.x},${A.y} L${C.x},${C.y} L${B.x},${B.y} Z`} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1" />
+                {[0.2, 0.4, 0.6, 0.8].map(t => {
+                    const l1_start = { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t };
+                    const l1_end = { x: A.x + (C.x - A.x) * t, y: A.y + (C.y - A.y) * t };
+                    const l2_start = { x: B.x + (A.x - B.x) * t, y: B.y + (A.y - B.y) * t };
+                    const l2_end = { x: B.x + (C.x - B.x) * t, y: B.y + (C.y - B.y) * t };
+                    const l3_start = { x: C.x + (A.x - C.x) * t, y: C.y + (A.y - C.y) * t };
+                    const l3_end = { x: C.x + (B.x - C.x) * t, y: C.y + (B.y - C.y) * t };
+                    return (
+                        <g key={t} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 3">
+                            <line x1={l1_start.x} y1={l1_start.y} x2={l1_end.x} y2={l1_end.y} />
+                            <line x1={l2_start.x} y1={l2_start.y} x2={l2_end.x} y2={l2_end.y} />
+                            <line x1={l3_start.x} y1={l3_start.y} x2={l3_end.x} y2={l3_end.y} />
+                        </g>
+                    );
+                })}
+                <text x={A.x} y={A.y - 15} textAnchor="middle" className="text-xs font-bold fill-blue-600">{labels[0]}</text>
+                <text x={C.x + 10} y={C.y + 10} textAnchor="start" className="text-xs font-bold fill-emerald-600">{labels[1]}</text>
+                <text x={B.x - 10} y={B.y + 10} textAnchor="end" className="text-xs font-bold fill-purple-600">{labels[2]}</text>
+                {data.map(d => {
+                    const pos = getCoords(d.v1, d.v2, d.v3);
+                    const color = CATEGORY_COLORS[d.category] || '#94a3b8';
+                    const isHovered = hovered?.id === d.id;
+                    const opacity = hovered ? (isHovered ? 1 : 0.2) : 0.8;
+                    let prevPos = null;
+                    if (showTrajectory && d.prevV1 !== undefined && d.prevV2 !== undefined && d.prevV3 !== undefined) {
+                        prevPos = getCoords(d.prevV1, d.prevV2, d.prevV3);
+                    }
+                    return (
+                        <g key={d.id} 
+                           onMouseEnter={() => setHovered(d)} 
+                           onMouseLeave={() => setHovered(null)}
+                           className="transition-opacity duration-300"
+                           style={{ opacity }}
+                        >
+                            <circle cx={pos.x} cy={pos.y} r={12} fill="transparent" />
+                            <circle cx={pos.x} cy={pos.y} r={isHovered ? 6 : 4} fill={color} stroke="white" strokeWidth="1.5" />
+                            {prevPos && (
+                                <g>
+                                    <circle cx={prevPos.x} cy={prevPos.y} r={2} fill={color} opacity="0.5" />
+                                    <line x1={prevPos.x} y1={prevPos.y} x2={pos.x} y2={pos.y} stroke={color} strokeWidth="1.5" opacity="0.5" markerEnd="url(#arrowHead)" />
+                                </g>
+                            )}
+                        </g>
+                    );
+                })}
+            </svg>
+        </div>
+    );
+};
 
 // Mock Data for Department Selector
 const MOCK_DEPARTMENTS = [
@@ -658,6 +1105,21 @@ const OperationalDecisionCenter: React.FC = () => {
   // Drill Down State
   const [drillDownConfig, setDrillDownConfig] = useState<{isOpen: boolean, title: string, type: string} | null>(null);
   const [workloadDrillDown, setWorkloadDrillDown] = useState<string | null>(null);
+
+  // Talent Development State
+  const [selectedTalentPlanId, setSelectedTalentPlanId] = useState<string | null>(null);
+  const [talentActiveView, setTalentActiveView] = useState<AnalysisView>('strategy');
+  const [talentCategoryFilter, setTalentCategoryFilter] = useState<string>('All');
+  const [talentSortField] = useState<SortField>('totalScore');
+  const [talentSortOrder] = useState<SortOrder>('desc');
+  const [talentCompareList, setTalentCompareList] = useState<string[]>([]);
+  const [talentExpandedRowId, setTalentExpandedRowId] = useState<string | null>(null);
+  const [talentTrendTargetId, setTalentTrendTargetId] = useState<string>('');
+  const [talentEvolutionChartMode, setTalentEvolutionChartMode] = useState<'normalized' | 'stacked'>('normalized');
+  const [talentSelectedIndicatorId, setTalentSelectedIndicatorId] = useState<string | null>(null);
+  const [talentStructureDims, setTalentStructureDims] = useState<string[]>(['medical', 'research', 'teaching']);
+  const [talentShowTrajectory, setTalentShowTrajectory] = useState(false);
+  const [talentShowCharts, setTalentShowCharts] = useState(false);
 
   // Close switcher when clicking outside
   useEffect(() => {
@@ -3556,17 +4018,31 @@ const OperationalDecisionCenter: React.FC = () => {
 
   const renderBloodCockpitContent = () => {
     const bloodInventoryData = [
-      { name: 'A型', value: 350, fill: '#ef4444' },
-      { name: 'B型', value: 280, fill: '#f43f5e' },
-      { name: 'O型', value: 420, fill: '#fb7185' },
-      { name: 'AB型', value: 120, fill: '#fda4af' },
+      { name: 'A型', value: 350, fill: '#ef4444' }, // Red
+      { name: 'B型', value: 280, fill: '#3b82f6' }, // Blue
+      { name: 'O型', value: 420, fill: '#10b981' }, // Emerald
+      { name: 'AB型', value: 120, fill: '#f97316' }, // Orange
     ];
 
     const plasmaInventoryData = [
-      { name: 'A型', value: 250, fill: '#eab308' },
-      { name: 'B型', value: 180, fill: '#facc15' },
-      { name: 'O型', value: 320, fill: '#fde047' },
-      { name: 'AB型', value: 90, fill: '#fef08a' },
+      { name: 'A型', value: 250, fill: '#ef4444' }, // Red
+      { name: 'B型', value: 180, fill: '#3b82f6' }, // Blue
+      { name: 'O型', value: 320, fill: '#10b981' }, // Emerald
+      { name: 'AB型', value: 90, fill: '#f97316' }, // Orange
+    ];
+
+    const cryoInventoryData = [
+      { name: 'A型', value: 150, fill: '#ef4444' },
+      { name: 'B型', value: 120, fill: '#3b82f6' },
+      { name: 'O型', value: 200, fill: '#10b981' },
+      { name: 'AB型', value: 50, fill: '#f97316' },
+    ];
+
+    const plateletInventoryData = [
+      { name: 'A型', value: 80, fill: '#ef4444' },
+      { name: 'B型', value: 60, fill: '#3b82f6' },
+      { name: 'O型', value: 110, fill: '#10b981' },
+      { name: 'AB型', value: 30, fill: '#f97316' },
     ];
 
     const bloodTypeDistData = [
@@ -3729,7 +4205,44 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-4">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-2">
+            <h3 className="text-sm font-bold text-slate-300 mb-2">冷沉淀库存分布</h3>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie data={cryoInventoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
+                    {cryoInventoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                  <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[320px] lg:col-span-2">
+            <h3 className="text-sm font-bold text-slate-300 mb-2">血小板库存分布</h3>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie data={plateletInventoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
+                    {plateletInventoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                  <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: 科室用血 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-4">
             <h3 className="text-sm font-bold text-slate-300 mb-4">配发血比例 & 满足率</h3>
             
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -3813,11 +4326,7 @@ const OperationalDecisionCenter: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Row 2: 科室用血 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-2">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-5">
             <div className="flex items-center gap-8 mb-6">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <BarChart3 className="text-blue-400" size={20} />
@@ -3851,7 +4360,7 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] overflow-hidden">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px] lg:col-span-3 overflow-hidden">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-bold text-slate-300">30天用血排名</h3>
               <button className="text-slate-400 hover:text-white transition-colors flex items-center gap-1 text-xs">
@@ -4633,6 +5142,17 @@ const OperationalDecisionCenter: React.FC = () => {
       { group: '临检流水线C', name: '张伟', dept: 'ICU', item: '血常规', time: '超45分钟' },
     ];
 
+    const emergencyTestsData = {
+      total: 128,
+      pending: 15,
+      completed: 113,
+      recent: [
+        { name: '王五', item: '急诊生化', time: '10分钟前', status: '检验中' },
+        { name: '赵六', item: '血气分析', time: '5分钟前', status: '待接收' },
+        { name: '钱七', item: '急诊凝血', time: '2分钟前', status: '待接收' },
+      ]
+    };
+
     const qcOutControlItems = [
       { instrument: '生化仪A', item: 'ALT', level: 'L1', rule: '1-3s', status: '待处理' },
       { instrument: '生化仪B', item: 'GLU', level: 'L2', rule: '2-2s', status: '待处理' },
@@ -4646,6 +5166,13 @@ const OperationalDecisionCenter: React.FC = () => {
       { barcode: 'A20260331045', patient: '李秀兰', dept: '心内科', item: '凝血四项', missingNode: '标本采集', status: '已检验' },
       { barcode: 'A20260331088', patient: '张伟', dept: '急诊科', item: '血常规', missingNode: '标本接收', status: '已出报告' },
       { barcode: 'A20260331102', patient: '刘洋', dept: 'ICU', item: '血气分析', missingNode: '标本运送', status: '已签收' },
+    ];
+
+    const returnedSpecimens = [
+      { barcode: 'A20260331012', patientId: 'O1234567', name: '刘建国', item: '生化全套', dept: '心内科', doctor: '张华', reason: '标本溶血', receiver: '李检验', handler: '王护士' },
+      { barcode: 'A20260331055', patientId: 'I9876543', name: '王秀英', item: '凝血四项', dept: '呼吸内科', doctor: '李明', reason: '采血量不足', receiver: '赵检验', handler: '孙护士' },
+      { barcode: 'A20260331099', patientId: 'O2345678', name: '陈伟', item: '血常规', dept: '急诊科', doctor: '王强', reason: '条码破损', receiver: '周检验', handler: '吴护士' },
+      { barcode: 'A20260331120', patientId: 'I8765432', name: '林芳', item: '血气分析', dept: 'ICU', doctor: '赵刚', reason: '标本凝块', receiver: '吴检验', handler: '郑护士' },
     ];
 
     return (
@@ -4697,41 +5224,77 @@ const OperationalDecisionCenter: React.FC = () => {
 
         {activeLabTab === 'lab' ? (
           <>
-            {/* 超TAT紧急提醒 */}
-            {overTatAlerts.length > 0 && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-pulse-slow">
-                <div className="bg-red-500 text-white p-2.5 rounded-lg flex items-center justify-center">
-                  <AlertCircle size={24} className="animate-pulse" />
+            {/* 顶部提醒区域 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 超TAT紧急提醒 */}
+              {overTatAlerts.length > 0 && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-pulse-slow">
+                  <div className="bg-red-500 text-white p-2.5 rounded-lg flex items-center justify-center">
+                    <AlertCircle size={24} className="animate-pulse" />
+                  </div>
+                  <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-red-400 font-bold text-lg leading-none">超TAT紧急提醒</h3>
+                      <span className="text-xs bg-red-500/20 px-2 py-0.5 rounded-full text-red-300 border border-red-500/30">
+                        {overTatAlerts.length} 项超时
+                      </span>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto pb-1 custom-scrollbar">
+                      {overTatAlerts.map((alert, idx) => (
+                        <div key={idx} className="flex-shrink-0 bg-slate-900/80 border border-red-500/30 rounded-lg px-4 py-2 flex items-center gap-4">
+                          <div className="flex flex-col items-center justify-center min-w-[60px]">
+                            <span className="text-red-400 font-bold text-sm">{alert.time}</span>
+                          </div>
+                          <div className="w-px h-8 bg-slate-700"></div>
+                          <div className="flex flex-col justify-center min-w-[120px]">
+                            <span className="text-slate-300 text-xs font-medium mb-0.5">{alert.group}</span>
+                            <span className="text-slate-400 text-[10px]">{alert.item}</span>
+                          </div>
+                          <div className="w-px h-8 bg-slate-700"></div>
+                          <div className="flex flex-col justify-center min-w-[80px]">
+                            <span className="text-slate-200 font-medium text-sm">{alert.name}</span>
+                            <span className="text-slate-400 text-[10px]">{alert.dept}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 flex flex-col gap-2">
+              )}
+
+              {/* 急诊急查 */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-4 shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                <div className="bg-amber-500 text-white p-2.5 rounded-lg flex items-center justify-center">
+                  <Zap size={24} className="animate-pulse" />
+                </div>
+                <div className="flex-1 flex flex-col gap-2 overflow-hidden">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-red-400 font-bold text-lg leading-none">超TAT紧急提醒</h3>
-                    <span className="text-xs bg-red-500/20 px-2 py-0.5 rounded-full text-red-300 border border-red-500/30">
-                      {overTatAlerts.length} 项超时
+                    <h3 className="text-amber-400 font-bold text-lg leading-none">急诊急查</h3>
+                    <span className="text-xs bg-amber-500/20 px-2 py-0.5 rounded-full text-amber-300 border border-amber-500/30">
+                      待处理 {emergencyTestsData.pending} 项
                     </span>
                   </div>
                   <div className="flex gap-4 overflow-x-auto pb-1 custom-scrollbar">
-                    {overTatAlerts.map((alert, idx) => (
-                      <div key={idx} className="flex-shrink-0 bg-slate-900/80 border border-red-500/30 rounded-lg px-4 py-2 flex items-center gap-4">
+                    {emergencyTestsData.recent.map((test, idx) => (
+                      <div key={idx} className="flex-shrink-0 bg-slate-900/80 border border-amber-500/30 rounded-lg px-4 py-2 flex items-center gap-4">
                         <div className="flex flex-col items-center justify-center min-w-[60px]">
-                          <span className="text-red-400 font-bold text-sm">{alert.time}</span>
+                          <span className="text-amber-400 font-bold text-sm">{test.time}</span>
                         </div>
                         <div className="w-px h-8 bg-slate-700"></div>
-                        <div className="flex flex-col justify-center min-w-[120px]">
-                          <span className="text-slate-300 text-xs font-medium mb-0.5">{alert.group}</span>
-                          <span className="text-slate-400 text-[10px]">{alert.item}</span>
+                        <div className="flex flex-col justify-center min-w-[100px]">
+                          <span className="text-slate-300 text-xs font-medium mb-0.5">{test.item}</span>
+                          <span className="text-slate-400 text-[10px]">{test.status}</span>
                         </div>
                         <div className="w-px h-8 bg-slate-700"></div>
-                        <div className="flex flex-col justify-center min-w-[80px]">
-                          <span className="text-slate-200 font-medium text-sm">{alert.name}</span>
-                          <span className="text-slate-400 text-[10px]">{alert.dept}</span>
+                        <div className="flex flex-col justify-center min-w-[60px]">
+                          <span className="text-slate-200 font-medium text-sm">{test.name}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Top Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -5016,7 +5579,7 @@ const OperationalDecisionCenter: React.FC = () => {
           </div>
         </div>
 
-        {/* 标本全流程追踪缺失信息 */}
+        {/* 标本全流程追踪缺失信息 & 当日回退标本数 */}
         <div className="grid grid-cols-1 gap-6">
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[300px]">
             <div className="flex justify-between items-center mb-6">
@@ -5053,6 +5616,50 @@ const OperationalDecisionCenter: React.FC = () => {
                           {row.status}
                         </span>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[300px]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <AlertCircle className="text-rose-400" size={20} />
+                当日回退标本数
+              </h3>
+              <div className="text-xs text-rose-400 bg-rose-400/10 px-2 py-1 rounded border border-rose-400/20">
+                回退标本: {returnedSpecimens.length}
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <table className="w-full text-left text-xs">
+                <thead className="text-slate-500 border-b border-slate-800 sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10">
+                  <tr>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">条码号</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">门诊号/住院号</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">姓名</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">项目</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">开单科室</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">开单医生</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">回退原因</th>
+                    <th className="pb-2 font-medium whitespace-nowrap pr-4">接受人</th>
+                    <th className="pb-2 font-medium whitespace-nowrap">处理人</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {returnedSpecimens.map((row, i) => (
+                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                      <td className="py-3 text-slate-300 font-mono pr-4">{row.barcode}</td>
+                      <td className="py-3 text-slate-300 font-mono pr-4">{row.patientId}</td>
+                      <td className="py-3 text-slate-300 pr-4">{row.name}</td>
+                      <td className="py-3 text-slate-300 font-medium pr-4">{row.item}</td>
+                      <td className="py-3 text-slate-400 pr-4">{row.dept}</td>
+                      <td className="py-3 text-slate-400 pr-4">{row.doctor}</td>
+                      <td className="py-3 text-rose-400 font-medium pr-4">{row.reason}</td>
+                      <td className="py-3 text-slate-400 pr-4">{row.receiver}</td>
+                      <td className="py-3 text-slate-400">{row.handler}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -6039,6 +6646,7 @@ const OperationalDecisionCenter: React.FC = () => {
     if (activeCockpitId === 'surgery') return renderSurgeryCockpit();
     if (activeCockpitId === 'surgery_analysis') return renderSurgeryOperationAnalysisCockpit();
     if (activeCockpitId === 'pathology') return <PathologyCockpit onBack={() => setActiveCockpitId(null)} />;
+    if (activeCockpitId === 'dean') return <DeanCockpit onBack={() => setActiveCockpitId(null)} />;
 
     return (
       <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col items-center pt-12 px-8 relative bg-[#f8fafc]">
@@ -6068,7 +6676,10 @@ const OperationalDecisionCenter: React.FC = () => {
           {/* Cockpit Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Card 1: 院长驾驶舱 */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col">
+            <div 
+              onClick={() => setActiveCockpitId('dean')}
+              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 cursor-pointer group flex flex-col"
+            >
               <div className="aspect-[16/9] bg-gray-900 relative overflow-hidden">
                 <img 
                   src="https://picsum.photos/seed/dash1/800/450" 
@@ -6570,10 +7181,1149 @@ const OperationalDecisionCenter: React.FC = () => {
                activeModuleId === 'doc' ? renderReportCenter() :
                activeModuleId === 'attending-kpi' ? renderAttendingGroupKPI() :
                activeModuleId === 'theme' ? renderThemeAnalysis() :
+               activeModuleId === 'talent' ? renderTalentDevelopment() :
                activeModuleId === 'report' ? <StatisticalReport /> :
                renderGenericDetail()}
            </div>
         </main>
+      </div>
+    );
+  };
+
+  const renderTalentDevelopment = () => {
+    if (selectedTalentPlanId) {
+      return renderTalentAnalysisDetail();
+    }
+
+    const plans = [
+      {
+        id: 'p1',
+        title: '2024年度学科综合考评方案',
+        desc: '全院临床学科年度绩效考核，重点关注CMI与科研产出。',
+        status: '进行中',
+        system: '临床医疗体系',
+        type: '年度考核',
+        updateTime: '2024-01-15',
+        statusColor: 'text-blue-600 bg-blue-50 border-blue-100'
+      },
+      {
+        id: 'p2',
+        title: '2024年Q1医疗组长绩效考核',
+        desc: '针对医疗组长的季度业务能力评估。',
+        status: '进行中',
+        system: '个人 (医疗组长)',
+        type: '季度考核',
+        updateTime: '2024-03-20',
+        statusColor: 'text-blue-600 bg-blue-50 border-blue-100'
+      },
+      {
+        id: 'p3',
+        title: '2023年度学科综合考评方案',
+        desc: '暂无描述',
+        status: '已归档',
+        system: '临床医疗体系',
+        type: '年度考核',
+        updateTime: '2023-12-10',
+        statusColor: 'text-gray-500 bg-gray-100 border-gray-200'
+      }
+    ];
+
+    return (
+      <div className="flex-1 flex flex-col bg-gray-50/50 p-8 overflow-y-auto">
+        <div className="max-w-6xl mx-auto w-full">
+          {/* Header */}
+          <div className="mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold mb-4 border border-blue-100">
+              <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
+              考评分析
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">选择考评方案</h1>
+            <p className="text-gray-500 text-lg">请选择一个已发布的考评方案以查看详细分析报告。</p>
+          </div>
+
+          {/* Plan Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {plans.map((plan) => (
+              <div 
+                key={plan.id}
+                onClick={() => setSelectedTalentPlanId(plan.id)}
+                className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group flex flex-col h-full"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors duration-500">
+                    <FileText size={28} />
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${plan.statusColor}`}>
+                    {plan.status === '进行中' && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>}
+                    {plan.status}
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">{plan.title}</h3>
+                <p className="text-sm text-gray-500 mb-8 line-clamp-2 flex-1">{plan.desc}</p>
+
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-center gap-3 text-gray-500">
+                    <Users size={16} className="text-gray-400" />
+                    <span className="text-sm">{plan.system}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-500">
+                    <Calendar size={16} className="text-gray-400" />
+                    <span className="text-sm">{plan.type}</span>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-50 flex items-center justify-between mt-auto">
+                  <span className="text-xs text-gray-400">更新于 {plan.updateTime}</span>
+                  <div className="flex items-center gap-1 text-blue-600 font-bold text-sm group-hover:gap-2 transition-all">
+                    进入分析
+                    <ChevronRight size={16} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTalentAnalysisDetail = () => {
+    const plan = [
+      { id: 'p1', title: '2024年度学科综合考评方案', updatedAt: '2024-01-15', cycle: '年度', targetName: '临床医疗体系' },
+      { id: 'p2', title: '2024年Q1医疗组长绩效考核', updatedAt: '2024-03-20', cycle: '季度', targetName: '个人 (医疗组长)' },
+      { id: 'p3', title: '2023年度学科综合考评方案', updatedAt: '2023-12-10', cycle: '年度', targetName: '临床医疗体系' }
+    ].find(p => p.id === selectedTalentPlanId);
+
+    const rawAssessments = MOCK_ASSESSMENTS.filter(a => a.schemeId === selectedTalentPlanId);
+
+    if (rawAssessments.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white rounded-xl border border-dashed border-slate-200">
+            <AlertCircle size={48} className="mb-4 text-slate-300" />
+            <h3 className="text-lg font-medium text-gray-900">暂无考评数据</h3>
+            <p className="text-gray-500 mt-2">方案“{plan?.title}”暂无任何考评结果数据。</p>
+            <button onClick={() => setSelectedTalentPlanId(null)} className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">
+                返回方案列表
+            </button>
+        </div>
+      );
+    }
+
+    // --- Lateral View Logic ---
+    const processedAssessments = [...rawAssessments]
+      .filter(item => talentCategoryFilter === 'All' || getCategory(item.targetName) === talentCategoryFilter)
+      .sort((a, b) => {
+        const valA = talentSortField === 'totalScore' ? a.totalScore : (a.dimensions as any)[talentSortField]?.score || 0;
+        const valB = talentSortField === 'totalScore' ? b.totalScore : (b.dimensions as any)[talentSortField]?.score || 0;
+        return talentSortOrder === 'asc' ? valA - valB : valB - valA;
+      });
+
+    const comparisonData = talentCompareList.length > 0 
+      ? processedAssessments.filter(a => talentCompareList.includes(a.id))
+      : processedAssessments.slice(0, 5);
+
+    const multiBarData = comparisonData.map(item => ({
+        name: item.targetName,
+        总分: item.totalScore,
+        医疗: item.dimensions.medical.score,
+        质量: item.dimensions.quality.score,
+        科研: item.dimensions.research.score,
+        教学: item.dimensions.teaching.score,
+        效率: item.dimensions.efficiency.score,
+    }));
+
+    const radarComparisonData = [
+        { key: 'medical', name: '医疗能力' },
+        { key: 'quality', name: '质量安全' },
+        { key: 'research', name: '科研产出' },
+        { key: 'teaching', name: '教学培养' },
+        { key: 'efficiency', name: '运营效率' },
+    ].map(subj => {
+        const point: any = { subject: subj.name, fullMark: 100 };
+        comparisonData.forEach(item => {
+            point[item.targetName] = (item.dimensions as any)[subj.key]?.score || 0;
+        });
+        return point;
+    });
+
+    const CHART_COLORS = ['#0052FF', '#10B981', '#A855F7', '#F59E0B', '#EC4899'];
+
+    // --- Longitudinal View Logic ---
+    const currentTrendTarget = rawAssessments.find(a => a.targetId === talentTrendTargetId) || rawAssessments[0];
+    const trendData = generateHistoryData(currentTrendTarget);
+    const indicatorHistoryData = generateIndicatorHistory();
+    const selectedIndicatorTrend = indicatorHistoryData.find(i => i.id === talentSelectedIndicatorId) || indicatorHistoryData[0];
+    const aiInsight = getAiInsight(currentTrendTarget.targetName, currentTrendTarget.totalScore);
+
+    const growthDrivers = (() => {
+        if (trendData.length < 2) return null;
+        const current = trendData[trendData.length - 1];
+        const previous = trendData[trendData.length - 2];
+        const diffs = [
+            { key: 'medical', name: '医疗能力', val: current.medical - previous.medical },
+            { key: 'quality', name: '质量安全', val: current.quality - previous.quality },
+            { key: 'research', name: '科研产出', val: current.research - previous.research },
+            { key: 'teaching', name: '教学培养', val: current.teaching - previous.teaching },
+            { key: 'efficiency', name: '运营效率', val: current.efficiency - previous.efficiency },
+        ].map(d => ({...d, val: Number(d.val.toFixed(1))}));
+        diffs.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
+        return { totalDiff: Number((current.score - previous.score).toFixed(1)), diffs, maxVal: Math.max(...diffs.map(d => Math.abs(d.val))), prevYear: previous.year, currYear: current.year };
+    })();
+
+    // --- Matrix View Logic ---
+    const catchUpData = rawAssessments.map(a => {
+        const history = generateHistoryData(a);
+        const start = history[0].score;
+        const end = history[history.length - 1].score;
+        const cagr = Math.pow(end / start, 1/4) - 1;
+        return { id: a.id, name: a.targetName, score: a.totalScore, cagr: cagr * 100, category: getCategory(a.targetName) };
+    });
+
+    const structuralData = rawAssessments.map(a => {
+        const dims = a.dimensions as any;
+        const v1 = dims[talentStructureDims[0]]?.score || 0;
+        const v2 = dims[talentStructureDims[1]]?.score || 0;
+        const v3 = dims[talentStructureDims[2]]?.score || 0;
+        const history = generateHistoryData(a);
+        const prev = history[history.length - 2] || history[history.length - 1];
+        return { id: a.id, name: a.targetName, category: getCategory(a.targetName), v1, v2, v3, prevV1: (prev as any)[talentStructureDims[0]], prevV2: (prev as any)[talentStructureDims[1]], prevV3: (prev as any)[talentStructureDims[2]] };
+    });
+
+    // --- Strategy View Logic ---
+    const strategyData = (() => {
+        const total = rawAssessments.length;
+        const leading = rawAssessments.filter(a => a.totalScore >= 90).length;
+        const potential = rawAssessments.filter(a => a.totalScore >= 80 && a.totalScore < 90).length;
+        const warning = rawAssessments.filter(a => a.totalScore < 80).length;
+        
+        const categories = ['内科系', '外科系', '医技系', '其他'];
+        const treemapData = categories.map(cat => ({
+            name: cat,
+            children: rawAssessments.filter(a => getCategory(a.targetName) === cat).map(a => ({
+                name: a.targetName,
+                size: a.totalScore,
+                score: a.totalScore,
+                category: cat
+            }))
+        })).filter(c => c.children.length > 0);
+
+        const avgMedical = rawAssessments.reduce((sum, a) => sum + (a.dimensions.medical?.score || 0), 0) / (total || 1);
+        const avgQuality = rawAssessments.reduce((sum, a) => sum + (a.dimensions.quality?.score || 0), 0) / (total || 1);
+        const avgResearch = rawAssessments.reduce((sum, a) => sum + (a.dimensions.research?.score || 0), 0) / (total || 1);
+        const avgTeaching = rawAssessments.reduce((sum, a) => sum + (a.dimensions.teaching?.score || 0), 0) / (total || 1);
+        const avgEfficiency = rawAssessments.reduce((sum, a) => sum + (a.dimensions.efficiency?.score || 0), 0) / (total || 1);
+
+        const radarData = [
+            { subject: '医疗能力', A: Number(avgMedical.toFixed(1)), fullMark: 100 },
+            { subject: '质量安全', A: Number(avgQuality.toFixed(1)), fullMark: 100 },
+            { subject: '科研产出', A: Number(avgResearch.toFixed(1)), fullMark: 100 },
+            { subject: '教学培养', A: Number(avgTeaching.toFixed(1)), fullMark: 100 },
+            { subject: '运营效率', A: Number(avgEfficiency.toFixed(1)), fullMark: 100 },
+        ];
+
+        return { total, leading, potential, warning, treemapData, radarData };
+    })();
+
+    return (
+      <div className="flex-1 flex flex-col bg-white overflow-hidden">
+        {/* Sub Header */}
+        <div className="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-gray-50/30 shrink-0">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSelectedTalentPlanId(null)}
+              className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500 transition-colors"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div className="h-4 w-px bg-gray-200"></div>
+            <div className="flex flex-col">
+                <h2 className="font-bold text-gray-800 text-sm">{plan?.title}</h2>
+                <span className="text-[10px] text-gray-400">最后更新: {plan?.updatedAt}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Download size={14} />
+              导出报告
+            </button>
+          </div>
+        </div>
+
+        {/* View Tabs */}
+        <div className="px-6 border-b border-gray-100 flex gap-8 bg-white shrink-0">
+            {[
+                { id: 'strategy', label: '全院学科战略视图 (Strategy)', icon: Target },
+                { id: 'lateral', label: '横向对比 (Rank)', icon: BarChart3 },
+                { id: 'longitudinal', label: '纵向趋势 (Trend)', icon: TrendingUp },
+                { id: 'matrix', label: '综合矩阵 (Matrix)', icon: LayoutGrid },
+            ].map(tab => (
+                <button
+                    key={tab.id}
+                    onClick={() => setTalentActiveView(tab.id as AnalysisView)}
+                    className={`flex items-center gap-2 pb-3 pt-4 text-sm font-medium transition-all relative ${talentActiveView === tab.id ? 'text-blue-600' : 'text-gray-500 hover:text-gray-800'}`}
+                >
+                    <tab.icon size={16} />
+                    {tab.label}
+                    {talentActiveView === tab.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                    )}
+                </button>
+            ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6">
+            <AnimatePresence mode="wait">
+                {talentActiveView === 'strategy' && (
+                    <motion.div 
+                        key="strategy"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-6"
+                    >
+                        {/* Top Summary Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                    <Target size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 font-medium">参评学科总数</div>
+                                    <div className="text-2xl font-bold text-gray-800">{strategyData.total}</div>
+                                </div>
+                            </div>
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <Sparkles size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 font-medium">优势学科 (≥90分)</div>
+                                    <div className="text-2xl font-bold text-gray-800">{strategyData.leading}</div>
+                                </div>
+                            </div>
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                    <TrendingUp size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 font-medium">潜力学科 (80-89分)</div>
+                                    <div className="text-2xl font-bold text-gray-800">{strategyData.potential}</div>
+                                </div>
+                            </div>
+                            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-500 font-medium">预警学科 (&lt;80分)</div>
+                                    <div className="text-2xl font-bold text-gray-800">{strategyData.warning}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Charts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Treemap */}
+                            <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <LayoutGrid size={18} className="text-blue-600" />
+                                        学科生态分布 (规模与绩效)
+                                    </h3>
+                                    <span className="text-xs text-gray-400">面积代表综合得分，颜色代表学科分类</span>
+                                </div>
+                                <div className="h-[350px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <Treemap
+                                            data={strategyData.treemapData}
+                                            dataKey="size"
+                                            aspectRatio={4 / 3}
+                                            stroke="#fff"
+                                            fill="#8884d8"
+                                            content={(props: any) => {
+                                                const { depth, x, y, width, height, name, category, score } = props;
+                                                if (depth === 2) {
+                                                    const color = CATEGORY_COLORS[category] || '#94a3b8';
+                                                    return (
+                                                        <g>
+                                                            <rect
+                                                                x={x}
+                                                                y={y}
+                                                                width={width}
+                                                                height={height}
+                                                                style={{
+                                                                    fill: color,
+                                                                    stroke: '#fff',
+                                                                    strokeWidth: 2,
+                                                                    strokeOpacity: 1,
+                                                                    fillOpacity: 0.8,
+                                                                }}
+                                                            />
+                                                            {width > 50 && height > 30 && (
+                                                                <>
+                                                                    <text x={x + width / 2} y={y + height / 2 - 8} textAnchor="middle" fill="#fff" fontSize={12} fontWeight="bold">
+                                                                        {name}
+                                                                    </text>
+                                                                    <text x={x + width / 2} y={y + height / 2 + 8} textAnchor="middle" fill="#fff" fontSize={10} opacity={0.9}>
+                                                                        {score?.toFixed(1)}分
+                                                                    </text>
+                                                                </>
+                                                            )}
+                                                        </g>
+                                                    );
+                                                }
+                                                return <g />;
+                                            }}
+                                        >
+                                            <Tooltip 
+                                                formatter={(value: any, name: any, props: any) => [
+                                                    `${props.payload.score?.toFixed(1)}分`, 
+                                                    '综合得分'
+                                                ]}
+                                            />
+                                        </Treemap>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* Radar Chart */}
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <Crosshair size={18} className="text-purple-600" />
+                                        全院核心能力画像
+                                    </h3>
+                                </div>
+                                <div className="h-[350px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={strategyData.radarData}>
+                                            <PolarGrid stroke="#e2e8f0" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12 }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                            <Radar name="全院平均" dataKey="A" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+                                            <Tooltip />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Strategic Insights */}
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6">
+                                <Lightbulb size={18} className="text-amber-500" />
+                                战略发展建议 (AI 生成)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="p-4 rounded-lg bg-blue-50/50 border border-blue-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                            <span className="text-xs font-bold">1</span>
+                                        </div>
+                                        <h4 className="font-bold text-blue-900 text-sm">科研转化亟待突破</h4>
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        全院科研产出平均得分（{strategyData.radarData.find(d => d.subject === '科研产出')?.A}分）为各项能力最低。建议设立专项科研基金，重点扶持心血管内科、神经外科等优势临床学科开展转化医学研究，提升SCI论文质量及国家级课题中标率。
+                                    </p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-emerald-50/50 border border-emerald-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                            <span className="text-xs font-bold">2</span>
+                                        </div>
+                                        <h4 className="font-bold text-emerald-900 text-sm">医疗质量保持高位</h4>
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        质量安全维度整体表现优异，平均得分（{strategyData.radarData.find(d => d.subject === '质量安全')?.A}分）。放射科、检验科等医技科室发挥了关键支撑作用。建议总结其质控经验，向全院推广标准化SOP。
+                                    </p>
+                                </div>
+                                <div className="p-4 rounded-lg bg-purple-50/50 border border-purple-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                                            <span className="text-xs font-bold">3</span>
+                                        </div>
+                                        <h4 className="font-bold text-purple-900 text-sm">学科结构需优化</h4>
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        当前存在 {strategyData.warning} 个预警学科（得分&lt;80），主要集中在部分传统内科及辅助科室。建议启动“学科结对帮扶”计划，由优势学科带动弱势学科，优化整体学科群落生态。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {talentActiveView === 'lateral' && (
+                    <motion.div 
+                        key="lateral"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-6"
+                    >
+                        {/* Control Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <Filter size={16} />
+                                    <span className="font-bold">分类筛选:</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    {['All', '内科系', '外科系', '医技系'].map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setTalentCategoryFilter(cat)}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${talentCategoryFilter === cat ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                                        >
+                                            {cat === 'All' ? '全部' : cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {talentCompareList.length > 0 && (
+                                <div className="flex items-center gap-3 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                                    <span className="text-xs font-bold text-blue-600">已选 {talentCompareList.length} 个对比对象</span>
+                                    <button onClick={() => setTalentCompareList([])} className="text-gray-400 hover:text-red-500 transition-colors">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Collapsible Charts Section */}
+                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                            <button 
+                                onClick={() => setTalentShowCharts(!talentShowCharts)}
+                                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <PieChartIcon size={18} className="text-blue-600" />
+                                    <h3 className="font-bold text-gray-800">多维能力与画像对比</h3>
+                                    <span className="text-xs text-gray-400 font-normal ml-2">
+                                        {talentShowCharts ? '点击收起图表' : '点击展开深度对比图表'}
+                                    </span>
+                                </div>
+                                <div className={`transition-transform duration-300 ${talentShowCharts ? 'rotate-180' : ''}`}>
+                                    <ChevronDown size={20} className="text-gray-400" />
+                                </div>
+                            </button>
+
+                            <AnimatePresence>
+                                {talentShowCharts && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="p-6 pt-0 grid grid-cols-1 xl:grid-cols-2 gap-6 border-t border-gray-50">
+                                            <div className="pt-6">
+                                                <h3 className="font-bold text-gray-800 mb-1 text-sm">多维能力对比</h3>
+                                                <p className="text-[10px] text-gray-400 mb-6">各考核维度的得分分布情况</p>
+                                                <div className="h-[300px]">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <BarChart data={multiBarData}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} domain={[0, 100]} />
+                                                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                                                            <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                                                            <Bar dataKey="医疗" fill="#0052FF" radius={[4, 4, 0, 0]} barSize={20} />
+                                                            <Bar dataKey="科研" fill="#A855F7" radius={[4, 4, 0, 0]} barSize={20} />
+                                                            <Bar dataKey="质量" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
+                                                        </BarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+                                            <div className="pt-6">
+                                                <h3 className="font-bold text-gray-800 mb-1 text-sm">综合画像重叠</h3>
+                                                <p className="text-[10px] text-gray-400 mb-6">识别优势领域与短板差异</p>
+                                                <div className="h-[300px]">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarComparisonData}>
+                                                            <PolarGrid stroke="#e2e8f0" />
+                                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false}/>
+                                                            <Tooltip />
+                                                            <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                                                            {comparisonData.map((item, index) => (
+                                                                <Radar
+                                                                    key={item.id}
+                                                                    name={item.targetName}
+                                                                    dataKey={item.targetName}
+                                                                    stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                                                                    strokeWidth={2}
+                                                                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                                                                    fillOpacity={0.1}
+                                                                />
+                                                            ))}
+                                                        </RadarChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-gray-50 flex justify-between items-center">
+                                <h3 className="font-bold text-gray-800">考评数据明细</h3>
+                                <div className="flex items-center gap-4 text-[10px]">
+                                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> 优秀 (&gt;95)</div>
+                                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div> 预警 (&lt;75)</div>
+                                    <div className="text-gray-400 ml-4">点击行展开查看指标详情</div>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50/50 text-[10px] text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                                            <th className="py-3 pl-6 w-10"></th>
+                                            <th className="py-3 w-10">对比</th>
+                                            <th className="py-3 font-bold">
+                                                <div className="flex items-center gap-1">
+                                                    排名/对象 <ArrowDown size={12} className="text-blue-600" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 font-bold text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    总得分 <ArrowDown size={12} className="text-blue-600" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    医疗能力 <ArrowUpDown size={12} className="text-gray-200" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    质量安全 <ArrowUpDown size={12} className="text-gray-200" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    科研产出 <ArrowUpDown size={12} className="text-gray-200" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    教学培养 <ArrowUpDown size={12} className="text-gray-200" />
+                                                </div>
+                                            </th>
+                                            <th className="py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    运营效率 <ArrowUpDown size={12} className="text-gray-200" />
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {processedAssessments.map((item) => (
+                                            <React.Fragment key={item.id}>
+                                                <tr 
+                                                    onClick={() => setTalentExpandedRowId(talentExpandedRowId === item.id ? null : item.id)}
+                                                    className={`border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${talentExpandedRowId === item.id ? 'bg-blue-50/30' : ''} ${talentCompareList.includes(item.id) ? 'bg-blue-50/50' : ''}`}
+                                                >
+                                                    <td className="py-4 pl-6 text-gray-300">
+                                                        {talentExpandedRowId === item.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                    </td>
+                                                    <td className="py-4">
+                                                        <div 
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                if (talentCompareList.includes(item.id)) {
+                                                                    setTalentCompareList(prev => prev.filter(id => id !== item.id));
+                                                                } else if (talentCompareList.length < 5) {
+                                                                    setTalentCompareList(prev => [...prev, item.id]);
+                                                                }
+                                                            }}
+                                                            className="cursor-pointer text-gray-300 hover:text-blue-600"
+                                                        >
+                                                            {talentCompareList.includes(item.id) ? <CheckCircle size={18} className="text-blue-600"/> : <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-200" />}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 font-medium">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-mono text-xs text-gray-400 w-6">#{item.rank}</span>
+                                                            <div>
+                                                                <div className="text-gray-900">{item.targetName}</div>
+                                                                <div className="text-[10px] text-gray-400 font-normal">{getCategory(item.targetName)}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 text-right font-bold text-blue-600 font-mono text-lg">{item.totalScore}</td>
+                                                    {['medical', 'quality', 'research', 'teaching', 'efficiency'].map((dimKey) => {
+                                                        const score = (item.dimensions as any)[dimKey]?.score || 0;
+                                                        return (
+                                                            <td key={dimKey} className="py-4 text-center">
+                                                                <span className={`font-medium ${score >= 95 ? 'text-emerald-600' : score < 75 ? 'text-red-600' : 'text-gray-600'}`}>
+                                                                    {score}
+                                                                </span>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                                {talentExpandedRowId === item.id && (
+                                                    <tr>
+                                                        <td colSpan={9} className="p-0 border-b border-gray-100">
+                                                            <motion.div 
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: 'auto', opacity: 1 }}
+                                                                className="bg-gray-50/50 p-6"
+                                                            >
+                                                                <h4 className="font-bold text-sm mb-6 text-gray-800">指标得分明细 ({item.targetName})</h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                                                    {['medical', 'quality', 'research', 'teaching', 'efficiency'].map((dimKey) => {
+                                                                        const dim = (item.dimensions as any)[dimKey];
+                                                                        const colorMap: any = {
+                                                                            medical: { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', bar: 'bg-blue-400' },
+                                                                            quality: { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', bar: 'bg-emerald-400' },
+                                                                            research: { text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', bar: 'bg-purple-400' },
+                                                                            teaching: { text: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100', bar: 'bg-cyan-400' },
+                                                                            efficiency: { text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', bar: 'bg-amber-400' },
+                                                                        };
+                                                                        const theme = colorMap[dimKey];
+                                                                        return (
+                                                                            <div key={dimKey} className="flex flex-col gap-3">
+                                                                                <div className={`px-4 py-2 rounded-t-xl border-x border-t flex justify-between items-center ${theme.bg} ${theme.border} ${theme.text}`}>
+                                                                                    <span className="font-bold text-xs">{dim.label}</span>
+                                                                                    <span className="font-mono font-bold">{dim.score}</span>
+                                                                                </div>
+                                                                                <div className={`flex-1 p-3 space-y-4 bg-white border-x border-b rounded-b-xl shadow-sm ${theme.border}`}>
+                                                                                    {dim.indicators && dim.indicators.length > 0 ? dim.indicators.map((ind: any) => (
+                                                                                        <div key={ind.id} className="space-y-2">
+                                                                                            <div className="flex justify-between items-baseline">
+                                                                                                <span className="text-xs font-bold text-gray-700">{ind.label}</span>
+                                                                                                <span className="text-xs font-bold text-gray-900">{ind.score}分</span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between text-[10px] text-gray-400">
+                                                                                                <span>值: {ind.rawValue}</span>
+                                                                                                <span>权: {ind.weight}</span>
+                                                                                            </div>
+                                                                                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                                                                <motion.div 
+                                                                                                    initial={{ width: 0 }}
+                                                                                                    animate={{ width: `${ind.score}%` }}
+                                                                                                    transition={{ duration: 1, ease: "easeOut" }}
+                                                                                                    className={`h-full ${theme.bar}`}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )) : (
+                                                                                        <div className="text-[10px] text-gray-400 text-center py-4">暂无指标明细数据</div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </motion.div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {talentActiveView === 'longitudinal' && (
+                    <motion.div 
+                        key="longitudinal"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
+                                <label className="text-[10px] font-bold uppercase text-gray-400 mb-2">分析对象</label>
+                                <select 
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    value={talentTrendTargetId}
+                                    onChange={(e) => setTalentTrendTargetId(e.target.value)}
+                                >
+                                    {rawAssessments.map(a => (
+                                        <option key={a.targetId} value={a.targetId}>{a.targetName}</option>
+                                    ))}
+                                </select>
+                                <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-50">
+                                    <div>
+                                        <div className="text-[10px] text-gray-400 mb-1">当前得分 (2024)</div>
+                                        <div className="text-3xl font-bold font-mono text-blue-600">{currentTrendTarget.totalScore}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-[10px] text-gray-400 mb-1">复合增长率</div>
+                                        <div className="text-3xl font-bold font-mono text-emerald-600">+4.2%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden bg-gradient-to-br from-blue-50/50 to-white">
+                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                    <Sparkles size={120} className="text-blue-600" />
+                                </div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                                            <BrainCircuit size={18} />
+                                        </div>
+                                        <h3 className="font-bold text-blue-900">AI 智能决策辅助</h3>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${aiInsight.color}`}>
+                                            {aiInsight.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 leading-relaxed mb-4">{aiInsight.analysis}</p>
+                                    <div className="bg-white/80 p-3 rounded-lg border border-blue-100 flex gap-3 shadow-sm">
+                                        <Lightbulb size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                                        <div className="text-xs text-gray-700">
+                                            <span className="font-bold text-blue-900">管理建议：</span>
+                                            {aiInsight.suggestion}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="font-bold text-gray-800 mb-6">绩效总分趋势与归因</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 h-[300px] border-r border-dashed border-gray-100 pr-8">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={trendData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                            <YAxis domain={[50, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                            <Tooltip labelFormatter={(label) => `${label}年度`} />
+                                            <Line type="monotone" dataKey="score" name="总得分" stroke="#0052FF" strokeWidth={3} dot={{r: 4, fill:'#0052FF', strokeWidth:2, stroke:'#fff'}} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="lg:col-span-1 flex flex-col justify-center">
+                                    {growthDrivers && (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">年度变化 ({growthDrivers.prevYear} → {growthDrivers.currYear})</div>
+                                                <div className={`text-4xl font-mono font-bold flex items-center gap-2 ${growthDrivers.totalDiff >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    {growthDrivers.totalDiff > 0 ? '+' : ''}{growthDrivers.totalDiff}
+                                                    {growthDrivers.totalDiff >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {growthDrivers.diffs.map(d => (
+                                                    <div key={d.key}>
+                                                        <div className="flex justify-between text-[10px] mb-1">
+                                                            <span className="text-gray-500">{d.name}</span>
+                                                            <span className={`font-bold ${d.val >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{d.val > 0 ? '+' : ''}{d.val}</span>
+                                                        </div>
+                                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden relative">
+                                                            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 z-10"></div>
+                                                            <div 
+                                                                className={`h-full absolute ${d.val >= 0 ? 'bg-emerald-500 left-1/2' : 'bg-red-500 right-1/2'}`} 
+                                                                style={{ width: `${(Math.abs(d.val) / growthDrivers.maxVal) * 50}%` }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-bold text-gray-800">关键能力维度演变</h3>
+                                <div className="flex bg-gray-100 p-1 rounded-lg">
+                                    <button 
+                                        onClick={() => setTalentEvolutionChartMode('normalized')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${talentEvolutionChartMode === 'normalized' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                                    >
+                                        占比 (100%)
+                                    </button>
+                                    <button 
+                                        onClick={() => setTalentEvolutionChartMode('stacked')}
+                                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${talentEvolutionChartMode === 'stacked' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                                    >
+                                        数值 (Stack)
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={trendData} stackOffset={talentEvolutionChartMode === 'normalized' ? 'expand' : 'none'}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(val) => talentEvolutionChartMode === 'normalized' ? `${(val * 100).toFixed(0)}%` : val} />
+                                        <Tooltip 
+                                            formatter={(value: any, name: string | undefined) => {
+                                                if (!name) return [null, null];
+                                                const val = talentEvolutionChartMode === 'normalized' ? `${(Number(value) * 100).toFixed(1)}%` : value;
+                                                return [val, name];
+                                            }}
+                                            labelFormatter={(label) => `${label}年度`}
+                                        />
+                                        <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                                        {[
+                                            { key: 'medical', name: '医疗能力', color: '#0052FF' },
+                                            { key: 'quality', name: '质量安全', color: '#10B981' },
+                                            { key: 'research', name: '科研产出', color: '#A855F7' },
+                                            { key: 'teaching', name: '教学培养', color: '#06b6d4' },
+                                            { key: 'efficiency', name: '运营效率', color: '#f59e0b' },
+                                        ].map(dim => (
+                                            <React.Fragment key={dim.key}>
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey={dim.key} 
+                                                    stackId="a" 
+                                                    fill={dim.color} 
+                                                    stroke="none" 
+                                                    fillOpacity={0.1} 
+                                                    legendType="none" 
+                                                    activeDot={false}
+                                                    name="" // Empty name to filter out in formatter
+                                                />
+                                                <Bar dataKey={dim.key} name={dim.name} stackId="b" fill={dim.color} barSize={30} />
+                                            </React.Fragment>
+                                        ))}
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="font-bold text-gray-800 mb-1">核心指标趋势热力图</h3>
+                            <p className="text-xs text-gray-400 mb-6">点击单元格查看具体指标的时间序列分析</p>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 overflow-x-auto">
+                                    <div className="min-w-[500px]">
+                                        <div className="grid grid-cols-7 gap-1 mb-2">
+                                            <div className="col-span-2 text-[10px] font-bold text-gray-400 uppercase text-right pr-4">指标名称</div>
+                                            {['2020', '2021', '2022', '2023', '2024'].map(year => (
+                                                <div key={year} className="col-span-1 text-center text-[10px] font-bold text-gray-500">{year}</div>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-1">
+                                            {indicatorHistoryData.map(ind => (
+                                                <div 
+                                                    key={ind.id} 
+                                                    className={`grid grid-cols-7 gap-1 items-center p-1 rounded-lg transition-colors cursor-pointer ${talentSelectedIndicatorId === ind.id ? 'bg-blue-50 ring-1 ring-blue-100' : 'hover:bg-gray-50'}`}
+                                                    onClick={() => setTalentSelectedIndicatorId(ind.id)}
+                                                >
+                                                    <div className="col-span-2 text-right pr-4">
+                                                        <div className={`text-xs font-bold ${talentSelectedIndicatorId === ind.id ? 'text-blue-600' : 'text-gray-700'}`}>{ind.name}</div>
+                                                        <div className="text-[9px] text-gray-400">{ind.category}</div>
+                                                    </div>
+                                                    {ind.history.map(point => (
+                                                        <div key={point.year} className="col-span-1 flex justify-center group relative">
+                                                            <div 
+                                                                className={`w-full h-8 rounded flex items-center justify-center text-[10px] font-bold text-white shadow-sm transition-all hover:scale-105 ${point.score >= 90 ? 'bg-emerald-500' : point.score >= 80 ? 'bg-blue-500' : point.score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                                            >
+                                                                {point.score}
+                                                            </div>
+                                                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[9px] px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10">
+                                                                {point.year}: {point.rawValue}{ind.unit}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-1 bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col justify-center min-h-[250px]">
+                                    <div className="mb-4 pb-4 border-b border-gray-200">
+                                        <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">{selectedIndicatorTrend.category}</div>
+                                        <div className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                            {selectedIndicatorTrend.name}
+                                            <span className="text-[9px] px-1.5 py-0.5 bg-white border border-gray-200 rounded text-gray-500">单位: {selectedIndicatorTrend.unit || '无'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 w-full relative">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <ComposedChart data={selectedIndicatorTrend.history}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                <XAxis dataKey="year" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+                                                <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} width={20} />
+                                                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} width={20}/>
+                                                <Tooltip labelFormatter={(label) => `${label}年度`} />
+                                                <Area yAxisId="left" type="monotone" dataKey="score" name="绩效得分" fill="#BFD0FF" stroke="none" />
+                                                <Line yAxisId="right" type="monotone" dataKey="rawValue" name="原始数值" stroke="#0052FF" strokeWidth={2} dot={{ r: 3 }} />
+                                            </ComposedChart>
+                                        </ResponsiveContainer>
+                                        <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                                            <div className="text-[8px] text-gray-400 bg-white/80 px-2 py-0.5 rounded border border-gray-100">
+                                                蓝色曲线:指标结果 | 蓝灰色背景:绩效得分
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {talentActiveView === 'matrix' && (
+                    <motion.div 
+                        key="matrix"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-6"
+                    >
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                                <div>
+                                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <Crosshair size={18} className="text-blue-600"/> 追赶识别矩阵
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-1">X轴：当前绩效得分 | Y轴：复合增长率(CAGR)</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-[10px]">
+                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold">领跑</div>
+                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-50 border border-blue-100 text-blue-700 font-bold">追赶</div>
+                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 border border-amber-100 text-amber-700 font-bold">滞涨</div>
+                                     <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50 border border-gray-200 text-gray-600 font-bold">掉队</div>
+                                </div>
+                            </div>
+                            <div className="h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis type="number" dataKey="score" name="当前绩效" domain={[60, 100]} tick={{fontSize: 10}} />
+                                        <YAxis type="number" dataKey="cagr" name="增长率" unit="%" domain={[-4, 12]} tick={{fontSize: 10}} />
+                                        <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                                        <ReferenceArea x1={60} x2={85} y1={5} y2={12} fill="#3b82f6" fillOpacity={0.03} />
+                                        <ReferenceArea x1={85} x2={100} y1={5} y2={12} fill="#10b981" fillOpacity={0.03} />
+                                        <ReferenceArea x1={60} x2={85} y1={-4} y2={5} fill="#f1f5f9" fillOpacity={0.2} />
+                                        <ReferenceArea x1={85} x2={100} y1={-4} y2={5} fill="#f59e0b" fillOpacity={0.03} />
+                                        <ReferenceLine x={85} stroke="#cbd5e1" strokeWidth={1} strokeDasharray="3 3" />
+                                        <ReferenceLine y={5} stroke="#cbd5e1" strokeWidth={1} strokeDasharray="3 3" />
+                                        <Scatter name="Disciplines" data={catchUpData}>
+                                            {catchUpData.map((entry, index) => {
+                                                let color = '#94a3b8';
+                                                if (entry.score >= 85 && entry.cagr >= 5) color = '#10B981';
+                                                else if (entry.score < 85 && entry.cagr >= 5) color = '#0052FF';
+                                                else if (entry.score >= 85 && entry.cagr < 5) color = '#F59E0B';
+                                                return <Cell key={`cell-${index}`} fill={color} />;
+                                            })}
+                                        </Scatter>
+                                    </ScatterChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                                <div>
+                                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <Split size={18} className="text-purple-600" /> 结构分化识别 (三角分布)
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-1">点靠近顶点代表该维度优势显著</p>
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px]">
+                                     {Object.entries(CATEGORY_COLORS).map(([cat, color]) => (
+                                         <div key={cat} className="flex items-center gap-1.5">
+                                             <div className="w-2 h-2 rounded-full" style={{backgroundColor: color}}></div>
+                                             <span className="text-gray-500">{cat}</span>
+                                         </div>
+                                     ))}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-12 gap-8">
+                                <div className="col-span-12 md:col-span-2 flex flex-col gap-4 border-r border-gray-50 pr-4">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase">分析维度 (选3项)</label>
+                                    <div className="space-y-1">
+                                        {[
+                                            { key: 'medical', label: '医疗' },
+                                            { key: 'quality', label: '质量' },
+                                            { key: 'research', label: '科研' },
+                                            { key: 'teaching', label: '教学' },
+                                            { key: 'efficiency', label: '效率' },
+                                        ].map(d => {
+                                            const isSelected = talentStructureDims.includes(d.key);
+                                            return (
+                                                <div 
+                                                    key={d.key}
+                                                    onClick={() => {
+                                                        if (isSelected) {
+                                                            if (talentStructureDims.length > 1) setTalentStructureDims(prev => prev.filter(k => k !== d.key));
+                                                        } else if (talentStructureDims.length < 3) {
+                                                            setTalentStructureDims(prev => [...prev, d.key]);
+                                                        } else {
+                                                            setTalentStructureDims(prev => [...prev.slice(1), d.key]);
+                                                        }
+                                                    }}
+                                                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-all ${isSelected ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-gray-50 text-gray-500'}`}
+                                                >
+                                                    <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white'}`}>
+                                                        {isSelected && <Check size={10} />}
+                                                    </div>
+                                                    <span className="text-xs">{d.label}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <button 
+                                        onClick={() => setTalentShowTrajectory(!talentShowTrajectory)}
+                                        className={`mt-auto w-full flex items-center justify-between p-2 rounded text-[10px] transition-all border ${talentShowTrajectory ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
+                                    >
+                                        <span>显示演变轨迹</span>
+                                        <GitCommit size={12} />
+                                    </button>
+                                </div>
+                                <div className="col-span-12 md:col-span-7 h-[350px]">
+                                    <TernaryPlot 
+                                        data={structuralData} 
+                                        labels={talentStructureDims.map(k => (({ medical: '医疗', quality: '质量', research: '科研', teaching: '教学', efficiency: '效率' } as any)[k] || '')) as any}
+                                        showTrajectory={talentShowTrajectory}
+                                    />
+                                </div>
+                                <div className="col-span-12 md:col-span-3 space-y-4">
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                        <h4 className="text-[10px] font-bold text-red-600 uppercase mb-2 flex items-center gap-1"><Crosshair size={12}/> 结构偏离最显著</h4>
+                                        <div className="space-y-2">
+                                            {structuralData.slice(0, 2).map(d => (
+                                                <div key={d.id} className="bg-white p-2 rounded border border-gray-100 shadow-sm">
+                                                    <div className="flex justify-between text-[10px] font-bold mb-1">
+                                                        <span>{d.name}</span>
+                                                        <span className="text-red-600">显著</span>
+                                                    </div>
+                                                    <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden flex">
+                                                        <div className="h-full bg-blue-400" style={{width: '60%'}}></div>
+                                                        <div className="h-full bg-emerald-400" style={{width: '20%'}}></div>
+                                                        <div className="h-full bg-purple-400" style={{width: '20%'}}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                        <h4 className="text-[10px] font-bold text-blue-600 uppercase mb-2 flex items-center gap-1"><RefreshCw size={12}/> 结构转型最快</h4>
+                                        <div className="space-y-2">
+                                            {structuralData.slice(2, 4).map(d => (
+                                                <div key={d.id} className="bg-white p-2 rounded border border-gray-100 shadow-sm text-[10px]">
+                                                    <div className="font-bold mb-1">{d.name}</div>
+                                                    <div className="text-gray-400">主要驱动: 科研产出</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
       </div>
     );
   };

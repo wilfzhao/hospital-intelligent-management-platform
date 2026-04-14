@@ -53,6 +53,16 @@ const MOCK_DATA = [
     department: '信息中心',
     coDepartment: '基建处',
     status: '进行中',
+  },
+  {
+    id: 6,
+    year: '2026',
+    category: '后勤保障',
+    target: '完成新院区后勤服务招标工作。',
+    leader: '刘总会',
+    department: '后勤处',
+    coDepartment: '无',
+    status: '未开始',
   }
 ];
 
@@ -100,6 +110,7 @@ export const TaskListLibrary: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(MOCK_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedStatus, setSelectedStatus] = useState<string>('全部');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedLeaders, setSelectedLeaders] = useState<string[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
@@ -147,6 +158,8 @@ export const TaskListLibrary: React.FC = () => {
         return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">进行中</span>;
       case '滞后':
         return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">滞后</span>;
+      case '未开始':
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">未开始</span>;
       default:
         return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
     }
@@ -155,10 +168,11 @@ export const TaskListLibrary: React.FC = () => {
   // Filter data
   const filteredData = tasks.filter(item => {
     const matchYear = item.year === selectedYear;
+    const matchStatus = selectedStatus === '全部' || item.status === selectedStatus;
     const matchSearch = item.target.includes(searchQuery) || item.department.includes(searchQuery);
     const matchCategory = selectedCategories.length === 0 || selectedCategories.includes(item.category);
     const matchLeader = selectedLeaders.length === 0 || selectedLeaders.includes(item.leader);
-    return matchYear && matchSearch && matchCategory && matchLeader;
+    return matchYear && matchStatus && matchSearch && matchCategory && matchLeader;
   });
 
   if (selectedTaskId !== null) {
@@ -168,10 +182,6 @@ export const TaskListLibrary: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col bg-gray-50 p-6 h-full overflow-hidden">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">任务清单库</h1>
-          <p className="text-sm text-gray-500 mt-1">管理和追踪年度各项重点工作任务</p>
-        </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium">
             <Upload size={18} />
@@ -204,6 +214,23 @@ export const TaskListLibrary: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col flex-1 overflow-hidden">
+        {/* Status Tabs */}
+        <div className="flex items-center px-4 pt-4 border-b border-gray-100 gap-6">
+          {['全部', '未开始', '进行中', '已完成', '滞后'].map(status => (
+            <button
+              key={status}
+              onClick={() => setSelectedStatus(status)}
+              className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                selectedStatus === status
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
         {/* Filter Bar */}
         <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4 bg-gray-50/50 relative z-20">
           <div className="flex flex-wrap items-center gap-4">

@@ -90,6 +90,13 @@ const LabCockpit: React.FC<LabCockpitProps> = ({
     { barcode: 'A20260331102', patient: '刘洋', dept: 'ICU', item: '血气分析', missingNode: '标本运送', status: '已签收' },
   ];
 
+  const returnedSpecimens = [
+    { barcode: 'A20260331012', patientId: 'O1234567', name: '刘建国', item: '生化全套', dept: '心内科', doctor: '张华', reason: '标本溶血', receiver: '李检验', handler: '王护士' },
+    { barcode: 'A20260331055', patientId: 'I9876543', name: '王秀英', item: '凝血四项', dept: '呼吸内科', doctor: '李明', reason: '采血量不足', receiver: '赵检验', handler: '孙护士' },
+    { barcode: 'A20260331099', patientId: 'O2345678', name: '陈伟', item: '血常规', dept: '急诊科', doctor: '王强', reason: '条码破损', receiver: '周检验', handler: '吴护士' },
+    { barcode: 'A20260331120', patientId: 'I8765432', name: '林芳', item: '血气分析', dept: 'ICU', doctor: '赵刚', reason: '标本凝块', receiver: '吴检验', handler: '郑护士' },
+  ];
+
   return (
     <div className="w-full bg-[#0f172a] flex-1 min-h-0 text-white p-6 pb-24 space-y-6 overflow-y-auto">
       {/* Header */}
@@ -460,7 +467,7 @@ const LabCockpit: React.FC<LabCockpitProps> = ({
         </div>
       </div>
 
-      {/* 标本全流程追踪缺失信息 */}
+      {/* 标本全流程追踪缺失信息 & 当日回退标本数 */}
       <div className="grid grid-cols-1 gap-6">
         <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[300px]">
           <div className="flex justify-between items-center mb-6">
@@ -497,6 +504,50 @@ const LabCockpit: React.FC<LabCockpitProps> = ({
                         {row.status}
                       </span>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[300px]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <AlertCircle className="text-rose-400" size={20} />
+              当日回退标本数
+            </h3>
+            <div className="text-xs text-rose-400 bg-rose-400/10 px-2 py-1 rounded border border-rose-400/20">
+              回退标本: {returnedSpecimens.length}
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto custom-scrollbar">
+            <table className="w-full text-left text-xs">
+              <thead className="text-slate-500 border-b border-slate-800 sticky top-0 bg-slate-900/90 backdrop-blur-sm z-10">
+                <tr>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">条码号</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">门诊号/住院号</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">姓名</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">项目</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">开单科室</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">开单医生</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">回退原因</th>
+                  <th className="pb-2 font-medium whitespace-nowrap pr-4">接受人</th>
+                  <th className="pb-2 font-medium whitespace-nowrap">处理人</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/50">
+                {returnedSpecimens.map((row, i) => (
+                  <tr key={i} className="hover:bg-white/5 transition-colors">
+                    <td className="py-3 text-slate-300 font-mono pr-4">{row.barcode}</td>
+                    <td className="py-3 text-slate-300 font-mono pr-4">{row.patientId}</td>
+                    <td className="py-3 text-slate-300 pr-4">{row.name}</td>
+                    <td className="py-3 text-slate-300 font-medium pr-4">{row.item}</td>
+                    <td className="py-3 text-slate-400 pr-4">{row.dept}</td>
+                    <td className="py-3 text-slate-400 pr-4">{row.doctor}</td>
+                    <td className="py-3 text-rose-400 font-medium pr-4">{row.reason}</td>
+                    <td className="py-3 text-slate-400 pr-4">{row.receiver}</td>
+                    <td className="py-3 text-slate-400">{row.handler}</td>
                   </tr>
                 ))}
               </tbody>

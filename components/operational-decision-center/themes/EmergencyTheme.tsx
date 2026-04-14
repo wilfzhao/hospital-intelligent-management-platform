@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   CartesianGrid, XAxis, YAxis, Tooltip, Legend, LineChart, Line, 
-  ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine
+  ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine, LabelList
 } from 'recharts';
 
 interface EmergencyThemeProps {

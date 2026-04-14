@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  RotateCcw, Search, TrendingUp, Activity, PieChart as PieChartIcon, Users, Clock
+  RotateCcw, Search, TrendingUp, Activity, PieChart as PieChartIcon, Users, Clock, FileText
 } from 'lucide-react';
 import {
   LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 

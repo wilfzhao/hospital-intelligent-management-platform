@@ -8,7 +8,7 @@ import {
   Database, FileCode, Activity,
   Send, Undo, Redo, Wand2, Clock, Globe, File as FileIcon, CalendarDays,
   ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
-  Sparkles, Bell, Loader2, Check
+  Loader2, Check
 } from 'lucide-react';
 import { PLANS } from '../constants';
 import { AnalysisSystem } from '../types';
@@ -802,7 +802,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) 
                onClick={() => setActiveSidebarTab('analysis')}
                className={`flex-1 py-3 text-sm font-medium text-center relative transition-colors ${activeSidebarTab === 'analysis' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
              >
-               分析体系
+               分析组件
                {activeSidebarTab === 'analysis' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
              </button>
           </div>
@@ -912,15 +912,15 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) 
                    <div 
                      key={system.id} 
                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer group transition-colors border border-transparent hover:border-blue-100"
-                     onDoubleClick={() => handleInsertText(system.name)}
-                     title="双击插入分析体系名称"
+                     onClick={handleInsertChart}
+                     title="点击插入图表"
                    >
                      <div className="w-8 h-8 rounded bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:text-blue-500 transition-colors">
                        <Activity size={16} />
                      </div>
                      <div className="flex-1 min-w-0">
                        <div className="text-sm text-gray-700 font-medium truncate group-hover:text-blue-700">{system.name}</div>
-                       <div className="text-[10px] text-gray-400 truncate">分析体系</div>
+                       <div className="text-[10px] text-gray-400 truncate">分析组件</div>
                      </div>
                      <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
                    </div>
@@ -992,24 +992,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) 
            </div>
         </main>
 
-        {/* Right Sidebar - Tools */}
-        <aside className="w-[80px] bg-white border-l border-gray-200 flex flex-col items-center py-6 gap-6 z-10 flex-shrink-0">
-            {/* Chat Item */}
-            <button className="flex flex-col items-center gap-1.5 group">
-                <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                    <Sparkles size={20} />
-                </div>
-                <span className="text-xs font-medium text-gray-600 group-hover:text-blue-600">对话</span>
-            </button>
 
-            {/* Reminder Item */}
-            <button className="flex flex-col items-center gap-1.5 group">
-                <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                    <Bell size={20} />
-                </div>
-                <span className="text-xs font-medium text-gray-600 group-hover:text-orange-500">提醒</span>
-            </button>
-        </aside>
       </div>
 
       {/* Loading Overlay */}

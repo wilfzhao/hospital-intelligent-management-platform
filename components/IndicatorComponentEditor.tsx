@@ -52,6 +52,7 @@ interface ReferenceLineConfig {
   value: number;
   label: string;
   position: 'start' | 'middle' | 'end';
+  field?: string;
 }
 
 const MOCK_DIMENSIONS: DimensionNode[] = [
@@ -173,10 +174,9 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
     );
   };
 
-  const calculateAverage = () => {
-    if (chartData.length === 0 || selectedIndicators.length === 0) return 0;
-    const indicatorLabel = getIndicatorLabel(selectedIndicators[0]);
-    const sum = chartData.reduce((acc, curr) => acc + (curr[indicatorLabel] || 0), 0);
+  const calculateAverage = (field?: string) => {
+    if (chartData.length === 0 || !field) return 0;
+    const sum = chartData.reduce((acc, curr) => acc + (curr[field] || 0), 0);
     return Math.round(sum / chartData.length);
   };
 
@@ -627,11 +627,27 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                             </button>
                             
                             <div className="space-y-2">
+                              <span className="text-[10px] text-gray-500 font-bold">应用字段</span>
+                              <select 
+                                value={line.field || ''}
+                                onChange={(e) => updateReferenceLine(line.id, { field: e.target.value })}
+                                className="w-full h-7 border rounded px-2 text-xs bg-white"
+                              >
+                                <option value="">选择字段</option>
+                                {selectedIndicators.map(id => {
+                                  const label = getIndicatorLabel(id);
+                                  return <option key={id} value={label}>{label}</option>;
+                                })}
+                              </select>
+                            </div>
+
+                            <div className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] text-gray-500 font-bold">数值</span>
                                 <button 
-                                  onClick={() => updateReferenceLine(line.id, { value: calculateAverage() })}
-                                  className="text-[9px] text-blue-600 hover:underline"
+                                  onClick={() => updateReferenceLine(line.id, { value: calculateAverage(line.field) })}
+                                  disabled={!line.field}
+                                  className={`text-[9px] ${line.field ? 'text-blue-600 hover:underline' : 'text-gray-300 cursor-not-allowed'}`}
                                 >
                                   设为平均值
                                 </button>
@@ -778,7 +794,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                                 y={line.value} 
                                 stroke="#ef4444" 
                                 strokeDasharray="3 3" 
-                                label={{ value: line.label, position: line.position, fill: '#ef4444', fontSize: 10 }} 
+                                label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
                               />
                             ))}
                           </BarChart>
@@ -857,7 +873,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                                 y={line.value} 
                                 stroke="#ef4444" 
                                 strokeDasharray="3 3" 
-                                label={{ value: line.label, position: line.position, fill: '#ef4444', fontSize: 10 }} 
+                                label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
                               />
                             ))}
                           </LineChart>

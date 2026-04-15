@@ -14,6 +14,7 @@ import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
+import { SupervisionConfig } from './components/SupervisionConfig';
 import IndicatorAnalysis from './components/IndicatorAnalysis';
 import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
 import { IndicatorAnalysisComponents } from './components/IndicatorAnalysisComponents';
@@ -39,7 +40,7 @@ const App: React.FC = () => {
 
   // Header Items State
   const [headerItems, setHeaderItems] = useState<string[]>([
-    '党委政务督办平台',
+    '党委决策督办平台',
     '医院等级评审', 
     '公立医院绩效考核', 
     '运营决策中心', 
@@ -49,7 +50,7 @@ const App: React.FC = () => {
 
   // Derive sidebar items based on active module
   const currentSidebarItems = useMemo(() => {
-    if (activeModule === '党委政务督办平台') {
+    if (activeModule === '党委决策督办平台') {
       return SUPERVISION_SIDEBAR_ITEMS;
     }
     if (activeModule === '医院等级评审') {
@@ -66,7 +67,7 @@ const App: React.FC = () => {
     setActiveModule(moduleName);
     
     // Reset view to the first item of the new module's sidebar
-    if (moduleName === '党委政务督办平台') {
+    if (moduleName === '党委决策督办平台') {
       setCurrentView(SUPERVISION_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '医院等级评审') {
       setCurrentView('review_summary');

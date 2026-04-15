@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import LabCockpit from './cockpits/LabCockpit';
 import ExamCockpit from './cockpits/ExamCockpit';

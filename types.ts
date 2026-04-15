@@ -70,6 +70,7 @@ export interface ReportDocument {
 export interface Department {
   id: string;
   name: string;
+  type?: string; // e.g., '内科', '外科', '医技', '职能'
   children?: Department[];
 }
 

@@ -293,31 +293,31 @@ export const MOCK_REPORTS: ReportDocument[] = [
 
 export const DEPARTMENTS: Department[] = [
   {
-    id: 'd1', name: '职能科室', children: [
-      { id: 'd1-1', name: '医务处' },
-      { id: 'd1-2', name: '护理部' },
-      { id: 'd1-3', name: '院感科' },
-      { id: 'd1-4', name: '质管科' },
-      { id: 'd1-5', name: '病案室' },
+    id: 'd1', name: '职能科室', type: '职能', children: [
+      { id: 'd1-1', name: '医务处', type: '职能' },
+      { id: 'd1-2', name: '护理部', type: '职能' },
+      { id: 'd1-3', name: '院感科', type: '职能' },
+      { id: 'd1-4', name: '质管科', type: '职能' },
+      { id: 'd1-5', name: '病案室', type: '职能' },
     ]
   },
   {
     id: 'd2', name: '临床科室', children: [
-      { id: 'd2-1', name: '心血管内科' },
-      { id: 'd2-2', name: '呼吸内科' },
-      { id: 'd2-3', name: '消化内科' },
-      { id: 'd2-4', name: '普通外科' },
-      { id: 'd2-5', name: '骨科' },
-      { id: 'd2-6', name: '神经内科' },
-      { id: 'd2-7', name: '妇产科' },
+      { id: 'd2-1', name: '心血管内科', type: '内科' },
+      { id: 'd2-2', name: '呼吸内科', type: '内科' },
+      { id: 'd2-3', name: '消化内科', type: '内科' },
+      { id: 'd2-4', name: '普通外科', type: '外科' },
+      { id: 'd2-5', name: '骨科', type: '外科' },
+      { id: 'd2-6', name: '神经内科', type: '内科' },
+      { id: 'd2-7', name: '妇产科', type: '外科' },
     ]
   },
   {
-    id: 'd3', name: '医技科室', children: [
-      { id: 'd3-1', name: '放射科' },
-      { id: 'd3-2', name: '检验科' },
-      { id: 'd3-3', name: '药剂科' },
-      { id: 'd3-4', name: '超声科' },
+    id: 'd3', name: '医技科室', type: '医技', children: [
+      { id: 'd3-1', name: '放射科', type: '医技' },
+      { id: 'd3-2', name: '检验科', type: '医技' },
+      { id: 'd3-3', name: '药剂科', type: '医技' },
+      { id: 'd3-4', name: '超声科', type: '医技' },
     ]
   }
 ];

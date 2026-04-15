@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, Info, Database } from 'lucide-react';
+import { SupervisionConfig } from './SupervisionConfig';
 
 const BaseConfig: React.FC = () => {
   const [activeTab, setActiveTab] = useState('platform');
@@ -14,6 +15,7 @@ const BaseConfig: React.FC = () => {
     { id: 'review', label: '医院等级评审' },
     { id: 'performance', label: '公立医院绩效监测' },
     { id: 'mobile', label: '移动运营' },
+    { id: 'supervision', label: '党委决策督办平台' },
   ];
 
   return (
@@ -150,7 +152,13 @@ const BaseConfig: React.FC = () => {
                 </div>
             )}
 
-            {activeTab !== 'platform' && (
+            {activeTab === 'supervision' && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300 max-w-4xl h-full">
+                    <SupervisionConfig />
+                </div>
+            )}
+
+            {activeTab !== 'platform' && activeTab !== 'supervision' && (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400 animate-in fade-in duration-300">
                     <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                         <Info className="text-gray-300" size={32} />

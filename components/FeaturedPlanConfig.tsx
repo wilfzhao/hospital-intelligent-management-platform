@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, Users, Layers, Info, Search, ChevronRight, ChevronDown, 
   Check, X, Filter, Plus, Trash2, Edit2, Target, Percent, AlertCircle, 
-  FileText, Hash, Trophy
+  FileText, Hash, Trophy, Settings
 } from 'lucide-react';
 import { Plan, Department, Indicator } from '../types';
 import { DEPARTMENTS, INDICATORS } from '../constants';
@@ -21,7 +21,7 @@ interface AssociatedIndicatorConfig {
   name: string;
   weight: number;
   score: number; 
-  scoringType: 'positive' | 'negative' | 'veto'; // Added scoring attribute options
+  scoringType: 'achievement' | 'interval'; // Updated scoring method options
 }
 
 interface DimensionNode {
@@ -33,59 +33,99 @@ interface DimensionNode {
   indicators?: AssociatedIndicatorConfig[];
 }
 
+interface PlanTemplate {
+  id: string;
+  name: string;
+  groupType: string;
+  targetIds: string[];
+  dimensions: DimensionNode[];
+  planTotalScore: number;
+}
+
 // --- Mock Data ---
 const MOCK_DISCIPLINES = [
-    { id: 'dis-1', name: '内科学' },
-    { id: 'dis-2', name: '外科学' },
-    { id: 'dis-3', name: '儿科学' },
-    { id: 'dis-4', name: '神经病学' },
-    { id: 'dis-5', name: '急诊医学' },
-    { id: 'dis-6', name: '肿瘤学' },
-    { id: 'dis-7', name: '康复医学' },
-    { id: 'dis-8', name: '麻醉学' },
-    { id: 'dis-9', name: '皮肤病学' },
-    { id: 'dis-10', name: '眼科学' },
+    { id: 'dis-1', name: '内科学', type: '内科' },
+    { id: 'dis-2', name: '外科学', type: '外科' },
+    { id: 'dis-3', name: '儿科学', type: '内科' },
+    { id: 'dis-4', name: '神经病学', type: '内科' },
+    { id: 'dis-5', name: '急诊医学', type: '急诊' },
+    { id: 'dis-6', name: '肿瘤学', type: '内科' },
+    { id: 'dis-7', name: '康复医学', type: '康复' },
+    { id: 'dis-8', name: '麻醉学', type: '医技' },
+    { id: 'dis-9', name: '皮肤病学', type: '内科' },
+    { id: 'dis-10', name: '眼科学', type: '外科' },
 ];
 
 const MOCK_PEOPLE = [
-    { id: 'u1', name: '张伟', dept: '心血管内科', deptId: 'd2-1' },
-    { id: 'u2', name: '王芳', dept: '心血管内科', deptId: 'd2-1' },
-    { id: 'u3', name: '李娜', dept: '呼吸内科', deptId: 'd2-2' },
-    { id: 'u4', name: '刘强', dept: '呼吸内科', deptId: 'd2-2' },
-    { id: 'u5', name: '陈杰', dept: '普通外科', deptId: 'd2-4' },
-    { id: 'u6', name: '杨敏', dept: '普通外科', deptId: 'd2-4' },
-    { id: 'u7', name: '赵静', dept: '护理部', deptId: 'd1-2' },
-    { id: 'u8', name: '孙勇', dept: '医务处', deptId: 'd1-1' },
-    { id: 'u9', name: '周涛', dept: '骨科', deptId: 'd2-5' },
-    { id: 'u10', name: '吴艳', dept: '妇产科', deptId: 'd2-7' },
+    { id: 'u1', name: '张伟', dept: '心血管内科', deptId: 'd2-1', type: '内科' },
+    { id: 'u2', name: '王芳', dept: '心血管内科', deptId: 'd2-1', type: '内科' },
+    { id: 'u3', name: '李娜', dept: '呼吸内科', deptId: 'd2-2', type: '内科' },
+    { id: 'u4', name: '刘强', dept: '呼吸内科', deptId: 'd2-2', type: '内科' },
+    { id: 'u5', name: '陈杰', dept: '普通外科', deptId: 'd2-4', type: '外科' },
+    { id: 'u6', name: '杨敏', dept: '普通外科', deptId: 'd2-4', type: '外科' },
+    { id: 'u7', name: '赵静', dept: '护理部', deptId: 'd1-2', type: '职能' },
+    { id: 'u8', name: '孙勇', dept: '医务处', deptId: 'd1-1', type: '职能' },
+    { id: 'u9', name: '周涛', dept: '骨科', deptId: 'd2-5', type: '外科' },
+    { id: 'u10', name: '吴艳', dept: '妇产科', deptId: 'd2-7', type: '外科' },
 ];
 
-const INITIAL_DIMENSIONS: DimensionNode[] = [
-  {
-    id: 'dim-1',
-    name: '医疗质量',
-    weight: 50,
-    score: 500,
-    children: [
+const DIMENSION_TEMPLATES: Record<string, DimensionNode[]> = {
+  '内科': [
+    {
+      id: 'dim-nk-1', name: '内科医疗质量', weight: 60, score: 600,
+      children: [
+        { id: 'dim-nk-1-1', name: '核心制度落实', weight: 40, score: 240, indicators: [] },
+        { id: 'dim-nk-1-2', name: '并发症控制', weight: 60, score: 360, indicators: [] }
+      ]
+    },
+    { id: 'dim-nk-2', name: '内科运营效率', weight: 20, score: 200, children: [] },
+    { id: 'dim-nk-3', name: '内科科研教学', weight: 20, score: 200, children: [] }
+  ],
+  '外科': [
+    {
+      id: 'dim-wk-1', name: '外科手术质量', weight: 50, score: 500,
+      children: [
+        { id: 'dim-wk-1-1', name: '三四级手术占比', weight: 50, score: 250, indicators: [] },
+        { id: 'dim-wk-1-2', name: '微创手术占比', weight: 50, score: 250, indicators: [] }
+      ]
+    },
+    { id: 'dim-wk-2', name: '外科医疗安全', weight: 30, score: 300, children: [] },
+    { id: 'dim-wk-3', name: '外科运营效率', weight: 20, score: 200, children: [] }
+  ],
+  '医技': [
+    {
+      id: 'dim-yj-1', name: '医技服务质量', weight: 50, score: 500,
+      children: [
+        { id: 'dim-yj-1-1', name: '报告准确率', weight: 60, score: 300, indicators: [] },
+        { id: 'dim-yj-1-2', name: '危急值报告及时率', weight: 40, score: 200, indicators: [] }
+      ]
+    },
+    { id: 'dim-yj-2', name: '医技工作效率', weight: 30, score: 300, children: [] },
+    { id: 'dim-yj-3', name: '设备管理', weight: 20, score: 200, children: [] }
+  ],
+  '职能': [
+    {
+      id: 'dim-zn-1', name: '管理效能', weight: 40, score: 400,
+      children: [
+        { id: 'dim-zn-1-1', name: '计划完成率', weight: 50, score: 200, indicators: [] },
+        { id: 'dim-zn-1-2', name: '督办事项完成率', weight: 50, score: 200, indicators: [] }
+      ]
+    },
+    { id: 'dim-zn-2', name: '服务满意度', weight: 40, score: 400, children: [] },
+    { id: 'dim-zn-3', name: '成本控制', weight: 20, score: 200, children: [] }
+  ],
+  'default': [
+    {
+      id: 'dim-1', name: '医疗质量', weight: 50, score: 500,
+      children: [
         { id: 'dim-1-1', name: '过程质量', weight: 40, score: 200, indicators: [] },
         { id: 'dim-1-2', name: '终末质量', weight: 60, score: 300, indicators: [] }
-    ]
-  },
-  {
-    id: 'dim-2',
-    name: '运营效率',
-    weight: 30,
-    score: 300,
-    children: []
-  },
-  {
-    id: 'dim-3',
-    name: '持续发展',
-    weight: 20,
-    score: 200,
-    children: []
-  }
-];
+      ]
+    },
+    { id: 'dim-2', name: '运营效率', weight: 30, score: 300, children: [] },
+    { id: 'dim-3', name: '持续发展', weight: 20, score: 200, children: [] }
+  ]
+};
 
 // --- Helper Functions ---
 const findDimensionNode = (nodes: DimensionNode[], id: string): DimensionNode | undefined => {
@@ -113,17 +153,47 @@ const findParentNode = (nodes: DimensionNode[], childId: string): DimensionNode 
 export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, onBack }) => {
   const [activeTab, setActiveTab] = useState<'targets' | 'dimensions'>('targets');
   
+  // --- Templates State ---
+  const [templates, setTemplates] = useState<PlanTemplate[]>([
+    {
+      id: 'tpl-1',
+      name: '默认考评类型',
+      groupType: 'default',
+      targetIds: [],
+      dimensions: JSON.parse(JSON.stringify(DIMENSION_TEMPLATES['default'])),
+      planTotalScore: 1000
+    }
+  ]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('tpl-1');
+
+  // --- Custom Types State ---
+  const [customTypes, setCustomTypes] = useState<string[]>(['内科', '外科', '医技', '职能']);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [newTypeName, setNewTypeName] = useState('');
+  const [editingType, setEditingType] = useState<string | null>(null);
+  const [editingTypeValue, setEditingTypeValue] = useState('');
+
+  const currentTemplate = templates.find(t => t.id === selectedTemplateId) || templates[0] || null;
+
+  const updateCurrentTemplate = (updates: Partial<PlanTemplate>) => {
+    if (!currentTemplate) return;
+    setTemplates(prev => prev.map(t => t.id === currentTemplate.id ? { ...t, ...updates } : t));
+  };
+
   // --- Target Selection State ---
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectedIds = useMemo(() => new Set(currentTemplate?.targetIds || []), [currentTemplate?.targetIds]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDeptIds, setExpandedDeptIds] = useState<Set<string>>(new Set(['d1', 'd2', 'd3']));
 
   // --- Dimension Configuration State ---
-  const [dimensions, setDimensions] = useState<DimensionNode[]>(INITIAL_DIMENSIONS);
+  const dimensions = currentTemplate?.dimensions || [];
+  const setDimensions = (newDimensions: DimensionNode[]) => updateCurrentTemplate({ dimensions: newDimensions });
+  const planTotalScore = currentTemplate?.planTotalScore || 1000;
+  const setPlanTotalScore = (score: number) => updateCurrentTemplate({ planTotalScore: score });
+
   const [selectedDimensionId, setSelectedDimensionId] = useState<string>('dim-1');
   const [expandedDimIds, setExpandedDimIds] = useState<Set<string>>(new Set(['dim-1']));
   const [isIndicatorModalOpen, setIsIndicatorModalOpen] = useState(false);
-  const [planTotalScore, setPlanTotalScore] = useState<number>(1000); // Default to 1000
 
   // --- Toast State ---
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -142,6 +212,31 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
   }, []);
 
   const targetType = plan.target || 'department';
+
+  // --- Right Panel Helpers (Moved up for use in useEffect) ---
+  const getSelectedItems = () => {
+      const items: {id: string, name: string, sub?: string, type?: string}[] = [];
+      if (targetType === 'department') {
+          const findName = (depts: Department[]): void => {
+              depts.forEach(d => {
+                  if (selectedIds.has(d.id)) items.push({ id: d.id, name: d.name, type: d.type });
+                  if (d.children) findName(d.children);
+              });
+          };
+          findName(DEPARTMENTS);
+      } else if (targetType === 'discipline') {
+          MOCK_DISCIPLINES.forEach(d => {
+              if (selectedIds.has(d.id)) items.push({ id: d.id, name: d.name, type: d.type });
+          });
+      } else if (targetType === 'person') {
+          MOCK_PEOPLE.forEach(p => {
+              if (selectedIds.has(p.id)) items.push({ id: p.id, name: p.name, sub: p.dept, type: p.type });
+          });
+      }
+      return items;
+  };
+
+  const selectedItemsList = getSelectedItems();
 
   // --- Statistics Calculation ---
   const { totalWeight, currentTotalScore } = useMemo(() => {
@@ -193,14 +288,53 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
   };
 
   // --- Target Logic ---
-  const toggleSelection = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
+  const findDepartment = (depts: Department[], id: string): Department | null => {
+    for (const dept of depts) {
+      if (dept.id === id) return dept;
+      if (dept.children) {
+        const found = findDepartment(dept.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
   };
 
-  const clearSelection = () => setSelectedIds(new Set());
+  const getAllDeptIds = (dept: Department): string[] => {
+    let ids = [dept.id];
+    if (dept.children) {
+      dept.children.forEach(child => {
+        ids = ids.concat(getAllDeptIds(child));
+      });
+    }
+    return ids;
+  };
+
+  const toggleSelection = (id: string) => {
+    const newSet = new Set(selectedIds);
+    const isSelected = newSet.has(id);
+
+    if (targetType === 'department') {
+      const dept = findDepartment(DEPARTMENTS, id);
+      if (dept) {
+        const allIds = getAllDeptIds(dept);
+        if (isSelected) {
+          allIds.forEach(childId => newSet.delete(childId));
+        } else {
+          allIds.forEach(childId => newSet.add(childId));
+        }
+      } else {
+        if (isSelected) newSet.delete(id);
+        else newSet.add(id);
+      }
+    } else {
+      if (isSelected) newSet.delete(id);
+      else newSet.add(id);
+    }
+    
+    updateCurrentTemplate({ targetIds: Array.from(newSet) });
+  };
+
+  const clearSelection = () => updateCurrentTemplate({ targetIds: [] });
 
   const toggleDeptExpand = (id: string) => {
     const newSet = new Set(expandedDeptIds);
@@ -400,7 +534,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                   name: findIndicatorName(INDICATORS, id),
                   weight: 0,
                   score: 0,
-                  scoringType: 'positive' // Default to '赋分指标'
+                  scoringType: 'achievement' // Default to '达成率计分法'
               };
           });
           
@@ -468,7 +602,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
       }
   };
 
-  const handleIndicatorScoringTypeChange = (indId: string, type: 'positive' | 'negative' | 'veto') => {
+  const handleIndicatorScoringTypeChange = (indId: string, type: 'achievement' | 'interval') => {
       const currentNode = findDimensionNode(dimensions, selectedDimensionId);
       if(currentNode && currentNode.indicators) {
           const updatedIndicators = currentNode.indicators.map(ind => 
@@ -741,31 +875,6 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
       });
   };
 
-  // --- Right Panel Helpers ---
-  const getSelectedItems = () => {
-      const items: {id: string, name: string, sub?: string}[] = [];
-      if (targetType === 'department') {
-          const findName = (depts: Department[]): void => {
-              depts.forEach(d => {
-                  if (selectedIds.has(d.id)) items.push({ id: d.id, name: d.name });
-                  if (d.children) findName(d.children);
-              });
-          };
-          findName(DEPARTMENTS);
-      } else if (targetType === 'discipline') {
-          MOCK_DISCIPLINES.forEach(d => {
-              if (selectedIds.has(d.id)) items.push({ id: d.id, name: d.name });
-          });
-      } else if (targetType === 'person') {
-          MOCK_PEOPLE.forEach(p => {
-              if (selectedIds.has(p.id)) items.push({ id: p.id, name: p.name, sub: p.dept });
-          });
-      }
-      return items;
-  };
-
-  const selectedItemsList = getSelectedItems();
-
   return (
     <div className="flex-1 w-full flex flex-col h-full bg-white rounded-lg shadow-sm overflow-hidden font-sans">
       {/* Header */}
@@ -794,68 +903,176 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
-        <button
-          onClick={() => setActiveTab('targets')}
-          className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors relative ${
-            activeTab === 'targets' 
-              ? 'border-blue-600 text-blue-600 bg-white' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Users size={16} />
-          配置考评对象
-        </button>
-        <button
-          onClick={() => setActiveTab('dimensions')}
-          className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors relative ${
-            activeTab === 'dimensions' 
-              ? 'border-blue-600 text-blue-600 bg-white' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <Layers size={16} />
-          配置考核维度与指标
-        </button>
-      </div>
+      {/* Main Layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar: Templates List */}
+        <div className="w-64 border-r border-gray-200 bg-gray-50 flex flex-col">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
+            <span className="font-bold text-gray-700">考评类型</span>
+            <button 
+              onClick={() => {
+                const newTpl: PlanTemplate = {
+                  id: `tpl-${Date.now()}`,
+                  name: '新考评类型',
+                  groupType: 'default',
+                  targetIds: [],
+                  dimensions: JSON.parse(JSON.stringify(DIMENSION_TEMPLATES['default'])),
+                  planTotalScore: 1000
+                };
+                setTemplates([...templates, newTpl]);
+                setSelectedTemplateId(newTpl.id);
+              }}
+              className="p-1 hover:bg-blue-50 rounded text-blue-600 transition-colors"
+              title="新建考评类型"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            {templates.map(tpl => (
+              <div 
+                key={tpl.id}
+                onClick={() => setSelectedTemplateId(tpl.id)}
+                className={`p-3 rounded-lg cursor-pointer border transition-all group ${
+                  selectedTemplateId === tpl.id 
+                    ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                    : 'bg-white border-transparent hover:border-gray-200 hover:shadow-sm'
+                }`}
+              >
+                <div className="font-medium text-sm text-gray-800 flex items-center justify-between">
+                  <span className="truncate pr-2">{tpl.name}</span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newTemplates = templates.filter(t => t.id !== tpl.id);
+                      setTemplates(newTemplates);
+                      if (selectedTemplateId === tpl.id) {
+                        setSelectedTemplateId(newTemplates.length > 0 ? newTemplates[0].id : '');
+                      }
+                    }}
+                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500 mt-1.5 flex justify-between items-center">
+                  <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                    {tpl.groupType === 'default' ? '默认' : tpl.groupType}类型
+                  </span>
+                  <span>{tpl.targetIds.length}个对象</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/* Content Area */}
-      <div className="flex-1 p-4 bg-gray-50 overflow-hidden flex flex-col">
-        {activeTab === 'targets' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-1 w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-                
-                {/* Left Panel: Source Selection */}
-                <div className="w-[60%] flex flex-col border-r border-gray-100">
-                    <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                            {targetType === 'department' && <Layers size={18} className="text-blue-500" />}
-                            {targetType === 'discipline' && <Check size={18} className="text-purple-500" />}
-                            {targetType === 'person' && <Users size={18} className="text-green-500" />}
-                            
-                            {targetType === 'department' && '选择科室'}
-                            {targetType === 'discipline' && '选择学科'}
-                            {targetType === 'person' && '选择人员'}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Filter size={12} />
-                            <span>当前模式: {
-                                targetType === 'department' ? '按科室' : 
-                                targetType === 'discipline' ? '按学科' : '按人员'
-                            }</span>
-                        </div>
+        {/* Right Side: Template Editor */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-white">
+          {currentTemplate ? (
+            <>
+              {/* Template Header */}
+              <div className="p-4 border-b border-gray-100 bg-white flex items-center justify-between flex-shrink-0">
+                <div className="flex items-center gap-4 flex-1">
+                  <input
+                    type="text"
+                    value={currentTemplate.name}
+                    onChange={e => updateCurrentTemplate({ name: e.target.value })}
+                    className="text-xl font-bold text-gray-800 bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-blue-500 focus:outline-none px-1 py-0.5 w-1/3 transition-colors"
+                    placeholder="输入考评类型名称"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500">类型:</span>
+                    <div className="flex items-center gap-1">
+                      <select
+                        value={currentTemplate.groupType}
+                        onChange={e => {
+                          const newSeries = e.target.value;
+                          const newDimensions = JSON.parse(JSON.stringify(DIMENSION_TEMPLATES[newSeries] || DIMENSION_TEMPLATES['default']));
+                          updateCurrentTemplate({ groupType: newSeries, dimensions: newDimensions });
+                        }}
+                        className="text-sm bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-gray-700 font-medium"
+                      >
+                        <option value="default">默认</option>
+                        {customTypes.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={() => setIsTypeModalOpen(true)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="管理类型"
+                      >
+                        <Settings size={16} />
+                      </button>
                     </div>
-                    
-                    {/* Search */}
-                    <div className="p-3 border-b border-gray-100">
-                        <div className="relative">
-                            <input 
-                                type="text" 
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                placeholder={`搜索${targetType === 'department' ? '科室' : targetType === 'discipline' ? '学科' : '人员'}...`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+                <button
+                  onClick={() => setActiveTab('targets')}
+                  className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors relative ${
+                    activeTab === 'targets' 
+                      ? 'border-blue-600 text-blue-600 bg-white' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Users size={16} />
+                  配置考评对象
+                </button>
+                <button
+                  onClick={() => setActiveTab('dimensions')}
+                  className={`px-6 py-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors relative ${
+                    activeTab === 'dimensions' 
+                      ? 'border-blue-600 text-blue-600 bg-white' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Layers size={16} />
+                  考核维度与指标
+                </button>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 p-4 bg-gray-50 overflow-hidden flex flex-col">
+                {activeTab === 'targets' && (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col flex-1 w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+                        
+                        {/* Target Selection Section */}
+                        <div className="flex flex-1 overflow-hidden">
+                            {/* Left Panel: Source Selection */}
+                        <div className="w-[60%] flex flex-col border-r border-gray-100">
+                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+                                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                    {targetType === 'department' && <Layers size={18} className="text-blue-500" />}
+                                    {targetType === 'discipline' && <Check size={18} className="text-purple-500" />}
+                                    {targetType === 'person' && <Users size={18} className="text-green-500" />}
+                                    
+                                    {targetType === 'department' && '选择使用科室'}
+                                    {targetType === 'discipline' && '选择使用学科'}
+                                    {targetType === 'person' && '选择使用人员'}
+                                </h3>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Filter size={12} />
+                                    <span>当前模式: {
+                                        targetType === 'department' ? '按科室' : 
+                                        targetType === 'discipline' ? '按学科' : '按人员'
+                                    }</span>
+                                </div>
+                            </div>
+                            
+                            {/* Search */}
+                            <div className="p-3 border-b border-gray-100">
+                                <div className="relative">
+                                    <input 
+                                        type="text" 
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                        placeholder={`搜索${targetType === 'department' ? '科室' : targetType === 'discipline' ? '学科' : '人员'}...`}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
                             <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
                         </div>
                     </div>
@@ -926,7 +1143,8 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                     </div>
                 </div>
             </div>
-        )}
+        </div>
+    )}
 
         {activeTab === 'dimensions' && (
              <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-1 w-full overflow-hidden animate-in fade-in zoom-in-95 duration-300">
@@ -1113,7 +1331,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                             <thead className="bg-gray-50 sticky top-0">
                                                 <tr>
                                                     <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[30%]">指标名称</th>
-                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">计分属性</th>
+                                                    <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">计分方法</th>
                                                     <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">指标权重 (%)</th>
                                                     <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 w-[20%]">指标分值</th>
                                                     <th className="px-4 py-3 text-xs font-semibold text-gray-600 border-b border-gray-200 text-center w-[10%]">操作</th>
@@ -1131,17 +1349,14 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                                         <td className="px-4 py-3">
                                                             <div className="relative w-32">
                                                                 <select
-                                                                    value={ind.scoringType}
-                                                                    onChange={(e) => handleIndicatorScoringTypeChange(ind.id, e.target.value as 'positive' | 'negative' | 'veto')}
+                                                                    value={ind.scoringType || 'achievement'}
+                                                                    onChange={(e) => handleIndicatorScoringTypeChange(ind.id, e.target.value as 'achievement' | 'interval')}
                                                                     className={`w-full appearance-none border border-gray-200 rounded px-3 py-1.5 text-xs font-medium outline-none focus:border-blue-500 transition-colors pr-8 cursor-pointer ${
-                                                                        ind.scoringType === 'positive' ? 'text-blue-700 bg-blue-50/50' :
-                                                                        ind.scoringType === 'negative' ? 'text-red-600 bg-red-50/50' :
-                                                                        'text-orange-600 bg-orange-50/50'
+                                                                        ind.scoringType === 'interval' ? 'text-purple-700 bg-purple-50/50' : 'text-blue-700 bg-blue-50/50'
                                                                     }`}
                                                                 >
-                                                                    <option value="positive">赋分指标</option>
-                                                                    <option value="negative">负向指标</option>
-                                                                    <option value="veto">一票否决</option>
+                                                                    <option value="achievement">达成率计分法</option>
+                                                                    <option value="interval">区间赋分法</option>
                                                                 </select>
                                                                 <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                                             </div>
@@ -1197,8 +1412,17 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
              </div>
         )}
       </div>
+      </>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+          <Layers size={48} className="text-gray-200 mb-4" />
+          <p className="text-sm font-medium">请在左侧选择或新建一个考评类型</p>
+        </div>
+      )}
+    </div>
+  </div>
 
-      {/* Modals */}
+  {/* Modals */}
       <IndicatorSelectModal 
         isOpen={isIndicatorModalOpen}
         onClose={() => setIsIndicatorModalOpen(false)}
@@ -1206,6 +1430,129 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
         initialSelection={currentSelectedDimension?.indicators?.map(i => i.id) || []}
         disabledIds={disabledIndicatorIds}
       />
+
+      {/* Type Management Modal */}
+      {isTypeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[150] flex items-center justify-center animate-in fade-in duration-200">
+          <div className="bg-white rounded-lg shadow-xl w-[400px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800">管理考评类型</h3>
+              <button onClick={() => setIsTypeModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto max-h-[400px]">
+              <div className="flex gap-2 mb-4">
+                <input 
+                  type="text" 
+                  value={newTypeName} 
+                  onChange={e => setNewTypeName(e.target.value)}
+                  placeholder="输入新类型名称"
+                  className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newTypeName.trim() && !customTypes.includes(newTypeName.trim())) {
+                      setCustomTypes([...customTypes, newTypeName.trim()]);
+                      setNewTypeName('');
+                    }
+                  }}
+                />
+                <button 
+                  onClick={() => {
+                    if (newTypeName.trim() && !customTypes.includes(newTypeName.trim())) {
+                      setCustomTypes([...customTypes, newTypeName.trim()]);
+                      setNewTypeName('');
+                    }
+                  }}
+                  disabled={!newTypeName.trim() || customTypes.includes(newTypeName.trim())}
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  添加
+                </button>
+              </div>
+              <ul className="space-y-2">
+                {customTypes.map((type, idx) => (
+                  <li key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded border border-gray-100 group">
+                    {editingType === type ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={editingTypeValue}
+                          onChange={e => setEditingTypeValue(e.target.value)}
+                          className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                          autoFocus
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && editingTypeValue.trim() && editingTypeValue.trim() !== type) {
+                              const newType = editingTypeValue.trim();
+                              if (!customTypes.includes(newType)) {
+                                setCustomTypes(customTypes.map(t => t === type ? newType : t));
+                                setTemplates(templates.map(t => t.groupType === type ? { ...t, groupType: newType } : t));
+                                setEditingType(null);
+                              }
+                            } else if (e.key === 'Escape') {
+                              setEditingType(null);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const newType = editingTypeValue.trim();
+                            if (newType && newType !== type && !customTypes.includes(newType)) {
+                              setCustomTypes(customTypes.map(t => t === type ? newType : t));
+                              setTemplates(templates.map(t => t.groupType === type ? { ...t, groupType: newType } : t));
+                            }
+                            setEditingType(null);
+                          }}
+                          className="text-green-600 hover:text-green-700 p-1"
+                          title="保存"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          onClick={() => setEditingType(null)}
+                          className="text-gray-400 hover:text-gray-600 p-1"
+                          title="取消"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm text-gray-700 font-medium">{type}</span>
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => {
+                              setEditingType(type);
+                              setEditingTypeValue(type);
+                            }}
+                            className="text-gray-400 hover:text-blue-500 p-1"
+                            title="编辑类型"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setCustomTypes(customTypes.filter(t => t !== type));
+                              // Update templates using this type to 'default'
+                              setTemplates(templates.map(t => t.groupType === type ? { ...t, groupType: 'default' } : t));
+                            }}
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            title="删除类型"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+                {customTypes.length === 0 && (
+                  <div className="text-center text-sm text-gray-400 py-4">暂无自定义类型</div>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toastMsg && (

@@ -14,12 +14,7 @@ import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
-import { SupervisionConfig } from './components/SupervisionConfig';
-import IndicatorAnalysis from './components/IndicatorAnalysis';
-import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
-import { IndicatorAnalysisComponents } from './components/IndicatorAnalysisComponents';
-import { IndicatorComponentEditor } from './components/IndicatorComponentEditor';
-import ReviewSummary from './components/ReviewSummary';
+import { ScoringRules } from './components/ScoringRules';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS, MOCK_ANALYSIS_SYSTEMS } from './constants';
 import { Plan, AnalysisSystem } from './types';
 import { Settings } from 'lucide-react';
@@ -158,6 +153,8 @@ const App: React.FC = () => {
             <PermissionTable activeRoleId={activeRoleId} />
           </>
         );
+      case 'rule_1':
+        return <ScoringRules />;
       case 'base_config':
         return <BaseConfig />;
 

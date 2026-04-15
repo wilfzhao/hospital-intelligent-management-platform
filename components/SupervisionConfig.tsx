@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Save, CheckCircle2, Settings2, Clock, AlertCircle, CalendarDays, Building2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, CalendarDays } from 'lucide-react';
 
 export const SupervisionConfig: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -8,6 +8,8 @@ export const SupervisionConfig: React.FC = () => {
 
   const [startDay, setStartDay] = useState<number>(20);
   const [endDay, setEndDay] = useState<number>(10);
+  const [startRelativeMonth, setStartRelativeMonth] = useState<number>(3); // 3: 末月, 4: 下季首月
+  const [endRelativeMonth, setEndRelativeMonth] = useState<number>(4); // 3: 本季末月, 4: 下季首月
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -33,9 +35,21 @@ export const SupervisionConfig: React.FC = () => {
 
   const previewDates = useMemo(() => {
     return [1, 2, 3, 4].map(q => {
-      const startMonth = q * 3;
-      const endMonth = q === 4 ? 1 : q * 3 + 1;
-      const endYear = q === 4 ? selectedYear + 1 : selectedYear;
+      let sMonth = (q - 1) * 3 + startRelativeMonth;
+      let eMonth = (q - 1) * 3 + endRelativeMonth;
+      
+      let sYear = selectedYear;
+      let eYear = selectedYear;
+
+      if (sMonth > 12) {
+        sMonth -= 12;
+        sYear += 1;
+      }
+      
+      if (eMonth > 12) {
+        eMonth -= 12;
+        eYear += 1;
+      }
 
       const formatMonth = (m: number) => m.toString().padStart(2, '0');
       const formatDay = (d: number) => d.toString().padStart(2, '0');
@@ -43,11 +57,11 @@ export const SupervisionConfig: React.FC = () => {
       return {
         quarter: q,
         quarterName: `第${q}季度 (${(q-1)*3+1}-${q*3}月)`,
-        start: `${selectedYear}-${formatMonth(startMonth)}-${formatDay(startDay)}`,
-        end: `${endYear}-${formatMonth(endMonth)}-${formatDay(endDay)}`
+        start: `${sYear}-${formatMonth(sMonth)}-${formatDay(startDay)}`,
+        end: `${eYear}-${formatMonth(eMonth)}-${formatDay(endDay)}`
       };
     });
-  }, [selectedYear, startDay, endDay]);
+  }, [selectedYear, startDay, endDay, startRelativeMonth, endRelativeMonth]);
 
   return (
     <div className="flex-1 flex flex-col h-full relative">
@@ -153,7 +167,21 @@ export const SupervisionConfig: React.FC = () => {
               <div className="bg-gray-50 p-5 rounded-lg border border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-3">填报开启时间</label>
                 <div className="flex items-center gap-3 text-gray-700">
-                  <span>每季度末月的</span>
+                  <select
+                    value={startRelativeMonth}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setStartRelativeMonth(val);
+                      if (val > endRelativeMonth) {
+                        setEndRelativeMonth(val);
+                      }
+                    }}
+                    className="px-2 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white"
+                  >
+                    <option value={3}>每季度末月</option>
+                    <option value={4}>下季度首月</option>
+                  </select>
+                  <span>的</span>
                   <input
                     type="number"
                     min="1"
@@ -166,14 +194,22 @@ export const SupervisionConfig: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
                   <AlertCircle size={12} />
-                  例如：Q1(1-3月)将在3月{startDay}日开启填报
+                  例如：Q1(1-3月)将在{startRelativeMonth > 3 ? startRelativeMonth - 3 : startRelativeMonth}月{startDay}日开启填报
                 </p>
               </div>
 
               <div className="bg-gray-50 p-5 rounded-lg border border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-3">填报结束时间</label>
                 <div className="flex items-center gap-3 text-gray-700">
-                  <span>下季度首月的</span>
+                  <select
+                    value={endRelativeMonth}
+                    onChange={(e) => setEndRelativeMonth(Number(e.target.value))}
+                    className="px-2 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white"
+                  >
+                    <option value={3} disabled={startRelativeMonth > 3}>每季度末月</option>
+                    <option value={4}>下季度首月</option>
+                  </select>
+                  <span>的</span>
                   <input
                     type="number"
                     min="1"
@@ -186,7 +222,7 @@ export const SupervisionConfig: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
                   <AlertCircle size={12} />
-                  例如：Q1(1-3月)将在4月{endDay}日结束填报
+                  例如：Q1(1-3月)将在{endRelativeMonth > 3 ? endRelativeMonth - 3 : endRelativeMonth}月{endDay}日结束填报
                 </p>
               </div>
             </div>

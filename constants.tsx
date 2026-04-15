@@ -18,7 +18,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     icon: <Settings size={20} />,
     expanded: false,
     subItems: [
-      { id: 'rule_1', label: '基础规则', icon: null },
+      { id: 'rule_1', label: '评分规则', icon: null },
       { id: 'rule_2', label: '高级规则', icon: null }
     ]
   },

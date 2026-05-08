@@ -230,10 +230,10 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[
-                      { name: '1周', value: 1800, prevValue: 1650, lastYearValue: 1500 },
-                      { name: '2周', value: 2100, prevValue: 1900, lastYearValue: 1750 },
-                      { name: '3周', value: 1950, prevValue: 1850, lastYearValue: 1600 },
-                      { name: '4周', value: 2300, prevValue: 2100, lastYearValue: 1900 },
+                      { name: '1月', value: 1800, prevValue: 1650, lastYearValue: 1500 },
+                      { name: '2月', value: 2100, prevValue: 1900, lastYearValue: 1750 },
+                      { name: '3月', value: 1950, prevValue: 1850, lastYearValue: 1600 },
+                      { name: '4月', value: 2300, prevValue: 2100, lastYearValue: 1900 },
                     ]} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
@@ -252,10 +252,10 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[
-                      { name: '1周', value: 950, prevValue: 880, lastYearValue: 800 },
-                      { name: '2周', value: 1100, prevValue: 1020, lastYearValue: 950 },
-                      { name: '3周', value: 1050, prevValue: 980, lastYearValue: 900 },
-                      { name: '4周', value: 1200, prevValue: 1150, lastYearValue: 1050 },
+                      { name: '1月', value: 950, prevValue: 880, lastYearValue: 800 },
+                      { name: '2月', value: 1100, prevValue: 1020, lastYearValue: 950 },
+                      { name: '3月', value: 1050, prevValue: 980, lastYearValue: 900 },
+                      { name: '4月', value: 1200, prevValue: 1150, lastYearValue: 1050 },
                     ]} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
@@ -469,8 +469,8 @@ const EndoscopyTheme: React.FC<EndoscopyThemeProps> = ({
                 <div className="h-[150px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={[
-                      { name: '1周', value: 4.2 }, { name: '2周', value: 3.8 },
-                      { name: '3周', value: 3.5 }, { name: '4周', value: 3.2 },
+                      { name: '1月', value: 4.2 }, { name: '2月', value: 3.8 },
+                      { name: '3月', value: 3.5 }, { name: '4月', value: 3.2 },
                     ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorApptWait" x1="0" y1="0" x2="0" y2="1">

@@ -211,7 +211,7 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
                    value={numeratorDetail}
                    onChange={(e) => setNumeratorDetail(e.target.value)}
                 >
-                   <option value="" disabled selected>选择分子展示明细字段</option>
+                   <option value="" disabled>选择分子展示明细字段</option>
                    <option value="field1">字段1</option>
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
@@ -227,7 +227,7 @@ export const EditIndicatorModal: React.FC<EditIndicatorModalProps> = ({
                    value={denominatorDetail}
                    onChange={(e) => setDenominatorDetail(e.target.value)}
                 >
-                   <option value="" disabled selected>选择分母展示明细字段</option>
+                   <option value="" disabled>选择分母展示明细字段</option>
                    <option value="field1">字段1</option>
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">

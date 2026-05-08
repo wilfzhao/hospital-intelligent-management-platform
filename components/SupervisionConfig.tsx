@@ -178,6 +178,7 @@ export const SupervisionConfig: React.FC = () => {
                     }}
                     className="px-2 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white"
                   >
+                    <option value={1}>每季度首月</option>
                     <option value={3}>每季度末月</option>
                     <option value={4}>下季度首月</option>
                   </select>
@@ -194,7 +195,7 @@ export const SupervisionConfig: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
                   <AlertCircle size={12} />
-                  例如：Q1(1-3月)将在{startRelativeMonth > 3 ? startRelativeMonth - 3 : startRelativeMonth}月{startDay}日开启填报
+                  例如：Q1(1-3月)将在{startRelativeMonth}月{startDay}日开启填报
                 </p>
               </div>
 
@@ -206,6 +207,7 @@ export const SupervisionConfig: React.FC = () => {
                     onChange={(e) => setEndRelativeMonth(Number(e.target.value))}
                     className="px-2 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm font-medium bg-white"
                   >
+                    <option value={1} disabled={startRelativeMonth > 1}>每季度首月</option>
                     <option value={3} disabled={startRelativeMonth > 3}>每季度末月</option>
                     <option value={4}>下季度首月</option>
                   </select>
@@ -222,7 +224,7 @@ export const SupervisionConfig: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
                   <AlertCircle size={12} />
-                  例如：Q1(1-3月)将在{endRelativeMonth > 3 ? endRelativeMonth - 3 : endRelativeMonth}月{endDay}日结束填报
+                  例如：Q1(1-3月)将在{endRelativeMonth}月{endDay}日结束填报
                 </p>
               </div>
             </div>

@@ -20,6 +20,9 @@ import IndicatorAnalysis from './components/IndicatorAnalysis';
 import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
 import { IndicatorAnalysisComponents } from './components/IndicatorAnalysisComponents';
 import { IndicatorComponentEditor } from './components/IndicatorComponentEditor';
+import { DimensionManagement } from './components/DimensionManagement';
+import { SourceTableManagement } from './components/SourceTableManagement';
+import { IndicatorManagement } from './components/IndicatorManagement';
 import { SIDEBAR_ITEMS, HOSPITAL_REVIEW_SIDEBAR_ITEMS, SUPERVISION_SIDEBAR_ITEMS, INDICATOR_MANAGEMENT_SIDEBAR_ITEMS, MOCK_ANALYSIS_SYSTEMS } from './constants';
 import { Plan, AnalysisSystem } from './types';
 import { Settings } from 'lucide-react';
@@ -59,6 +62,9 @@ const App: React.FC = () => {
     if (activeModule === '指标管理中心') {
       return INDICATOR_MANAGEMENT_SIDEBAR_ITEMS;
     }
+    if (activeModule === '运营决策中心') {
+      return [];
+    }
     // Default to SIDEBAR_ITEMS for '管理配置'
     return SIDEBAR_ITEMS;
   }, [activeModule]);
@@ -74,7 +80,7 @@ const App: React.FC = () => {
     } else if (moduleName === '指标管理中心') {
       setCurrentView(INDICATOR_MANAGEMENT_SIDEBAR_ITEMS[0].id); 
     } else if (moduleName === '运营决策中心') {
-      setCurrentView('odc_dashboard'); // Dashboard view for ODC
+      setCurrentView('odc_dashboard');
     } else if (moduleName === '管理配置') {
       setCurrentView('plan_mgmt');
     } else {
@@ -212,7 +218,15 @@ const App: React.FC = () => {
       case 'indicator_component_editor':
         return <IndicatorComponentEditor onBack={() => setCurrentView('indicator_analysis_components')} />;
 
+      case 'dimension_management':
+        return <DimensionManagement />;
+
+      case 'source_table_management':
+        return <SourceTableManagement />;
+
       case 'indicator_library':
+        return <IndicatorManagement />;
+
       case 'indicator_reporting': {
          let activeIndicatorItem = INDICATOR_MANAGEMENT_SIDEBAR_ITEMS.find(i => i.id === currentView);
          if (!activeIndicatorItem) {
@@ -264,7 +278,7 @@ const App: React.FC = () => {
   }
 
   // Hide sidebar for full-page dashboards like ODC, or if sidebar items are empty
-  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'featured_plan_config' && currentView !== 'odc_dashboard' && currentView !== 'indicator_analysis_editor';
+  const shouldShowSidebar = currentSidebarItems.length > 0 && currentView !== 'associate_indicators' && currentView !== 'featured_plan_config' && currentView !== 'indicator_analysis_editor';
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-sans">

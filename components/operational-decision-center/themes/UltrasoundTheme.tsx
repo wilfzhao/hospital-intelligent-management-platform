@@ -171,8 +171,8 @@ const UltrasoundTheme: React.FC<UltrasoundThemeProps> = ({
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={[
-                    { name: '1周', value: 2400 }, { name: '2周', value: 2600 },
-                    { name: '3周', value: 2300 }, { name: '4周', value: 2800 },
+                    { name: '1月', value: 2400 }, { name: '2月', value: 2600 },
+                    { name: '3月', value: 2300 }, { name: '4月', value: 2800 },
                   ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />

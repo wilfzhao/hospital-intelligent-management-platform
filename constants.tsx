@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, FileText, Database, Settings, BarChart, ClipboardList, Layout,
-  Activity, Target, Zap, ClipboardCheck, ListTodo, TrendingUp, PieChart
+  Activity, Target, Zap, ClipboardCheck, ListTodo, TrendingUp, PieChart, Layers
 } from 'lucide-react';
 import { Indicator, Role, SidebarItem, Plan, ReportTemplate, ReportDocument, Department, AnalysisSystem } from './types';
 
@@ -65,8 +65,18 @@ export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
 export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'indicator_library',
-    label: '指标库',
+    label: '指标管理',
     icon: <Database size={20} />,
+  },
+  {
+    id: 'source_table_management',
+    label: '来源表管理',
+    icon: <Database size={20} />, // You might need to import a different icon if preferred, Database for now
+  },
+  {
+    id: 'dimension_management',
+    label: '维度管理',
+    icon: <Layers size={20} />,
   },
   {
     id: 'indicator_reporting',

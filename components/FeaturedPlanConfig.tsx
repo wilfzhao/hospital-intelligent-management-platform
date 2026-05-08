@@ -186,7 +186,7 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
   const [expandedDeptIds, setExpandedDeptIds] = useState<Set<string>>(new Set(['d1', 'd2', 'd3']));
 
   // --- Dimension Configuration State ---
-  const dimensions = currentTemplate?.dimensions || [];
+  const dimensions = useMemo(() => currentTemplate?.dimensions || [], [currentTemplate?.dimensions]);
   const setDimensions = (newDimensions: DimensionNode[]) => updateCurrentTemplate({ dimensions: newDimensions });
   const planTotalScore = currentTemplate?.planTotalScore || 1000;
   const setPlanTotalScore = (score: number) => updateCurrentTemplate({ planTotalScore: score });

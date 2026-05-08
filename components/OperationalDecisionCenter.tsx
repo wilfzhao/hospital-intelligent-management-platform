@@ -11,9 +11,10 @@ import {
   LineChart, Line, AreaChart, Area, Legend, ReferenceLine, LabelList,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ComposedChart, ScatterChart, ReferenceArea, Scatter, Treemap
 } from 'recharts';
-import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Filter, Users, Hourglass, User, ArrowUpDown, ArrowDown, X, Pill, PieChart as PieChartIcon, CheckCircle, ArrowLeft, Target, Download, LayoutGrid, TrendingUp, BarChart3, ChevronDown, ChevronUp, Sparkles, Lightbulb, BrainCircuit, ArrowUpRight, ArrowDownRight, Split, Crosshair, GitCommit, Zap } from 'lucide-react';
+import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskConical, Filter, Users, Hourglass, User, ArrowUpDown, ArrowDown, X, Pill, PieChart as PieChartIcon, CheckCircle, ArrowLeft, Target, LayoutGrid, TrendingUp, BarChart3, ChevronDown, ChevronUp, Sparkles, Lightbulb, BrainCircuit, ArrowUpRight, ArrowDownRight, Split, Crosshair, GitCommit, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import DeanCockpit from './operational-decision-center/cockpits/DeanCockpit';
+import { StatisticalReport } from './operational-decision-center/StatisticalReport';
 
 // --- Talent Development Types & Helpers ---
 
@@ -645,8 +646,6 @@ const MODULES = [
   },
 ];
 
-import { StatisticalReport } from './operational-decision-center/StatisticalReport';
-
 const IndicatorCard = ({ data }: { data: any }) => (
   <div className="bg-[#0b1a30]/80 border border-blue-500/30 rounded-lg p-4 flex flex-col gap-4 relative overflow-hidden backdrop-blur-sm">
     {/* Title */}
@@ -1150,7 +1149,12 @@ const OperationalDecisionCenter: React.FC = () => {
   const deptSelectorRef = useRef<HTMLDivElement>(null);
   const [selectedReports, setSelectedReports] = useState<number[]>([]);
   const [activeCockpitId, setActiveCockpitId] = useState<string | null>(null);
+  const [surgeryWorkloadTab, setSurgeryWorkloadTab] = useState('手术完成情况');
   const [activeLabTab, setActiveLabTab] = useState<'lab' | 'blood'>('lab');
+  const [labVolumeTab, setLabVolumeTab] = useState('全部');
+  const [labFeeTab, setLabFeeTab] = useState('全部');
+  const [peakTrendTimeRange, setPeakTrendTimeRange] = useState<'day' | 'week' | 'month'>('week');
+  const [tatPatientType, setTatPatientType] = useState<'outpatient' | 'inpatient'>('outpatient');
   const [selectedCampus, setSelectedCampus] = useState('全院');
   const [selectedDoctorId, setSelectedDoctorId] = useState(1);
 
@@ -1179,6 +1183,8 @@ const OperationalDecisionCenter: React.FC = () => {
   const [talentStructureDims, setTalentStructureDims] = useState<string[]>(['medical', 'research', 'teaching']);
   const [talentShowTrajectory, setTalentShowTrajectory] = useState(false);
   const [talentShowCharts, setTalentShowCharts] = useState(false);
+  const [talentTimeFilter, setTalentTimeFilter] = useState<string>('2024年度');
+  const [talentTargetSearch, setTalentTargetSearch] = useState<string>('');
 
   // Close switcher when clicking outside
   useEffect(() => {
@@ -1202,7 +1208,7 @@ const OperationalDecisionCenter: React.FC = () => {
   // View 1: Dashboard Grid (Entry Point)
   // --------------------------------------------------------------------------
   const renderDashboard = () => (
-    <div className="flex flex-col h-full w-full gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-2 max-w-7xl mx-auto">
+    <div className="flex flex-col h-full w-full gap-6 p-2 max-w-7xl mx-auto">
       {/* Header / Welcome Section */}
       <div className="flex flex-col gap-1 mb-2">
          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">运营决策中心</h1>
@@ -2496,9 +2502,13 @@ const OperationalDecisionCenter: React.FC = () => {
           rate: 80,
         },
         cost: {
-          equipment: Math.round(500 * m),
-          consumables: Math.round(200 * m),
-          personnel: Math.round(300 * m),
+          personnel: Math.round(400 * m),
+          materials: Math.round(150 * m),
+          drugs: Math.round(50 * m),
+          depreciation: Math.round(100 * m),
+          amortization: Math.round(20 * m),
+          riskFund: Math.round(30 * m),
+          other: Math.round(50 * m),
         },
         income: {
           total: Math.round(3500 * m),
@@ -2628,19 +2638,28 @@ const OperationalDecisionCenter: React.FC = () => {
             </h3>
             <div className="space-y-6">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">检查量趋势</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">检查量趋势 (总体与类别)</h4>
                 <div className="h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={[
-                      { name: '1周', value: 2400 }, { name: '2周', value: 2600 },
-                      { name: '3周', value: 2300 }, { name: '4周', value: 2800 },
-                    ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <ComposedChart data={[
+                      { name: '1月', total: 2400, abdomen: 800, gyn: 600, heart: 500, other: 500 }, 
+                      { name: '2月', total: 2600, abdomen: 850, gyn: 650, heart: 550, other: 550 },
+                      { name: '3月', total: 2300, abdomen: 780, gyn: 580, heart: 480, other: 460 }, 
+                      { name: '4月', total: 2800, abdomen: 920, gyn: 700, heart: 600, other: 580 },
+                      { name: '5月', total: 2700, abdomen: 900, gyn: 650, heart: 600, other: 550 }, 
+                      { name: '6月', total: 2900, abdomen: 950, gyn: 750, heart: 600, other: 600 },
+                    ]} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
                       <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-                    </LineChart>
+                      <Legend wrapperStyle={{fontSize: '11px'}} />
+                      <Bar name="腹部超声" dataKey="abdomen" stackId="a" fill="#0ea5e9" barSize={24} />
+                      <Bar name="妇科超声" dataKey="gyn" stackId="a" fill="#10b981" />
+                      <Bar name="心脏超声" dataKey="heart" stackId="a" fill="#f59e0b" />
+                      <Bar name="浅表及其他" dataKey="other" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      <Line name="总检查量" type="monotone" dataKey="total" stroke="#f43f5e" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -2706,37 +2725,46 @@ const OperationalDecisionCenter: React.FC = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">单次检查成本</div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {((data.cost.equipment + data.cost.consumables + data.cost.personnel) * 10000 / data.target.completed).toFixed(2)}
+                    {((data.cost.personnel + data.cost.materials + data.cost.drugs + data.cost.depreciation + data.cost.amortization + data.cost.riskFund + data.cost.other) * 10000 / data.target.completed).toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">元/次</div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">总成本</div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {(data.cost.equipment + data.cost.consumables + data.cost.personnel)}
+                    {(data.cost.personnel + data.cost.materials + data.cost.drugs + data.cost.depreciation + data.cost.amortization + data.cost.riskFund + data.cost.other)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">万元</div>
                 </div>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">成本结构占比</h4>
-                <div className="h-[200px]">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">成本结构占比 (7大类)</h4>
+                <div className="h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RePieChart>
+                    <RePieChart margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                       <Pie data={[
-                        { name: '人员薪酬', value: data.cost.personnel, color: '#f59e0b' },
-                        { name: '设备折旧', value: data.cost.equipment, color: '#3b82f6' },
-                        { name: '耗材成本', value: data.cost.consumables, color: '#10b981' },
-                      ]} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({name, percent}) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}>
+                        { name: '人员经费', value: data.cost.personnel, color: '#f59e0b' },
+                        { name: '卫生材料费', value: data.cost.materials, color: '#10b981' },
+                        { name: '药品费', value: data.cost.drugs, color: '#ef4444' },
+                        { name: '固定资产折旧费', value: data.cost.depreciation, color: '#3b82f6' },
+                        { name: '无形资产摊销费', value: data.cost.amortization, color: '#8b5cf6' },
+                        { name: '医疗风险基金', value: data.cost.riskFund, color: '#ec4899' },
+                        { name: '其他运行费用', value: data.cost.other, color: '#6366f1' },
+                      ]} cx="40%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" label={({percent}) => `${((percent || 0) * 100).toFixed(0)}%`}>
                         {
                           [
-                            { name: '人员薪酬', value: data.cost.personnel, color: '#f59e0b' },
-                            { name: '设备折旧', value: data.cost.equipment, color: '#3b82f6' },
-                            { name: '耗材成本', value: data.cost.consumables, color: '#10b981' },
+                            { name: '人员经费', value: data.cost.personnel, color: '#f59e0b' },
+                            { name: '卫生材料费', value: data.cost.materials, color: '#10b981' },
+                            { name: '药品费', value: data.cost.drugs, color: '#ef4444' },
+                            { name: '固定资产折旧费', value: data.cost.depreciation, color: '#3b82f6' },
+                            { name: '无形资产摊销费', value: data.cost.amortization, color: '#8b5cf6' },
+                            { name: '医疗风险基金', value: data.cost.riskFund, color: '#ec4899' },
+                            { name: '其他运行费用', value: data.cost.other, color: '#6366f1' },
                           ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)
                         }
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value: number | undefined) => [`${value || 0} 万元`, '成本金额']} />
+                      <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '11px', right: 0 }} />
                     </RePieChart>
                   </ResponsiveContainer>
                 </div>
@@ -2744,19 +2772,19 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
           </div>
 
-          {/* 模块三：超声体检收入分析 */}
+          {/* 模块三：超声收入分析 */}
           <div 
-            onClick={() => setDrillDownConfig({isOpen: true, title: '超声体检收入分析', type: 'module'})}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
+            onClick={() => setDrillDownConfig({isOpen: true, title: '超声收入分析', type: 'module'})}
+            className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all h-full flex flex-col"
           >
             <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
               <TrendingUp size={18} className="text-purple-600" />
-              模块三：超声体检收入分析
+              模块三：超声收入分析
             </h3>
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">体检收入趋势</h4>
-                <div className="h-[200px]">
+            <div className="space-y-6 flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col min-h-[200px] relative">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">总收入趋势</h4>
+                <div className="flex-1 min-h-0 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={[
                       { month: '1月', value: 120 }, { month: '2月', value: 100 },
@@ -2778,15 +2806,15 @@ const OperationalDecisionCenter: React.FC = () => {
                   </ResponsiveContainer>
                 </div>
               </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">各检查项目收入分布</h4>
-                <div className="h-[150px]">
+              <div className="flex-1 flex flex-col min-h-[150px] relative">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">收入结构分布 (门诊/住院/个检/团检)</h4>
+                <div className="flex-1 min-h-0 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[
-                      { name: '腹部彩超', value: 85 },
-                      { name: '甲状腺', value: 45 },
-                      { name: '乳腺', value: 40 },
-                      { name: '颈动脉', value: 30 },
+                      { name: '门诊', value: 125 },
+                      { name: '住院', value: 85 },
+                      { name: '个检', value: 45 },
+                      { name: '团检', value: 75 },
                     ]} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
@@ -2803,44 +2831,34 @@ const OperationalDecisionCenter: React.FC = () => {
           {/* 模块四：医生效率分析 */}
           <div 
             onClick={() => setDrillDownConfig({isOpen: true, title: '医生效率分析', type: 'module'})}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
+            className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all h-full flex flex-col"
           >
             <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Users size={18} className="text-orange-500" />
               模块四：医生效率分析
             </h3>
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">医生工作量排名 (Top 5)</h4>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: '张医生', value: 1250 },
-                      { name: '李医生', value: 1180 },
-                      { name: '王医生', value: 1050 },
-                      { name: '赵医生', value: 980 },
-                      { name: '陈医生', value: 920 },
-                    ]} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} width={50} />
-                      <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Bar dataKey="value" fill="#f97316" radius={[0, 4, 4, 0]} barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <div className="text-sm text-orange-800 mb-1">最高/最低工作量差值</div>
-                  <div className="text-2xl font-bold text-orange-600">330</div>
-                  <div className="text-xs text-orange-700 mt-1">需关注排班均衡性</div>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <div className="text-sm text-orange-800 mb-1">平均检查时长</div>
-                  <div className="text-2xl font-bold text-orange-600">8.5</div>
-                  <div className="text-xs text-orange-700 mt-1">分钟/人次</div>
-                </div>
+            <div className="space-y-6 flex-1 flex flex-col min-h-[300px] relative">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">医生工作量排名 (按检查部位)</h4>
+              <div className="flex-1 min-h-0 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    { name: '张医生', total: 1250, abdomen: 450, gyn: 300, heart: 350, other: 150 },
+                    { name: '李医生', total: 1180, abdomen: 420, gyn: 280, heart: 300, other: 180 },
+                    { name: '王医生', total: 1050, abdomen: 380, gyn: 250, heart: 280, other: 140 },
+                    { name: '赵医生', total: 980, abdomen: 350, gyn: 200, heart: 260, other: 170 },
+                    { name: '陈医生', total: 920, abdomen: 320, gyn: 220, heart: 250, other: 130 },
+                  ]} layout="vertical" margin={{ top: 0, right: 35, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} width={50} />
+                    <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Legend wrapperStyle={{fontSize: '11px'}} />
+                    <Bar name="腹部" dataKey="abdomen" stackId="a" fill="#0ea5e9" barSize={24} />
+                    <Bar name="妇产" dataKey="gyn" stackId="a" fill="#10b981" />
+                    <Bar name="心脏" dataKey="heart" stackId="a" fill="#f59e0b" />
+                    <Bar name="浅表及其他" dataKey="other" stackId="a" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
@@ -2944,6 +2962,70 @@ const OperationalDecisionCenter: React.FC = () => {
                   <div className="text-sm text-indigo-800 mb-1">平均出报告时间</div>
                   <div className="text-2xl font-bold text-indigo-600">{data.efficiency.reportTime}</div>
                   <div className="text-xs text-indigo-700 mt-1">分钟/份</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 模块七：检查项目维度分析 */}
+          <div 
+            onClick={() => setDrillDownConfig({isOpen: true, title: '检查项目维度分析', type: 'module'})}
+            className="lg:col-span-2 bg-white p-5 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all"
+          >
+            <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Activity size={18} className="text-cyan-600" />
+              模块七：检查项目维度分析
+            </h3>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">各大项目组检查数量 (点击项目看明细)</h4>
+                  <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[
+                        { name: '腹部超声', value: 3200 },
+                        { name: '妇产科超声', value: 2100 },
+                        { name: '血管超声', value: 1500 },
+                        { name: '浅表器官', value: 1800 },
+                        { name: '心脏超声', value: 2400 },
+                      ]} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} width={80} />
+                        <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="value" fill="#06b6d4" barSize={20} radius={[0, 4, 4, 0]} onClick={() => setDrillDownConfig({isOpen: true, title: '检查项目明细', type: 'kpi'})}>
+                          <LabelList dataKey="value" position="right" fill="#6b7280" fontSize={11} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">各大项目组业务收入占比</h4>
+                  <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RePieChart>
+                        <Pie data={[
+                          { name: '腹部超声组', value: 450, color: '#0ea5e9' },
+                          { name: '妇产科超声组', value: 310, color: '#10b981' },
+                          { name: '血管超声组', value: 220, color: '#f59e0b' },
+                          { name: '浅表器官组', value: 180, color: '#8b5cf6' },
+                          { name: '心脏超声组', value: 380, color: '#ec4899' },
+                        ]} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={2} label={({name, percent}) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}>
+                          {
+                            [
+                              { name: '腹部超声组', value: 450, color: '#0ea5e9' },
+                              { name: '妇产科超声组', value: 310, color: '#10b981' },
+                              { name: '血管超声组', value: 220, color: '#f59e0b' },
+                              { name: '浅表器官组', value: 180, color: '#8b5cf6' },
+                              { name: '心脏超声组', value: 380, color: '#ec4899' },
+                            ].map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)
+                          }
+                        </Pie>
+                        <Tooltip />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3573,8 +3655,8 @@ const OperationalDecisionCenter: React.FC = () => {
                   <div className="h-[150px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={[
-                        { name: '1周', value: 4.2 }, { name: '2周', value: 3.8 },
-                        { name: '3周', value: 3.5 }, { name: '4周', value: 3.2 },
+                        { name: '1月', value: 4.2 }, { name: '2月', value: 3.8 },
+                        { name: '3月', value: 3.5 }, { name: '4月', value: 3.2 },
                       ]} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorApptWait" x1="0" y1="0" x2="0" y2="1">
@@ -4143,6 +4225,33 @@ const OperationalDecisionCenter: React.FC = () => {
       { dept: '肝胆外科', value: 30 },
     ];
 
+    const bloodTrendData = [
+      { date: '03-22', cryo: 5, rbc: 44, platelet: 12, plasma: 30 },
+      { date: '03-23', cryo: 8, rbc: 50, platelet: 15, plasma: 35 },
+      { date: '03-24', cryo: 4, rbc: 37, platelet: 10, plasma: 25 },
+    ];
+
+    const bloodPrepareTimeData = [
+      { name: '30min内', value: 45 },
+      { name: '1h内', value: 30 },
+      { name: '2h内', value: 15 },
+      { name: '3h内', value: 7 },
+      { name: '3h+', value: 3 },
+    ];
+    
+    const rescueBloodTimeData = [
+      { name: '30min内', value: 65 },
+      { name: '1h内', value: 20 },
+      { name: '2h内', value: 10 },
+      { name: '3h内', value: 4 },
+      { name: '3h+', value: 1 },
+    ];
+
+    const todayTransfusionReqs = [
+      { patient: '张三', dept: '重症医学科', type: '红细胞 2U', status: '已发血' },
+      { patient: '李四', dept: '急诊科', type: '血浆 400ml', status: '配血中' },
+    ];
+
     return (
       <div className="flex flex-col gap-6 flex-shrink-0">
         {/* Row 1: 实时监控 */}
@@ -4487,6 +4596,113 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Row 3: 备血输血趋势 & 时效与明细 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[400px] lg:col-span-7 relative">
+            <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
+              <TrendingUp className="text-emerald-400" size={20} />
+              备血输血趋势 (3天内)
+            </h3>
+            <div className="absolute top-5 left-64 flex items-center gap-6">
+              <div className="flex flex-col">
+                <span className="text-slate-400 text-[10px] mb-0.5">申请人次</span>
+                <span className="text-xl font-bold text-blue-500 leading-none">135</span>
+              </div>
+              <div className="w-px h-8 bg-slate-700/50"></div>
+              <div className="flex flex-col">
+                <span className="text-slate-400 text-[10px] mb-0.5">输血人次</span>
+                <span className="text-xl font-bold text-emerald-500 leading-none">125</span>
+              </div>
+            </div>
+            <div className="flex-1 mt-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={bloodTrendData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                  <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ fontSize: '10px', paddingBottom: '10px', marginTop: '-30px' }} />
+                  <Line type="monotone" dataKey="cryo" name="冷沉淀" stroke="#a855f7" strokeWidth={3} dot={{r: 4}} />
+                  <Line type="monotone" dataKey="rbc" name="红细胞" stroke="#ef4444" strokeWidth={3} dot={{r: 4}} />
+                  <Line type="monotone" dataKey="platelet" name="血小板" stroke="#3b82f6" strokeWidth={3} dot={{r: 4}} />
+                  <Line type="monotone" dataKey="plasma" name="血浆" stroke="#eab308" strokeWidth={3} dot={{r: 4}} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[400px] lg:col-span-5 relative">
+            <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
+              <Clock className="text-amber-400" size={20} />
+              时效与明细
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4 flex-none">
+              {/* 3天内备血发血比例 (%) */}
+              <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3 flex flex-col h-[140px]">
+                <h4 className="text-[10px] text-slate-400 mb-1">3天内备血发血比例 (%)</h4>
+                <div className="flex-1 pb-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={bloodPrepareTimeData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} ticks={[0, 15, 30, 60]} />
+                      <Tooltip cursor={{fill: '#1e293b'}} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }} />
+                      <Bar dataKey="value" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={10} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* 30天抢救备血用时 (%) */}
+              <div className="bg-slate-800/30 border border-slate-700/50 rounded-lg p-3 flex flex-col h-[140px]">
+                <h4 className="text-[10px] text-slate-400 mb-1">30天抢救备血用时 (%)</h4>
+                <div className="flex-1 pb-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={rescueBloodTimeData} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} ticks={[0, 20, 40, 80]} />
+                      <Tooltip cursor={{fill: '#1e293b'}} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }} />
+                      <Bar dataKey="value" fill="#10b981" radius={[2, 2, 0, 0]} barSize={10} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <h4 className="text-sm font-bold text-slate-300 mb-3 flex-none">今日输血申请</h4>
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-700/50 text-slate-400 text-xs">
+                      <th className="pb-2 font-medium">患者</th>
+                      <th className="pb-2 font-medium">科室</th>
+                      <th className="pb-2 font-medium">类型</th>
+                      <th className="pb-2 font-medium text-right pr-2">状态</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50 text-xs">
+                    {todayTransfusionReqs.map((req, idx) => (
+                      <tr key={idx} className="hover:bg-white/5 transition-colors">
+                        <td className="py-2.5 text-slate-300">{req.patient}</td>
+                        <td className="py-2.5 text-slate-400">{req.dept}</td>
+                        <td className="py-2.5 text-slate-300">{req.type}</td>
+                        <td className="py-2.5 text-right pr-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] ${req.status === '已发血' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                            {req.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -4680,87 +4896,164 @@ const OperationalDecisionCenter: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Left: 手术工作量分析 */}
-            <div className="bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm flex flex-col h-[48%] shadow-[inset_0_0_20px_rgba(14,165,233,0.1)]">
-              <div className="px-4 py-3 border-b border-[#1e3a8a]/50 flex justify-between items-center bg-gradient-to-r from-blue-500/10 to-transparent">
-                <h3 className="text-lg font-bold text-blue-400 flex items-center gap-2">
-                  <div className="w-1 h-4 bg-blue-500"></div>
-                  手术工作量分析
-                </h3>
-                <button className="text-xs text-blue-400 hover:text-blue-300" onClick={() => setDrillDownConfig({isOpen: true, title: '手术工作量分析', type: 'module'})}>更多 &gt;</button>
-              </div>
-              <div className="p-4 flex-1 flex flex-col min-h-0">
-                <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-1">
-                  <button className="text-blue-400 px-2 py-1 text-sm font-medium border-b-2 border-blue-500">介入手术工作量</button>
-                  <button className="text-gray-400 px-2 py-1 text-sm hover:text-blue-400 transition-colors">手术完成情况</button>
-                  <button className="text-gray-400 px-2 py-1 text-sm hover:text-blue-400 transition-colors">手术类型统计</button>
+            <div className="flex gap-4 h-[48%] w-full min-h-0">
+              {/* Bottom Left: 手术工作量分析 */}
+              <div className="bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm flex flex-col flex-1 shadow-[inset_0_0_20px_rgba(14,165,233,0.1)] w-5/12">
+                <div className="px-4 py-3 border-b border-[#1e3a8a]/50 flex justify-between items-center bg-gradient-to-r from-blue-500/10 to-transparent">
+                  <h3 className="text-lg font-bold text-blue-400 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-blue-500"></div>
+                    手术工作量分析
+                  </h3>
+                  <button className="text-xs text-blue-400 hover:text-blue-300" onClick={() => setDrillDownConfig({isOpen: true, title: '手术工作量分析', type: 'module'})}>更多 &gt;</button>
                 </div>
-                <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
-                  {/* Left Stats */}
-                  <div className="col-span-2 flex flex-col gap-2 cursor-pointer min-h-0" onClick={() => setDrillDownConfig({isOpen: true, title: '介入手术', type: 'kpi'})}>
-                    <div className="bg-blue-600/20 border border-blue-500/30 rounded p-2 text-center">
-                      <div className="text-xs text-blue-400 font-bold">介入手术</div>
-                    </div>
-                    <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
-                      <div className="text-[10px] text-gray-400 mb-0.5">计划</div>
-                      <div className="text-xl font-bold text-blue-400">7</div>
-                    </div>
-                    <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
-                      <div className="text-[10px] text-gray-400 mb-0.5">术中</div>
-                      <div className="text-xl font-bold text-blue-400">2</div>
-                    </div>
-                    <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
-                      <div className="text-[10px] text-gray-400 mb-0.5">完成</div>
-                      <div className="text-xl font-bold text-blue-400">2</div>
-                    </div>
+                <div className="p-4 flex-1 flex flex-col min-h-0">
+                  <div className="flex gap-4 mb-3 border-b border-slate-700/50 pb-1 shrink-0">
+                    <button 
+                      className={`px-2 py-1 text-sm transition-colors ${surgeryWorkloadTab === '介入手术工作量' ? 'text-blue-400 font-medium border-b-2 border-blue-500' : 'text-gray-400 hover:text-blue-400'}`}
+                      onClick={() => setSurgeryWorkloadTab('介入手术工作量')}
+                    >介入手术工作量</button>
+                    <button 
+                      className={`px-2 py-1 text-sm transition-colors ${surgeryWorkloadTab === '手术完成情况' ? 'text-blue-400 font-medium border-b-2 border-blue-500' : 'text-gray-400 hover:text-blue-400'}`}
+                      onClick={() => setSurgeryWorkloadTab('手术完成情况')}
+                    >手术完成情况</button>
+                    <button 
+                      className={`px-2 py-1 text-sm transition-colors ${surgeryWorkloadTab === '手术类型统计' ? 'text-blue-400 font-medium border-b-2 border-blue-500' : 'text-gray-400 hover:text-blue-400'}`}
+                      onClick={() => setSurgeryWorkloadTab('手术类型统计')}
+                    >手术类型统计</button>
                   </div>
-                  
-                  {/* Middle Chart */}
-                  <div className="col-span-3 flex flex-col cursor-pointer min-h-0" onClick={() => setDrillDownConfig({isOpen: true, title: '院区分布', type: 'kpi'})}>
-                    <div className="flex-1 min-h-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={[
-                          { name: '天河', value: 3 },
-                          { name: '同德', value: 4 },
-                          { name: '珠玑', value: 2 },
-                        ]} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e3a8a" opacity={0.2} />
-                          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
-                          <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#d1d5db' }} />
-                          <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#0a1128', border: '1px solid #1e3a8a', borderRadius: '4px' }} />
-                          <Bar dataKey="value" fill="#0ea5e9" barSize={15} radius={[0, 4, 4, 0]}>
-                            <LabelList dataKey="value" position="right" fill="#0ea5e9" fontSize={10} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                  <div className="flex-1 min-h-0">
+                    {surgeryWorkloadTab === '介入手术工作量' ? (
+                      <div className="flex flex-col md:flex-row gap-4 h-full">
+                        {/* Left Stats */}
+                        <div className="w-full md:w-2/5 flex flex-col gap-2 cursor-pointer min-h-0" onClick={() => setDrillDownConfig({isOpen: true, title: '介入手术', type: 'kpi'})}>
+                          <div className="bg-blue-600/20 border border-blue-500/30 rounded p-2 text-center">
+                            <div className="text-xs text-blue-400 font-bold">介入手术</div>
+                          </div>
+                          <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
+                            <div className="text-[10px] text-gray-400 mb-0.5">计划</div>
+                            <div className="text-xl font-bold text-blue-400">7</div>
+                          </div>
+                          <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
+                            <div className="text-[10px] text-gray-400 mb-0.5">术中</div>
+                            <div className="text-xl font-bold text-blue-400">2</div>
+                          </div>
+                          <div className="bg-slate-800/30 border border-slate-700 rounded p-2 text-center flex-1 flex flex-col justify-center">
+                            <div className="text-[10px] text-gray-400 mb-0.5">完成</div>
+                            <div className="text-xl font-bold text-blue-400">2</div>
+                          </div>
+                        </div>
+                        
+                        {/* Middle Chart */}
+                        <div className="w-full md:w-3/5 flex flex-col cursor-pointer min-h-0" onClick={() => setDrillDownConfig({isOpen: true, title: '院区分布', type: 'kpi'})}>
+                          <div className="flex-1 min-h-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={[
+                                { name: '天河', value: 3 },
+                                { name: '同德', value: 4 },
+                                { name: '珠玑', value: 2 },
+                              ]} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e3a8a" opacity={0.2} />
+                                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
+                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#d1d5db' }} />
+                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#0a1128', border: '1px solid #1e3a8a', borderRadius: '4px' }} />
+                                <Bar dataKey="value" fill="#0ea5e9" barSize={15} radius={[0, 4, 4, 0]}>
+                                  <LabelList dataKey="value" position="right" fill="#0ea5e9" fontSize={10} />
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+                    ) : surgeryWorkloadTab === '手术完成情况' ? (
+                      <div className="flex flex-col h-full gap-3">
+                         <div className="flex gap-4">
+                            <div className="bg-slate-800/30 border border-slate-700 rounded py-2 px-3 flex-1 flex flex-col justify-center cursor-pointer" onClick={() => setDrillDownConfig({isOpen: true, title: '今日手术计划', type: 'kpi'})}>
+                              <div className="text-[10px] text-gray-400 mb-0.5">今日手术计划台次</div>
+                              <div className="text-xl font-bold text-blue-400">128</div>
+                            </div>
+                            <div className="bg-slate-800/30 border border-slate-700 rounded py-2 px-3 flex-1 flex flex-col justify-center cursor-pointer" onClick={() => setDrillDownConfig({isOpen: true, title: '手术完成', type: 'kpi'})}>
+                              <div className="text-[10px] text-gray-400 mb-0.5">手术完成台次</div>
+                              <div className="text-xl font-bold text-emerald-400">92</div>
+                            </div>
+                            <div className="bg-slate-800/30 border border-slate-700 rounded py-2 px-3 flex-1 flex flex-col justify-center cursor-pointer" onClick={() => setDrillDownConfig({isOpen: true, title: '排班完成率', type: 'kpi'})}>
+                              <div className="text-[10px] text-gray-400 mb-0.5">排班手术完成率</div>
+                              <div className="text-xl font-bold text-indigo-400">71.8%</div>
+                            </div>
+                         </div>
+                         <div className="flex-1 min-h-0 relative">
+                            {/* Area chart showing planned vs completed across recent 7 days */}
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={[
+                                { name: '03-12', planned: 110, completed: 105 },
+                                { name: '03-13', planned: 130, completed: 125 },
+                                { name: '03-14', planned: 125, completed: 118 },
+                                { name: '03-15', planned: 140, completed: 132 },
+                                { name: '03-16', planned: 135, completed: 125 },
+                                { name: '03-17', planned: 142, completed: 136 },
+                                { name: '03-18', planned: 128, completed: 92 },
+                              ]} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                <defs>
+                                  <linearGradient id="colorPlanned" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
+                                  </linearGradient>
+                                  <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e3a8a" opacity={0.2} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748b' }} />
+                                <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} contentStyle={{ backgroundColor: '#0a1128', border: '1px solid #1e3a8a', borderRadius: '4px' }} itemStyle={{ fontSize: '10px' }} />
+                                <Area type="monotone" dataKey="planned" name="计划手术" stroke="#94a3b8" fillOpacity={1} fill="url(#colorPlanned)" />
+                                <Area type="monotone" dataKey="completed" name="完成手术" stroke="#10b981" fillOpacity={1} fill="url(#colorCompleted)" />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                         </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-slate-500 text-sm">开发中...</div>
+                    )}
                   </div>
+                </div>
+              </div>
 
-                  {/* Right Table */}
-                  <div className="col-span-7 flex flex-col bg-slate-900/50 rounded border border-slate-700 overflow-hidden cursor-pointer min-h-0" onClick={() => setDrillDownConfig({isOpen: true, title: '主刀医生手术情况统计表', type: 'kpi'})}>
-                    <div className="bg-blue-600/20 text-blue-400 px-3 py-1.5 flex justify-between items-center border-b border-blue-500/30">
+              {/* Bottom Right: 主刀医生手术情况 */}
+              <div className="bg-[#0a1128]/80 border border-[#1e3a8a] rounded-sm flex flex-col flex-1 shadow-[inset_0_0_20px_rgba(14,165,233,0.1)] w-7/12">
+                <div className="px-4 py-3 border-b border-[#1e3a8a]/50 flex justify-between items-center bg-gradient-to-r from-blue-500/10 to-transparent">
+                  <h3 className="text-lg font-bold text-blue-400 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-blue-500"></div>
+                    主刀医生手术情况
+                  </h3>
+                  <button className="text-xs text-blue-400 hover:text-blue-300" onClick={() => setDrillDownConfig({isOpen: true, title: '主刀医生手术情况', type: 'module'})}>更多 &gt;</button>
+                </div>
+                <div className="p-4 flex-1 flex flex-col min-h-0">
+                  <div className="flex flex-col bg-slate-900/50 rounded border border-slate-700 overflow-hidden cursor-pointer h-full" onClick={() => setDrillDownConfig({isOpen: true, title: '主刀医生手术情况统计表', type: 'kpi'})}>
+                    <div className="bg-blue-600/20 text-blue-400 px-3 py-1.5 flex justify-between items-center border-b border-blue-500/30 shrink-0">
                       <span className="text-xs font-bold">主刀医生手术情况统计表</span>
                       <span className="text-[9px] opacity-60">2026-03-31</span>
                     </div>
                     <div className="overflow-y-auto flex-1">
-                      <table className="w-full text-[10px] text-center border-collapse">
+                      <table className="w-full text-[10px] text-center border-collapse whitespace-nowrap">
                         <thead>
-                          <tr className="bg-slate-800/50 text-slate-300 sticky top-0">
+                          <tr className="bg-slate-800/50 text-slate-300 sticky top-0 shadow-sm">
                             <th className="border border-slate-700 p-1.5">序号</th>
-                            <th className="border border-slate-700 p-1.5">科室</th>
-                            <th className="border border-slate-700 p-1.5">医生</th>
-                            <th className="border border-slate-700 p-1.5">级别</th>
-                            <th className="border border-slate-700 p-1.5">台数</th>
-                            <th className="border border-slate-700 p-1.5">均时(h)</th>
+                            <th className="border border-slate-700 p-1.5">科室名称</th>
+                            <th className="border border-slate-700 p-1.5">主刀医生</th>
+                            <th className="border border-slate-700 p-1.5">手术级别</th>
+                            <th className="border border-slate-700 p-1.5">手术台数</th>
+                            <th className="border border-slate-700 p-1.5">平均每台手术时长（小时）</th>
+                            <th className="border border-slate-700 p-1.5">备注</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-400">
                           {[
-                            { id: 1, dept: '外科', doc: '张三', level: '四级', count: 3, time: 1.5 },
-                            { id: 2, dept: '外科', doc: '李四', level: '三级', count: 2, time: 1.35 },
-                            { id: 3, dept: '骨科', doc: '王五', level: '二级', count: 4, time: 1.01 },
-                            { id: 4, dept: '神外', doc: '赵六', level: '四级', count: 1, time: 2.2 },
-                            { id: 5, dept: '泌尿', doc: '孙七', level: '三级', count: 2, time: 1.8 },
+                            { id: 1, dept: '外科', doc: '张三', level: '四级', count: 3, time: 1.5, notes: '急诊' },
+                            { id: 2, dept: '外科', doc: '李四', level: '三级', count: 2, time: 1.35, notes: '-' },
+                            { id: 3, dept: '骨科', doc: '王五', level: '二级', count: 4, time: 1.01, notes: '-' },
+                            { id: 4, dept: '神外', doc: '赵六', level: '四级', count: 1, time: 2.2, notes: '-' },
+                            { id: 5, dept: '泌尿', doc: '孙七', level: '三级', count: 2, time: 1.8, notes: '-' },
                           ].map((row, i) => (
                             <tr key={i} className={i % 2 === 0 ? 'bg-slate-800/20' : ''}>
                               <td className="border border-slate-700 p-1.5">{row.id}</td>
@@ -4769,6 +5062,7 @@ const OperationalDecisionCenter: React.FC = () => {
                               <td className="border border-slate-700 p-1.5">{row.level}</td>
                               <td className="border border-slate-700 p-1.5 text-white font-bold">{row.count}</td>
                               <td className="border border-slate-700 p-1.5">{row.time}</td>
+                              <td className="border border-slate-700 p-1.5 text-red-400">{row.notes}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -5159,23 +5453,54 @@ const OperationalDecisionCenter: React.FC = () => {
       { name: '分子生物', value: 90 },
     ];
 
-    const labTrendData = [
-      { date: '03-18', current: 1200, previous: 1000, completed: 1100 },
-      { date: '03-19', current: 1450, previous: 1380, completed: 1350 },
-      { date: '03-20', current: 1300, previous: 1320, completed: 1280 },
-      { date: '03-21', current: 1520, previous: 1480, completed: 1420 },
-      { date: '03-22', current: 1380, previous: 1410, completed: 1300 },
-      { date: '03-23', current: 850, previous: 880, completed: 800 },
-      { date: '03-24', current: 1070, previous: 950, completed: 914 },
-    ];
+    const labTrendDataMap = {
+      day: [
+        { date: '08:00', current: 120, previous: 100, completed: 110 },
+        { date: '10:00', current: 350, previous: 280, completed: 300 },
+        { date: '12:00', current: 150, previous: 180, completed: 140 },
+        { date: '14:00', current: 220, previous: 200, completed: 210 },
+        { date: '16:00', current: 180, previous: 160, completed: 170 },
+        { date: '18:00', current: 90, previous: 110, completed: 80 },
+        { date: '20:00', current: 60, previous: 50, completed: 60 },
+      ],
+      week: [
+        { date: '周一', current: 1200, previous: 1000, completed: 1100 },
+        { date: '周二', current: 1450, previous: 1380, completed: 1350 },
+        { date: '周三', current: 1300, previous: 1320, completed: 1280 },
+        { date: '周四', current: 1520, previous: 1480, completed: 1420 },
+        { date: '周五', current: 1380, previous: 1410, completed: 1300 },
+        { date: '周六', current: 850, previous: 880, completed: 800 },
+        { date: '周日', current: 1070, previous: 950, completed: 914 },
+      ],
+      month: [
+        { date: '1-5日', current: 5200, previous: 5000, completed: 5100 },
+        { date: '6-10日', current: 6450, previous: 6380, completed: 6350 },
+        { date: '11-15日', current: 5300, previous: 5320, completed: 5280 },
+        { date: '16-20日', current: 6520, previous: 6480, completed: 6420 },
+        { date: '21-25日', current: 5380, previous: 5410, completed: 5300 },
+        { date: '26-末日', current: 4850, previous: 4880, completed: 4800 },
+      ],
+    };
+    
+    const labTrendData = labTrendDataMap[peakTrendTimeRange];
 
-    const tatData = [
-      { name: '临检', value: 0.5, target: 1.0 },
-      { name: '生化', value: 1.2, target: 2.0 },
-      { name: '免疫', value: 2.5, target: 4.0 },
-      { name: '微生物', value: 48, target: 72 },
-      { name: '外送', value: 72, target: 96 },
-    ];
+    const tatDataMap = {
+      outpatient: [
+        { name: '临检', value: 0.5, target: 1.0 },
+        { name: '生化', value: 1.2, target: 2.0 },
+        { name: '免疫', value: 2.5, target: 4.0 },
+        { name: '微生物', value: 48, target: 72 },
+        { name: '外送', value: 72, target: 96 },
+      ],
+      inpatient: [
+        { name: '临检', value: 0.8, target: 1.5 },
+        { name: '生化', value: 2.5, target: 3.0 },
+        { name: '免疫', value: 3.2, target: 4.0 },
+        { name: '微生物', value: 60, target: 84 },
+        { name: '外送', value: 80, target: 120 },
+      ]
+    };
+    const tatData = tatDataMap[tatPatientType];
 
     const labFeeData = [
       { name: '临检', value: 35, amount: 12540, color: '#3b82f6' },
@@ -5186,13 +5511,13 @@ const OperationalDecisionCenter: React.FC = () => {
     ];
 
     const criticalValues = [
-      { dept: '心内科', name: '张三', item: 'TnI', result: '1.5', alert: '↑', status: '待处理' },
-      { dept: '急诊科', name: '李四', item: 'K+', result: '6.2', alert: '↑', status: '处理中' },
-      { dept: '呼吸科', name: '王五', item: 'WBC', result: '25.4', alert: '↑', status: '待处理' },
-      { dept: '儿科', name: '赵六', item: 'CRP', result: '120', alert: '↑', status: '已通知' },
-      { dept: '重症医学科', name: '孙七', item: 'PLT', result: '15', alert: '↓', status: '待处理' },
-      { dept: '血液科', name: '周八', item: 'HGB', result: '45', alert: '↓', status: '待处理' },
-      { dept: '神经内科', name: '吴九', item: 'GLU', result: '2.1', alert: '↓', status: '待处理' },
+      { dept: '心内科', name: '张三', patientId: 'ZY20261011', item: 'TnI', result: '1.5', alert: '↑', status: '待处理' },
+      { dept: '急诊科', name: '李四', patientId: 'MZ20261015', item: 'K+', result: '6.2', alert: '↑', status: '处理中' },
+      { dept: '呼吸科', name: '王五', patientId: 'ZY20261022', item: 'WBC', result: '25.4', alert: '↑', status: '待处理' },
+      { dept: '儿科', name: '赵六', patientId: 'MZ20261033', item: 'CRP', result: '120', alert: '↑', status: '已通知' },
+      { dept: '重症医学科', name: '孙七', patientId: 'ZY20261045', item: 'PLT', result: '15', alert: '↓', status: '待处理' },
+      { dept: '血液科', name: '周八', patientId: 'ZY20261056', item: 'HGB', result: '45', alert: '↓', status: '待处理' },
+      { dept: '神经内科', name: '吴九', patientId: 'ZY20261077', item: 'GLU', result: '2.1', alert: '↓', status: '待处理' },
     ];
 
     const overTatAlerts = [
@@ -5364,6 +5689,21 @@ const OperationalDecisionCenter: React.FC = () => {
                 <FlaskConical className="text-blue-400" size={20} />
                 标本业务量
               </h3>
+              <div className="flex gap-1.5 p-1 bg-slate-800/80 rounded-lg">
+                {['全部', '门诊', '住院', '体检'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setLabVolumeTab(tab)}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                      labVolumeTab === tab 
+                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                        : 'text-slate-400 hover:text-slate-300 transparent border border-transparent'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
             
             <div className="grid grid-cols-4 gap-2 mb-4">
@@ -5408,23 +5748,49 @@ const OperationalDecisionCenter: React.FC = () => {
 
           {/* 标本高峰趋势监控 */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px]">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <TrendingUp className="text-emerald-400" size={20} />
-                标本高峰趋势监控
-              </h3>
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-blue-500"></div>
-                  <span className="text-slate-400">本周</span>
+            <div className="flex justify-between items-start md:items-center mb-6 flex-col md:flex-row gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
+                <h3 className="text-lg font-bold flex items-center gap-2 whitespace-nowrap">
+                  <TrendingUp className="text-emerald-400" size={20} />
+                  标本高峰趋势监控
+                </h3>
+                <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700/50 self-start">
+                  <button
+                    onClick={() => setPeakTrendTimeRange('day')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${peakTrendTimeRange === 'day' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}
+                  >
+                    按天
+                  </button>
+                  <button
+                    onClick={() => setPeakTrendTimeRange('week')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${peakTrendTimeRange === 'week' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}
+                  >
+                    按周
+                  </button>
+                  <button
+                    onClick={() => setPeakTrendTimeRange('month')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${peakTrendTimeRange === 'month' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}
+                  >
+                    按月
+                  </button>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-emerald-500"></div>
-                  <span className="text-slate-400">已完成</span>
+              </div>
+              <div className="flex items-center gap-6 mt-1 lg:mt-0">
+                <div className="flex items-center gap-2 group cursor-default">
+                  <div className="w-2 h-2 rounded-sm bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] ring-2 ring-blue-500/20"></div>
+                  <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
+                    {peakTrendTimeRange === 'day' ? '今天' : peakTrendTimeRange === 'week' ? '本周' : '本月'}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-slate-500"></div>
-                  <span className="text-slate-400">上周</span>
+                <div className="flex items-center gap-2 group cursor-default">
+                  <div className="w-2 h-2 rounded-sm bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-2 ring-emerald-500/20"></div>
+                  <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">已完成</span>
+                </div>
+                <div className="flex items-center gap-2 group cursor-default">
+                  <div className="w-4 border-t-[2.5px] border-dashed border-slate-500"></div>
+                  <span className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
+                    {peakTrendTimeRange === 'day' ? '昨天' : peakTrendTimeRange === 'week' ? '上周' : '上月'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -5446,7 +5812,11 @@ const OperationalDecisionCenter: React.FC = () => {
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                    formatter={(value: any, name: any) => [value, name === 'current' ? '本周标本' : name === 'completed' ? '已完成' : '上周标本']}
+                    formatter={(value: any, name: any) => {
+                      const currentLabel = peakTrendTimeRange === 'day' ? '今天标本' : peakTrendTimeRange === 'week' ? '本周标本' : '本月标本';
+                      const prevLabel = peakTrendTimeRange === 'day' ? '昨天标本' : peakTrendTimeRange === 'week' ? '上周标本' : '上月标本';
+                      return [value, name === 'current' ? currentLabel : name === 'completed' ? '已完成' : prevLabel];
+                    }}
                   />
                   <Area type="monotone" dataKey="current" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCurrent)" />
                   <Area type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorCompleted)" />
@@ -5458,10 +5828,26 @@ const OperationalDecisionCenter: React.FC = () => {
 
           {/* TAT时效分析 */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col h-[360px]">
-            <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
-              <Clock className="text-amber-400" size={20} />
-              TAT时效分析
-            </h3>
+            <div className="flex justify-between items-start md:items-center mb-6 flex-col md:flex-row gap-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Clock className="text-amber-400" size={20} />
+                TAT时效分析
+              </h3>
+              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700/50 self-start">
+                <button
+                  onClick={() => setTatPatientType('outpatient')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tatPatientType === 'outpatient' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}
+                >
+                  门诊
+                </button>
+                <button
+                  onClick={() => setTatPatientType('inpatient')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${tatPatientType === 'inpatient' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}
+                >
+                  住院
+                </button>
+              </div>
+            </div>
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={tatData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
@@ -5491,6 +5877,21 @@ const OperationalDecisionCenter: React.FC = () => {
                 <BarChart3 className="text-violet-400" size={20} />
                 检验服务费用
               </h3>
+              <div className="flex gap-1.5 p-1 bg-slate-800/80 rounded-lg">
+                {['全部', '门诊', '住院', '体检'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setLabFeeTab(tab)}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                      labFeeTab === tab 
+                        ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' 
+                        : 'text-slate-400 hover:text-slate-300 transparent border border-transparent'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex-1 flex items-center">
               <div className="w-1/2 h-full">
@@ -5556,9 +5957,9 @@ const OperationalDecisionCenter: React.FC = () => {
                 未处理: {criticalValues.filter(row => row.status === '待处理').length}
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto custom-scrollbar">
               <table className="w-full text-left text-xs">
-                <thead className="text-slate-500 border-b border-slate-800">
+                <thead className="text-slate-500 border-b border-slate-800 sticky top-0 bg-slate-900/95 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="pb-2 font-medium">科室</th>
                     <th className="pb-2 font-medium">姓名</th>
@@ -5572,7 +5973,12 @@ const OperationalDecisionCenter: React.FC = () => {
                   {criticalValues.filter(row => row.status === '待处理').map((row, i) => (
                     <tr key={i} className="hover:bg-white/5 transition-colors">
                       <td className="py-3 text-slate-300">{row.dept}</td>
-                      <td className="py-3 text-slate-300">{row.name}</td>
+                      <td className="py-3 text-slate-300">
+                        <div className="flex flex-col">
+                          <span>{row.name}</span>
+                          <span className="text-[10px] text-slate-500 font-mono mt-0.5">{row.patientId}</span>
+                        </div>
+                      </td>
                       <td className="py-3 text-slate-300 font-medium">{row.item}</td>
                       <td className="py-3 text-red-400 font-bold">{row.result}</td>
                       <td className="py-3 text-red-400">{row.alert}</td>
@@ -5603,9 +6009,9 @@ const OperationalDecisionCenter: React.FC = () => {
                 未处理: {qcOutControlItems.filter(row => row.status === '待处理').length}
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto custom-scrollbar">
               <table className="w-full text-left text-xs">
-                <thead className="text-slate-500 border-b border-slate-800">
+                <thead className="text-slate-500 border-b border-slate-800 sticky top-0 bg-slate-900/95 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="pb-2 font-medium">仪器</th>
                     <th className="pb-2 font-medium">项目</th>
@@ -5650,9 +6056,9 @@ const OperationalDecisionCenter: React.FC = () => {
                 异常标本: {missingTrackingInfo.length}
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto custom-scrollbar">
               <table className="w-full text-left text-xs">
-                <thead className="text-slate-500 border-b border-slate-800">
+                <thead className="text-slate-500 border-b border-slate-800 sticky top-0 bg-slate-900/95 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="pb-2 font-medium">条码号</th>
                     <th className="pb-2 font-medium">姓名</th>
@@ -6905,7 +7311,7 @@ const OperationalDecisionCenter: React.FC = () => {
                 </div>
                 
                 {isDeptSelectorOpen && (
-                  <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
                     <div className="p-1">
                       {MOCK_DEPARTMENTS.map(dept => {
                         const isSelected = selectedDept.includes(dept.name);
@@ -7178,7 +7584,7 @@ const OperationalDecisionCenter: React.FC = () => {
 
                 {/* MEGA MENU DROPDOWN */}
                 {isSwitcherOpen && (
-                   <div className="absolute top-full left-0 mt-2 w-[480px] bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                   <div className="absolute top-full left-0 mt-2 w-[480px] bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-50">
                       <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center justify-between">
                          <span>切换功能模块</span>
                          <span className="bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[10px]">ESC 关闭</span>
@@ -7354,7 +7760,9 @@ const OperationalDecisionCenter: React.FC = () => {
       { id: 'p3', title: '2023年度学科综合考评方案', updatedAt: '2023-12-10', cycle: '年度', targetName: '临床医疗体系' }
     ].find(p => p.id === selectedTalentPlanId);
 
-    const rawAssessments = MOCK_ASSESSMENTS.filter(a => a.schemeId === selectedTalentPlanId);
+    const rawAssessments = MOCK_ASSESSMENTS
+      .filter(a => a.schemeId === selectedTalentPlanId)
+      .filter(a => !talentTargetSearch || a.targetName.toLowerCase().includes(talentTargetSearch.toLowerCase()));
 
     if (rawAssessments.length === 0) {
       return (
@@ -7419,15 +7827,52 @@ const OperationalDecisionCenter: React.FC = () => {
         if (trendData.length < 2) return null;
         const current = trendData[trendData.length - 1];
         const previous = trendData[trendData.length - 2];
+        const allIndicators: {label: string, val: number}[] = [];
+
         const diffs = [
             { key: 'medical', name: '医疗能力', val: current.medical - previous.medical },
             { key: 'quality', name: '质量安全', val: current.quality - previous.quality },
             { key: 'research', name: '科研产出', val: current.research - previous.research },
             { key: 'teaching', name: '教学培养', val: current.teaching - previous.teaching },
             { key: 'efficiency', name: '运营效率', val: current.efficiency - previous.efficiency },
-        ].map(d => ({...d, val: Number(d.val.toFixed(1))}));
+        ].map(d => {
+            const val = Number(d.val.toFixed(1));
+            // Faking indicator-level attribution that sums up to the dimension val
+            const indicatorsList = (currentTrendTarget.dimensions as any)[d.key]?.indicators || [];
+            if (indicatorsList.length > 0) {
+                let remaining = val;
+                indicatorsList.forEach((ind: any, i: number) => {
+                    let portion = 0;
+                    if (i === indicatorsList.length - 1) {
+                        portion = Number(remaining.toFixed(1));
+                    } else {
+                        portion = Number((val * (0.3 + Math.random() * 0.4)).toFixed(1));
+                        remaining -= portion;
+                    }
+                    if (Math.abs(portion) > 0.1) {
+                        allIndicators.push({ label: ind.label, val: portion });
+                    }
+                });
+            } else {
+                 if (Math.abs(val) > 0.1) {
+                     allIndicators.push({ label: `${d.name}综合评估`, val: val });
+                 }
+            }
+            return {...d, val};
+        });
+
         diffs.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
-        return { totalDiff: Number((current.score - previous.score).toFixed(1)), diffs, maxVal: Math.max(...diffs.map(d => Math.abs(d.val))), prevYear: previous.year, currYear: current.year };
+        allIndicators.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
+        const topGlobalIndicators = allIndicators.slice(0, 5);
+
+        return { 
+            totalDiff: Number((current.score - previous.score).toFixed(1)), 
+            diffs, 
+            maxVal: Math.max(...diffs.map(d => Math.abs(d.val))), 
+            prevYear: previous.year, 
+            currYear: current.year,
+            topGlobalIndicators
+        };
     })();
 
     // --- Matrix View Logic ---
@@ -7502,10 +7947,37 @@ const OperationalDecisionCenter: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2">
-              <Download size={14} />
-              导出报告
-            </button>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Calendar size={14} className="text-gray-400" />
+              <span className="text-xs font-bold text-gray-500">考核时间:</span>
+              <select 
+                value={talentTimeFilter}
+                onChange={(e) => setTalentTimeFilter(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 cursor-pointer p-0"
+              >
+                <option value="2024年度">2024年度</option>
+                <option value="2024年Q1">2024年Q1</option>
+                <option value="2023年度">2023年度</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Users size={14} className="text-gray-400" />
+              <span className="text-xs font-bold text-gray-500">考核对象:</span>
+              <div className="relative flex items-center">
+                <input 
+                  type="text"
+                  placeholder="搜索学科..."
+                  value={talentTargetSearch}
+                  onChange={(e) => setTalentTargetSearch(e.target.value)}
+                  className="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 w-24 p-0 placeholder:font-normal"
+                />
+                {talentTargetSearch && (
+                  <button onClick={() => setTalentTargetSearch('')} className="text-gray-300 hover:text-gray-500 transition-colors ml-1">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -7741,6 +8213,7 @@ const OperationalDecisionCenter: React.FC = () => {
                                     ))}
                                 </div>
                             </div>
+                            
                             {talentCompareList.length > 0 && (
                                 <div className="flex items-center gap-3 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
                                     <span className="text-xs font-bold text-blue-600">已选 {talentCompareList.length} 个对比对象</span>
@@ -8053,8 +8526,8 @@ const OperationalDecisionCenter: React.FC = () => {
 
                         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
                             <h3 className="font-bold text-gray-800 mb-6">绩效总分趋势与归因</h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-2 h-[300px] border-r border-dashed border-gray-100 pr-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div className="lg:col-span-5 h-[300px] border-r border-dashed border-gray-100 pr-6">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={trendData}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -8065,30 +8538,56 @@ const OperationalDecisionCenter: React.FC = () => {
                                         </LineChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="lg:col-span-1 flex flex-col justify-center">
+                                <div className="lg:col-span-4 flex flex-col justify-center border-r border-dashed border-gray-100 pr-6">
                                     {growthDrivers && (
-                                        <div className="space-y-6">
-                                            <div>
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">年度变化 ({growthDrivers.prevYear} → {growthDrivers.currYear})</div>
-                                                <div className={`text-4xl font-mono font-bold flex items-center gap-2 ${growthDrivers.totalDiff >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                    {growthDrivers.totalDiff > 0 ? '+' : ''}{growthDrivers.totalDiff}
-                                                    {growthDrivers.totalDiff >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
+                                        <div className="flex flex-col h-full">
+                                            <div className="mb-4 flex items-center justify-between pb-4 border-b border-gray-100">
+                                                <div>
+                                                    <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">年度变化 ({growthDrivers.prevYear} → {growthDrivers.currYear})</div>
+                                                    <div className={`text-4xl font-mono font-bold flex items-center gap-2 ${growthDrivers.totalDiff >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                        {growthDrivers.totalDiff > 0 ? '+' : ''}{growthDrivers.totalDiff}
+                                                        {growthDrivers.totalDiff >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-3">
+                                            <div className="text-xs font-bold text-gray-400 mb-4 px-2">维度变化</div>
+                                            <div className="space-y-4">
                                                 {growthDrivers.diffs.map(d => (
-                                                    <div key={d.key}>
-                                                        <div className="flex justify-between text-[10px] mb-1">
-                                                            <span className="text-gray-500">{d.name}</span>
+                                                    <div key={d.key} className="flex flex-col px-2">
+                                                        <div className="flex justify-between text-xs mb-1">
+                                                            <span className="font-bold text-gray-700">{d.name}</span>
                                                             <span className={`font-bold ${d.val >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{d.val > 0 ? '+' : ''}{d.val}</span>
                                                         </div>
-                                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden relative">
+                                                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden relative">
                                                             <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 z-10"></div>
                                                             <div 
                                                                 className={`h-full absolute ${d.val >= 0 ? 'bg-emerald-500 left-1/2' : 'bg-red-500 right-1/2'}`} 
                                                                 style={{ width: `${(Math.abs(d.val) / growthDrivers.maxVal) * 50}%` }}
                                                             ></div>
                                                         </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="lg:col-span-3 flex flex-col justify-center">
+                                    {growthDrivers && (
+                                        <div className="flex flex-col h-full">
+                                            <div className="mb-4 pb-4 border-b border-transparent">
+                                                <div className="h-[46px]"></div> {/* space matching height */}
+                                            </div>
+                                            <div className="text-xs font-bold text-gray-400 mb-4 px-2">关键影响指标</div>
+                                            <div className="space-y-3 px-2">
+                                                {growthDrivers.topGlobalIndicators.map((ind, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center text-xs p-2.5 bg-gray-50/80 rounded-lg border border-gray-100 shadow-sm">
+                                                        <span className="text-gray-600 flex items-center gap-2 line-clamp-1 flex-1">
+                                                            <div className={`w-2 h-2 rounded-full ${ind.val > 0 ? 'bg-emerald-400' : ind.val < 0 ? 'bg-red-400' : 'bg-gray-300'}`}></div>
+                                                            {ind.label}
+                                                        </span>
+                                                        <span className={`pl-2 font-bold shrink-0 text-sm ${ind.val > 0 ? 'text-emerald-500' : ind.val < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                                            {ind.val > 0 ? '+' : ''}{ind.val}
+                                                        </span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -8392,7 +8891,7 @@ const OperationalDecisionCenter: React.FC = () => {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <Activity size={20} className="text-blue-600" />
@@ -8410,12 +8909,14 @@ const OperationalDecisionCenter: React.FC = () => {
                 <option>同德院区</option>
                 <option>珠玑院区</option>
               </select>
-              <select className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                <option>全部科室</option>
-                <option>内镜中心</option>
-                <option>超声科</option>
-                <option>放射科</option>
-              </select>
+              {drillDownConfig?.title !== '医护人效分析' && (
+                <select className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                  <option>全部科室</option>
+                  <option>内镜中心</option>
+                  <option>超声科</option>
+                  <option>放射科</option>
+                </select>
+              )}
               <select className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                 <option>全部类别</option>
                 <option>检查</option>
@@ -8423,9 +8924,11 @@ const OperationalDecisionCenter: React.FC = () => {
               </select>
               <input type="date" className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" defaultValue="2026-03-19" />
               <div className="ml-auto flex gap-2">
-                <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">
-                  趋势分析
-                </button>
+                {drillDownConfig?.title !== '医护人效分析' && (
+                  <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors">
+                    趋势分析
+                  </button>
+                )}
                 <button className="px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded-md hover:bg-blue-100 transition-colors">
                   明细数据
                 </button>

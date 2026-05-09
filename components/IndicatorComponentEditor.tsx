@@ -42,9 +42,15 @@ interface IndicatorNode {
   children?: IndicatorNode[];
 }
 
+interface DimensionHierarchy {
+  id: string;
+  label: string;
+}
+
 interface DimensionNode {
   id: string;
   label: string;
+  hierarchies?: DimensionHierarchy[];
 }
 
 interface ReferenceLineConfig {
@@ -56,23 +62,73 @@ interface ReferenceLineConfig {
 }
 
 const MOCK_DIMENSIONS: DimensionNode[] = [
-  { id: 'd1', label: '科室' },
-  { id: 'd2', label: '院区' },
-  { id: 'd3', label: '医生' },
-  { id: 'd4', label: '手术等级' },
-  { id: 'd5', label: '病种' },
-  { id: 'd6', label: '时间' },
+  { 
+    id: 'd1', 
+    label: '科室维度',
+    hierarchies: [
+      { id: 'hospital', label: '医院' },
+      { id: 'area', label: '院区' },
+      { id: 'dept', label: '科室' }
+    ]
+  },
+  { 
+    id: 'd2', 
+    label: '人员维度',
+    hierarchies: [
+      { id: 'job_title', label: '职称' },
+      { id: 'doctor', label: '医生' }
+    ]
+  },
+  { 
+    id: 'd3', 
+    label: '时间维度',
+    hierarchies: [
+      { id: 'year', label: '年度' },
+      { id: 'quarter', label: '季度' },
+      { id: 'month', label: '月份' },
+      { id: 'week', label: '周' },
+      { id: 'day', label: '日期' }
+    ]
+  },
+  { 
+    id: 'd4', 
+    label: '诊断维度',
+    hierarchies: [
+      { id: 'diag_cat', label: '诊断分类' },
+      { id: 'diag_code', label: '诊断' }
+    ]
+  },
+  {
+    id: 'd5',
+    label: '项目维度',
+    hierarchies: [
+      { id: 'item_cat', label: '项目分类' },
+      { id: 'item_code', label: '项目' }
+    ]
+  },
+  { id: 'd6', label: '付费方式' },
 ];
 
 const INDICATOR_DIMENSION_MAP: Record<string, string[]> = {
-  'i1': ['d1', 'd2', 'd3', 'd5', 'd6'], // 门诊人次
-  'i2': ['d1', 'd2', 'd3', 'd6'],       // 急诊人次
-  'i3': ['d1', 'd2', 'd3', 'd5', 'd6'], // 门诊均次费用
-  'i4': ['d1', 'd2', 'd3', 'd5', 'd6'], // 出院人次
-  'i5': ['d1', 'd2', 'd5', 'd6'],       // 平均住院日
-  'i6': ['d1', 'd2', 'd6'],             // 床位使用率
-  'i7': ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'], // 手术总例数
-  'i8': ['d1', 'd2', 'd3', 'd4', 'd6'],       // 三四级手术占比
+  'i1': ['hospital', 'area', 'dept', 'job_title', 'doctor', 'year', 'quarter', 'month', 'week', 'day', 'diag_cat', 'diag_code', 'd6'], // 门诊人次
+  'i2': ['hospital', 'area', 'job_title', 'doctor', 'year', 'quarter', 'month', 'd6'],       // 急诊人次 (无科室粒度, 无细粒度时间)
+  'i3': ['hospital', 'area', 'dept', 'year', 'quarter', 'month', 'diag_cat', 'diag_code', 'd6'], // 门诊均次费用
+  'i4': ['hospital', 'area', 'dept', 'job_title', 'doctor', 'year', 'quarter', 'month', 'week', 'day', 'diag_cat', 'diag_code', 'd6'], // 出院人次
+  'i5': ['hospital', 'area', 'dept', 'year', 'quarter', 'month', 'diag_cat', 'diag_code', 'd6'],       // 平均住院日
+  'i6': ['hospital', 'area', 'dept', 'year', 'quarter', 'month'],             // 床位使用率 (粒度较粗)
+  'i7': ['hospital', 'area', 'dept', 'year', 'quarter', 'month', 'day', 'diag_cat', 'diag_code'], // 手术总例数
+  'i8': ['hospital', 'area', 'dept', 'year', 'quarter', 'month'],       // 三四级手术占比
+};
+
+const INDICATOR_EMBEDDED_DIMENSIONS: Record<string, { id: string; label: string }[]> = {
+  'i1': [{ id: 'e_reg_type', label: '挂号类别' }, { id: 'e_is_first', label: '初复诊标志' }, { id: 'e_pay_status', label: '结算状态' }],
+  'i2': [{ id: 'e_reg_type', label: '挂号类别' }, { id: 'e_level', label: '急诊分级' }],
+  'i3': [{ id: 'e_reg_type', label: '挂号类别' }, { id: 'e_cost_type', label: '费用来源' }],
+  'i4': [{ id: 'e_out_type', label: '出院方式' }, { id: 'e_is_death', label: '死亡标志' }],
+  'i5': [{ id: 'e_out_type', label: '出院方式' }],
+  'i6': [{ id: 'e_bed_type', label: '床型' }],
+  'i7': [{ id: 'e_surgery_level', label: '手术等级' }, { id: 'e_is_emergency', label: '急诊手术标志' }],
+  'i8': [{ id: 'e_surgery_level', label: '手术等级' }],
 };
 
 const MOCK_INDICATORS: IndicatorNode[] = [
@@ -113,7 +169,21 @@ const DIMENSION_MOCK_DATA: Record<string, string[]> = {
   'd3': ['张医生', '李医生', '王医生', '赵医生'],
   'd4': ['一级手术', '二级手术', '三级手术', '四级手术'],
   'd5': ['肺炎', '高血压', '糖尿病', '冠心病'],
-  'd6': ['一月', '二月', '三月', '四月', '五月', '六月'],
+  'd6': ['自费', '医保', '公费', '其他'],
+  'hospital': ['第一人民医院', '第二人民医院', '中心医院'],
+  'area': ['总院区', '东院区', '西院区', '南院区'],
+  'dept': ['内科', '外科', '儿科', '妇科', '中医科', '口腔科', '皮肤科'],
+  'job_title': ['主任医师', '副主任医师', '主治医师', '住院医师'],
+  'doctor': ['张医生', '李医生', '王医生', '赵医生', '孙医生', '钱医生'],
+  'year': ['2023年', '2024年', '2025年'],
+  'quarter': ['一季度', '二季度', '三季度', '四季度'],
+  'month': ['1月', '2月', '3月', '4月', '5月', '6月'],
+  'week': ['W1', 'W2', 'W3', 'W4'],
+  'day': ['01', '02', '03', '04', '05', '06', '07'],
+  'diag_cat': ['呼吸系统', '消化系统', '循环系统', '神经系统'],
+  'diag_code': ['感冒', '胃炎', '高血压', '偏头痛'],
+  'item_cat': ['药品', '检查', '治疗', '手术'],
+  'item_code': ['阿莫西林', 'CT', '化疗', '缝合'],
 };
 
 interface IndicatorComponentEditorProps {
@@ -130,18 +200,54 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   const [hasRunQuery, setHasRunQuery] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
-  const [chartType, setChartType] = useState<'bar' | 'horizontal-bar' | 'line' | 'pie'>('bar');
-  const [configTab, setConfigTab] = useState<'layout' | 'data' | 'axis' | 'display'>('layout');
+  const [chartType, setChartType] = useState<'bar' | 'horizontal-bar' | 'line' | 'pie' | 'table'>('bar');
+  const [configTab, setConfigTab] = useState<string>('layout');
+
+  // Handle tab switching based on chart type
+  const getTabs = React.useCallback(() => {
+    if (chartType === 'table') {
+      return [
+        { id: 'generic', label: '通用' },
+        { id: 'conditional', label: '条件格式' }
+      ];
+    }
+    return [
+      { id: 'layout', label: '布局' },
+      { id: 'data', label: '数据' },
+      { id: 'axis', label: '坐标轴' },
+      { id: 'display', label: '显示' }
+    ];
+  }, [chartType]);
+
+  // Reset tab when chart type changes to table or away from table
+  React.useEffect(() => {
+    const tabs = getTabs();
+    if (!tabs.find(t => t.id === configTab)) {
+      setConfigTab(tabs[0].id);
+    }
+  }, [chartType, configTab, getTabs]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [pieData, setPieData] = useState<any[]>([]);
   const [referenceLines, setReferenceLines] = useState<ReferenceLineConfig[]>([]);
 
-  // Calculate available dimensions based on selected indicators
-  const availableDimensions = selectedIndicators.length === 0 
-    ? MOCK_DIMENSIONS.map(d => d.id)
-    : MOCK_DIMENSIONS.filter(dim => 
-        selectedIndicators.every(indId => INDICATOR_DIMENSION_MAP[indId]?.includes(dim.id))
-      ).map(d => d.id);
+  // Calculate available dimensions and specific hierarchy levels based on selected indicators
+  const availableHierarchyIds = selectedIndicators.length === 0 
+    ? []
+    : selectedIndicators.reduce((acc, indId, idx) => {
+        const indDims = INDICATOR_DIMENSION_MAP[indId] || [];
+        if (idx === 0) return indDims;
+        return acc.filter(id => indDims.includes(id));
+      }, [] as string[]);
+
+  // Calculate common embedded dimensions
+  const availableEmbeddedDimensions = selectedIndicators.length === 0
+    ? []
+    : selectedIndicators.reduce((acc, indId, idx) => {
+        const indEmbeds = INDICATOR_EMBEDDED_DIMENSIONS[indId] || [];
+        if (idx === 0) return indEmbeds;
+        // Intersection by label (重名)
+        return acc.filter(a => indEmbeds.some(b => b.label === a.label));
+      }, [] as { id: string; label: string }[]);
 
   const toggleFolder = (id: string) => {
     setExpandedFolders(prev => 
@@ -157,9 +263,28 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
       // Auto-remove dimensions that are no longer supported by the new set of indicators
       if (next.length > 0) {
         setSelectedDimensions(currentDims => 
-          currentDims.filter(dimId => 
-            next.every(indId => INDICATOR_DIMENSION_MAP[indId]?.includes(dimId))
-          )
+          currentDims.filter(dimId => {
+            // Check in master dimensions
+            const isMasterSupported = next.every(indId => INDICATOR_DIMENSION_MAP[indId]?.includes(dimId));
+            if (isMasterSupported) return true;
+
+            // Check in embedded dimensions (intersection by label)
+            // First find the label of this dimId if it is an embedded one
+            let dimLabelHint: string | undefined;
+            for (const list of Object.values(INDICATOR_EMBEDDED_DIMENSIONS)) {
+              const found = list.find(e => e.id === dimId);
+              if (found) {
+                dimLabelHint = found.label;
+                break;
+              }
+            }
+
+            if (dimLabelHint) {
+              return next.every(indId => (INDICATOR_EMBEDDED_DIMENSIONS[indId] || []).some(e => e.label === dimLabelHint));
+            }
+
+            return false;
+          })
         );
       }
       
@@ -168,7 +293,11 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   };
 
   const toggleDimension = (id: string) => {
-    if (!availableDimensions.includes(id)) return;
+    const isMasterAvailable = availableHierarchyIds.includes(id);
+    const isEmbeddedAvailable = availableEmbeddedDimensions.some(e => e.id === id);
+    
+    if (!isMasterAvailable && !isEmbeddedAvailable) return;
+    
     setSelectedDimensions(prev => 
       prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
     );
@@ -203,7 +332,24 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   };
 
   const getDimensionLabel = (id: string) => {
-    return MOCK_DIMENSIONS.find(d => d.id === id)?.label || id;
+    const dim = MOCK_DIMENSIONS.find(d => d.id === id);
+    if (dim) return dim.label;
+    
+    // Look in hierarchies
+    for (const d of MOCK_DIMENSIONS) {
+      if (d.hierarchies) {
+        const h = d.hierarchies.find(hi => hi.id === id);
+        if (h) return h.label;
+      }
+    }
+    
+    // Look in embedded dimensions
+    for (const idList of Object.values(INDICATOR_EMBEDDED_DIMENSIONS)) {
+      const e = idList.find(ei => ei.id === id);
+      if (e) return e.label;
+    }
+    
+    return id;
   };
 
   const handleRunQuery = () => {
@@ -230,6 +376,13 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
       
       for (let i = 0; i < dimensionValues.length; i++) {
         const entry: Record<string, any> = { name: dimensionValues[i] };
+        
+        // Add individual dimension values for table view
+        selectedDimensions.forEach((dimId) => {
+          const values = DIMENSION_MOCK_DATA[dimId] || ['数据' + (i + 1)];
+          entry[dimId] = values[i % values.length];
+        });
+
         selectedIndicators.forEach(id => {
           entry[getIndicatorLabel(id)] = Math.floor(Math.random() * 1000 + 500);
         });
@@ -345,42 +498,139 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
           </div>
 
           {/* Dimensions Section */}
-          <div className="h-1/3 border-t border-gray-200 flex flex-col bg-white">
+          <div className="flex-1 border-t border-gray-200 flex flex-col bg-white overflow-hidden">
             <div className="p-3 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">维度</h3>
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">可选维度</h3>
             </div>
-            <div className="flex-1 overflow-auto p-2">
-              <div className="grid grid-cols-2 gap-2">
-                {MOCK_DIMENSIONS.map(dim => {
-                  const isAvailable = availableDimensions.includes(dim.id);
-                  const isSelected = selectedDimensions.includes(dim.id);
-                  return (
-                    <div 
-                      key={dim.id}
-                      onClick={() => toggleDimension(dim.id)}
-                      className={`
-                        px-3 py-2 rounded-md text-xs font-medium cursor-pointer transition-all border
-                        ${isSelected 
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
-                          : isAvailable 
-                            ? 'bg-white border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50' 
-                            : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed opacity-60'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{dim.label}</span>
-                        {!isAvailable && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                        )}
+            <div className="flex-1 overflow-auto p-3 space-y-4">
+              {selectedIndicators.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center">
+                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                    <Database size={20} className="text-gray-300" />
+                  </div>
+                  <p className="text-xs text-gray-400 font-medium whitespace-pre-wrap">请先选择指标以加载可用维度</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Master Dimensions */}
+                  <div className="space-y-4">
+                    {MOCK_DIMENSIONS.map(dim => {
+                      const hasHierarchies = dim.hierarchies && dim.hierarchies.length > 0;
+                      
+                      if (hasHierarchies) {
+                        // Check if any hierarchy level is available or selected
+                        const availableLevels = dim.hierarchies!.filter(h => availableHierarchyIds.includes(h.id));
+                        if (availableLevels.length === 0) return null;
+
+                        return (
+                          <div key={dim.id} className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                              <div className="w-1 h-3 bg-blue-400 rounded-full"></div>
+                              {dim.label}
+                            </div>
+                            <div className="pl-3 space-y-1 border-l border-gray-100 ml-0.5">
+                              {dim.hierarchies!.map((h, hIdx) => {
+                                const isHAvailable = availableHierarchyIds.includes(h.id);
+                                const isHSelected = selectedDimensions.includes(h.id);
+                                
+                                if (!isHAvailable) return null;
+
+                                return (
+                                  <div 
+                                    key={h.id}
+                                    onClick={() => toggleDimension(h.id)}
+                                    className={`
+                                      flex items-center justify-between px-3 py-1.5 rounded-md text-[11px] cursor-pointer transition-all border
+                                      ${isHSelected 
+                                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
+                                        : 'bg-white border-gray-100 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
+                                      }
+                                    `}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="opacity-50 font-mono text-[9px]">L{hIdx + 1}</span>
+                                      <span>{h.label}</span>
+                                    </div>
+                                    {isHSelected && <div className="w-1 h-1 rounded-full bg-white animate-pulse"></div>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Non-hierarchical dimensions
+                      const isAvailable = availableHierarchyIds.includes(dim.id);
+                      if (!isAvailable) return null;
+                      const isSelected = selectedDimensions.includes(dim.id);
+
+                      return (
+                        <div key={dim.id} className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+                            <div className="w-1 h-3 bg-blue-400 rounded-full"></div>
+                            {dim.label}
+                          </div>
+                          <div className="pl-3 space-y-1 border-l border-gray-100 ml-0.5">
+                            <div 
+                              onClick={() => toggleDimension(dim.id)}
+                              className={`
+                                flex items-center justify-between px-3 py-1.5 rounded-md text-[11px] cursor-pointer transition-all border
+                                ${isSelected 
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm' 
+                                  : 'bg-white border-gray-100 text-gray-600 hover:border-blue-300 hover:bg-blue-50'
+                                }
+                              `}
+                            >
+                              <span>{dim.label}</span>
+                              {isSelected && <div className="w-1 h-1 rounded-full bg-white animate-pulse"></div>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Embedded Dimensions */}
+                  {availableEmbeddedDimensions.length > 0 && (
+                    <div className="space-y-3 pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-500">
+                        <Code size={14} />
+                        内嵌维度
+                        <span className="text-[10px] font-normal text-gray-400 ml-1">(仅指标下可用)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {availableEmbeddedDimensions.map((dim) => {
+                          const isSelected = selectedDimensions.includes(dim.id);
+                          return (
+                            <div 
+                              key={dim.id}
+                              onClick={() => {
+                                setSelectedDimensions(prev => 
+                                  prev.includes(dim.id) ? prev.filter(d => d !== dim.id) : [...prev, dim.id]
+                                );
+                              }}
+                              className={`
+                                flex items-center justify-center px-2 py-2 rounded border text-[11px] cursor-pointer transition-all
+                                ${isSelected 
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' 
+                                  : 'bg-emerald-50 border-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                                }
+                              `}
+                            >
+                              {dim.label}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-              {selectedIndicators.length > 0 && availableDimensions.length === 0 && (
+                  )}
+                </div>
+              )}
+              
+              {selectedIndicators.length > 0 && availableHierarchyIds.length === 0 && availableEmbeddedDimensions.length === 0 && (
                 <div className="mt-4 p-3 bg-orange-50 rounded-md border border-orange-100">
-                  <p className="text-[10px] text-orange-600 leading-relaxed">
+                  <p className="text-[10px] text-orange-600 leading-relaxed text-center">
                     当前选择的指标没有共同支持的维度。
                   </p>
                 </div>
@@ -412,7 +662,8 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                     { type: 'bar', icon: BarChart2, label: '柱状图' },
                     { type: 'horizontal-bar', icon: BarChart2, label: '条形图', rotate: true },
                     { type: 'line', icon: LineChartIcon, label: '折线图' },
-                    { type: 'pie', icon: PieChartIcon, label: '饼图' }
+                    { type: 'pie', icon: PieChartIcon, label: '饼图' },
+                    { type: 'table', icon: TableIcon, label: '表格' }
                   ].map(({ type, icon: Icon, label, rotate }) => (
                     <button 
                       key={type}
@@ -429,15 +680,10 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
 
               {/* Config Tabs */}
               <div className="flex border-b border-gray-100 bg-gray-50/50 shrink-0">
-                {[
-                  { id: 'layout', label: '布局' },
-                  { id: 'data', label: '数据' },
-                  { id: 'axis', label: '坐标轴' },
-                  { id: 'display', label: '显示' }
-                ].map(tab => (
+                {getTabs().map(tab => (
                   <button
                     key={tab.id}
-                    onClick={() => setConfigTab(tab.id as any)}
+                    onClick={() => setConfigTab(tab.id)}
                     className={`flex-1 py-2.5 text-[11px] font-bold transition-colors relative ${configTab === tab.id ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     {tab.label}
@@ -449,7 +695,74 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
               </div>
 
               <div className="flex-1 overflow-auto p-4 space-y-6">
-                {configTab === 'layout' && (
+                {/* Table Specific Tabs */}
+                {chartType === 'table' ? (
+                  <>
+                    {configTab === 'generic' && (
+                      <div className="space-y-4">
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">表格设置</label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">显示序号</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">冻结首列</span>
+                              <div className="w-8 h-4 bg-gray-200 rounded-full relative">
+                                <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">单元格边框</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">文字样式</label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">对齐方式</span>
+                              <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="左对齐">
+                                <option>左对齐</option>
+                                <option>居中</option>
+                                <option>右对齐</option>
+                              </select>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">字体大小</span>
+                              <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="12px">
+                                <option>11px</option>
+                                <option>12px</option>
+                                <option>13px</option>
+                              </select>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    )}
+                    {configTab === 'conditional' && (
+                      <div className="space-y-4 text-center py-10">
+                        <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Filter size={20} className="text-emerald-500" />
+                        </div>
+                        <h4 className="text-xs font-bold text-gray-700 mb-1">条件格式规则</h4>
+                        <p className="text-[10px] text-gray-400 mb-4 px-6">设置单元格背景或文字颜色，根据数值动态变化。</p>
+                        <button className="px-3 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-md shadow-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-1">
+                          <Plus size={12} />
+                          添加规则
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {configTab === 'layout' && (
                   <div className="space-y-4">
                     <section>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">基础信息</label>
@@ -698,9 +1011,11 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                     </section>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
         </div>
 
         {/* Main Content Area */}
@@ -757,151 +1072,191 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                 )}
               </div>
               {isChartExpanded && (
-                <div className="flex-1 flex items-center justify-center bg-gray-50/30 p-6">
+                <div className="flex-1 flex items-center justify-center bg-gray-50/30 p-6 overflow-hidden">
                   {hasRunQuery && selectedIndicators.length > 0 ? (
-                    <div className="w-full h-full min-h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        {chartType === 'bar' ? (
-                          <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="name" 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                            />
-                            <YAxis 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                            />
-                            <Tooltip 
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                            />
-                            <Legend iconType="circle" />
-                            {selectedIndicators.map((id, index) => (
-                              <Bar 
-                                key={id} 
-                                dataKey={getIndicatorLabel(id)} 
-                                fill={COLORS[index % COLORS.length]} 
-                                radius={[4, 4, 0, 0]} 
-                                barSize={32}
-                              />
-                            ))}
-                            {referenceLines.map(line => (
-                              <ReferenceLine 
-                                key={line.id} 
-                                y={line.value} 
-                                stroke="#ef4444" 
-                                strokeDasharray="3 3" 
-                                label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
-                              />
-                            ))}
-                          </BarChart>
-                        ) : chartType === 'horizontal-bar' ? (
-                          <BarChart data={chartData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                            <XAxis 
-                              type="number"
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                            />
-                            <YAxis 
-                              dataKey="name" 
-                              type="category"
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                              width={80}
-                            />
-                            <Tooltip 
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                            />
-                            <Legend iconType="circle" />
-                            {selectedIndicators.map((id, index) => (
-                              <Bar 
-                                key={id} 
-                                dataKey={getIndicatorLabel(id)} 
-                                fill={COLORS[index % COLORS.length]} 
-                                radius={[0, 4, 4, 0]} 
-                                barSize={20}
-                              />
-                            ))}
-                            {referenceLines.map(line => (
-                              <ReferenceLine 
-                                key={line.id} 
-                                x={line.value} 
-                                stroke="#ef4444" 
-                                strokeDasharray="3 3" 
-                                label={{ value: line.label, position: line.position === 'start' ? 'insideBottomLeft' : line.position === 'middle' ? 'insideBottom' : 'insideBottomRight', fill: '#ef4444', fontSize: 10 }} 
-                              />
-                            ))}
-                          </BarChart>
-                        ) : chartType === 'line' ? (
-                          <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="name" 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                            />
-                            <YAxis 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 12, fill: '#64748b' }} 
-                            />
-                            <Tooltip 
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                            />
-                            <Legend iconType="circle" />
-                            {selectedIndicators.map((id, index) => (
-                              <Line 
-                                key={id} 
-                                type="monotone" 
-                                dataKey={getIndicatorLabel(id)} 
-                                stroke={COLORS[index % COLORS.length]} 
-                                strokeWidth={3}
-                                dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                                activeDot={{ r: 6, strokeWidth: 0 }}
-                              />
-                            ))}
-                            {referenceLines.map(line => (
-                              <ReferenceLine 
-                                key={line.id} 
-                                y={line.value} 
-                                stroke="#ef4444" 
-                                strokeDasharray="3 3" 
-                                label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
-                              />
-                            ))}
-                          </LineChart>
-                        ) : chartType === 'pie' ? (
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {pieData.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <div className="w-full h-full min-h-[300px] flex flex-col">
+                      {chartType === 'table' ? (
+                        <div className="w-full h-full overflow-auto bg-white rounded-lg border border-gray-100 shadow-sm">
+                          <table className="w-full text-left border-collapse min-w-full">
+                            <thead className="sticky top-0 bg-gray-50 z-10 shadow-sm">
+                              <tr>
+                                {selectedDimensions.length > 0 ? (
+                                  selectedDimensions.map(dimId => (
+                                    <th key={dimId} className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-200 bg-gray-50">
+                                      {getDimensionLabel(dimId)}
+                                    </th>
+                                  ))
+                                ) : (
+                                  <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-200 bg-gray-50">名称</th>
+                                )}
+                                {selectedIndicators.map(id => (
+                                  <th key={id} className="px-4 py-3 text-[11px] font-bold text-emerald-600 uppercase border-b border-gray-200 bg-gray-50">
+                                    {getIndicatorLabel(id)}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {chartData.map((row, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                  {selectedDimensions.length > 0 ? (
+                                    selectedDimensions.map(dimId => (
+                                      <td key={dimId} className="px-4 py-2.5 text-xs font-medium text-gray-700 border-r border-gray-50 last:border-r-0">
+                                        {row[dimId] || row.name}
+                                      </td>
+                                    ))
+                                  ) : (
+                                    <td className="px-4 py-2.5 text-xs font-medium text-gray-700">{row.name}</td>
+                                  )}
+                                  {selectedIndicators.map(id => (
+                                    <td key={id} className="px-4 py-2.5 text-xs text-gray-600 font-mono font-normal">
+                                      {row[getIndicatorLabel(id)]?.toLocaleString()}
+                                    </td>
+                                  ))}
+                                </tr>
                               ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                          </PieChart>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                            <TableIcon size={48} className="mb-4 opacity-20" />
-                            <p>透视表视图暂未实现</p>
-                          </div>
-                        )}
-                      </ResponsiveContainer>
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          {chartType === 'bar' ? (
+                            <BarChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                              />
+                              <YAxis 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                              />
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                              />
+                              <Legend iconType="circle" />
+                              {selectedIndicators.map((id, index) => (
+                                <Bar 
+                                  key={id} 
+                                  dataKey={getIndicatorLabel(id)} 
+                                  fill={COLORS[index % COLORS.length]} 
+                                  radius={[4, 4, 0, 0]} 
+                                  barSize={32}
+                                />
+                              ))}
+                              {referenceLines.map(line => (
+                                <ReferenceLine 
+                                  key={line.id} 
+                                  y={line.value} 
+                                  stroke="#ef4444" 
+                                  strokeDasharray="3 3" 
+                                  label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
+                                />
+                              ))}
+                            </BarChart>
+                          ) : chartType === 'horizontal-bar' ? (
+                            <BarChart data={chartData} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                              <XAxis 
+                                type="number"
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                              />
+                              <YAxis 
+                                dataKey="name" 
+                                type="category"
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                                width={80}
+                              />
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                              />
+                              <Legend iconType="circle" />
+                              {selectedIndicators.map((id, index) => (
+                                <Bar 
+                                  key={id} 
+                                  dataKey={getIndicatorLabel(id)} 
+                                  fill={COLORS[index % COLORS.length]} 
+                                  radius={[0, 4, 4, 0]} 
+                                  barSize={20}
+                                />
+                              ))}
+                              {referenceLines.map(line => (
+                                <ReferenceLine 
+                                  key={line.id} 
+                                  x={line.value} 
+                                  stroke="#ef4444" 
+                                  strokeDasharray="3 3" 
+                                  label={{ value: line.label, position: line.position === 'start' ? 'insideBottomLeft' : line.position === 'middle' ? 'insideBottom' : 'insideBottomRight', fill: '#ef4444', fontSize: 10 }} 
+                                />
+                              ))}
+                            </BarChart>
+                          ) : chartType === 'line' ? (
+                            <LineChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                              />
+                              <YAxis 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                              />
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                              />
+                              <Legend iconType="circle" />
+                              {selectedIndicators.map((id, index) => (
+                                <Line 
+                                  key={id} 
+                                  type="monotone" 
+                                  dataKey={getIndicatorLabel(id)} 
+                                  stroke={COLORS[index % COLORS.length]} 
+                                  strokeWidth={3}
+                                  dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                                  activeDot={{ r: 6, strokeWidth: 0 }}
+                                />
+                              ))}
+                              {referenceLines.map(line => (
+                                <ReferenceLine 
+                                  key={line.id} 
+                                  y={line.value} 
+                                  stroke="#ef4444" 
+                                  strokeDasharray="3 3" 
+                                  label={{ value: line.label, position: line.position === 'start' ? 'insideTopLeft' : line.position === 'middle' ? 'top' : 'insideTopRight', fill: '#ef4444', fontSize: 10 }} 
+                                />
+                              ))}
+                            </LineChart>
+                          ) : (
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={100}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {pieData.map((_, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                              <Legend />
+                            </PieChart>
+                          )}
+                        </ResponsiveContainer>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center max-w-xs">

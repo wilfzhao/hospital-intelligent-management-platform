@@ -69,14 +69,14 @@ export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [
     icon: <Database size={20} />,
   },
   {
-    id: 'source_table_management',
-    label: '来源表管理',
-    icon: <Database size={20} />, // You might need to import a different icon if preferred, Database for now
-  },
-  {
     id: 'dimension_management',
     label: '维度管理',
     icon: <Layers size={20} />,
+  },
+  {
+    id: 'source_table_management',
+    label: '来源表管理',
+    icon: <Database size={20} />, // You might need to import a different icon if preferred, Database for now
   },
   {
     id: 'indicator_reporting',

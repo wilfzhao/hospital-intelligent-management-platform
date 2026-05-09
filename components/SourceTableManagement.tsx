@@ -93,9 +93,51 @@ const AVAILABLE_TABLES = [
   { tableName: 'fact_exam', name: '检查事实表' },
 ];
 
-const DIMENSIONS = ['科室维度', '人员维度', '时间维度', '诊断维度', '项目维度'];
+const DIMENSION_CONFIGS = [
+  { 
+    name: '科室维度', 
+    hierarchies: [
+      { name: '医院', field: 'hospital_id' },
+      { name: '院区', field: 'area_id' },
+      { name: '科室', field: 'dept_id' }
+    ] 
+  },
+  { 
+    name: '人员维度', 
+    hierarchies: [
+      { name: '职称', field: 'job_title_id' },
+      { name: '医生', field: 'doctor_id' }
+    ] 
+  },
+  { 
+    name: '时间维度', 
+    hierarchies: [
+      { name: '年度', field: 'year' },
+      { name: '季度', field: 'quarter' },
+      { name: '月份', field: 'month' },
+      { name: '周', field: 'week' },
+      { name: '日期', field: 'day' }
+    ] 
+  },
+  { 
+     name: '诊断维度',
+     hierarchies: [
+       { name: '诊断分类', field: 'diag_cat_id' },
+       { name: '诊断', field: 'diag_code' }
+     ]
+  },
+  {
+    name: '项目维度',
+    hierarchies: [
+      { name: '项目分类', field: 'item_cat_id' },
+      { name: '项目', field: 'item_code' }
+    ]
+  }
+];
+
+const DIMENSIONS = DIMENSION_CONFIGS.map(d => d.name);
 const SOURCE_TABLE_FIELDS = ['dept_code', 'doctor_id', 'visit_date', 'patient_id', 'diag_code', 'item_code', 'admit_date', 'pay_type', 'visit_type', 'reg_source', 'surgeon_id', 'surgery_dept_code', 'surgery_type_code', 'snap_date', 'bed_type'];
-const DIM_PRIMARY_KEYS = ['id', 'dept_id', 'user_id', 'code', 'doctor_id', 'patient_id', 'diag_code'];
+const DIM_PRIMARY_KEYS = ['id', 'dept_id', 'user_id', 'code', 'doctor_id', 'patient_id', 'diag_code', 'hospital_id', 'area_id', 'year', 'quarter', 'month', 'week', 'day', 'diag_cat_id', 'item_cat_id'];
 const DIM_DISPLAY_FIELDS = ['name', 'dept_name', 'user_name', 'desc', 'diag_name', 'type_name'];
 
 const FIELD_NAME_MAP: Record<string, string> = {
@@ -363,100 +405,144 @@ export const SourceTableManagement: React.FC = () => {
                             {/* Decorative accent */}
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
                             
-                            <div className="flex items-center gap-3 pl-2">
-                              <div className="flex-1">
-                                <label className="block text-[11px] font-medium text-gray-500 mb-1">主维度</label>
-                                <select 
-                                  value={field.name}
-                                  onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
-                                  className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white text-gray-800 transition-colors"
+                            <div className="space-y-4 pl-2">
+                              {/* Row 1: Source Table Field */}
+                              <div className="flex items-end gap-3">
+                                <div className="flex-1">
+                                  <label className="block text-[11px] font-medium text-gray-500 mb-1">来源表字段</label>
+                                  <select 
+                                    value={field.field}
+                                    onChange={(e) => handleFieldChange(idx, 'field', e.target.value)}
+                                    className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500 focus:bg-white text-gray-800 transition-colors"
+                                  >
+                                    <option value="" disabled>选择来源表字段</option>
+                                    {SOURCE_TABLE_FIELDS.map(f => (
+                                      <option key={f} value={f}>{f}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <button 
+                                  onClick={() => handleRemoveField(idx)}
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="删除"
                                 >
-                                  <option value="" disabled>选择主维度</option>
-                                  {DIMENSIONS.map(dim => (
-                                    <option key={dim} value={dim} disabled={selectedDimensions.includes(dim) && field.name !== dim}>
-                                      {dim}
-                                    </option>
-                                  ))}
-                                </select>
+                                  <X size={16} />
+                                </button>
                               </div>
-                              <div className="text-gray-300 mt-5">→</div>
-                              <div className="flex-[0.8]">
-                                <label className="block text-[11px] font-medium text-gray-500 mb-1">来源表字段</label>
-                                <select 
-                                  value={field.field}
-                                  onChange={(e) => handleFieldChange(idx, 'field', e.target.value)}
-                                  className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500 focus:bg-white text-gray-800 transition-colors"
-                                >
-                                  <option value="" disabled>选择来源表字段</option>
-                                  {SOURCE_TABLE_FIELDS.map(f => (
-                                    <option key={f} value={f}>{f}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div className="flex-[0.8]">
-                                <label className="block text-[11px] font-medium text-gray-500 mb-1">关联方式</label>
-                                <select 
-                                  value={field.type}
-                                  onChange={(e) => handleFieldChange(idx, 'type', e.target.value)}
-                                  className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:bg-white text-gray-800 transition-colors"
-                                >
-                                  <option value="直接关联">直接关联</option>
-                                  <option value="编码映射">编码映射</option>
-                                </select>
-                              </div>
-                              <button 
-                                onClick={() => handleRemoveField(idx)}
-                                className="mt-5 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="删除"
-                              >
-                                <X size={16} />
-                              </button>
+
+                              {/* Row 2: Dimension and Association */}
+                                <div className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                                  <div className="flex-1">
+                                    <label className="block text-[11px] font-medium text-gray-500 mb-1">映射主维度</label>
+                                    <select 
+                                      value={field.name}
+                                      onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-800 transition-colors"
+                                    >
+                                      <option value="" disabled>选择主维度</option>
+                                      {DIMENSIONS.map(dim => (
+                                        <option key={dim} value={dim} disabled={selectedDimensions.includes(dim) && field.name !== dim}>
+                                          {dim}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="text-gray-300">→</div>
+                                  <div className="flex-1">
+                                    <label className="block text-[11px] font-medium text-gray-500 mb-1">关联方式</label>
+                                    <select 
+                                      value={field.type}
+                                      onChange={(e) => handleFieldChange(idx, 'type', e.target.value)}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-800 transition-colors"
+                                    >
+                                      <option value="直接关联">直接关联</option>
+                                      <option value="编码映射">编码映射</option>
+                                    </select>
+                                  </div>
+                                </div>
                             </div>
                             
                             {(field.type === '直接关联' || field.type === '编码映射') && (
-                              <div className="flex items-center gap-3 pl-5 py-2 mt-1 rounded-lg bg-blue-50/50 border border-blue-50 ml-2">
-                                {field.type === '编码映射' && (
-                                  <div className="flex-[0.6]">
-                                    <label className="block text-[11px] font-medium text-blue-600/70 mb-1">来源系统</label>
-                                    <select
-                                      value={field.sourceSystem || ''}
-                                      onChange={(e) => handleFieldChange(idx, 'sourceSystem', e.target.value)}
-                                      className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs focus:outline-none focus:border-blue-400 text-gray-700"
-                                    >
-                                      <option value="" disabled>选择来源系统</option>
-                                      <option value="HIS系统">HIS系统</option>
-                                      <option value="LIS系统">LIS系统</option>
-                                      <option value="PACS系统">PACS系统</option>
-                                      <option value="EMR系统">EMR系统</option>
-                                    </select>
-                                  </div>
-                                )}
-                                <div className="flex-1">
-                                  <label className="block text-[11px] font-medium text-blue-600/70 mb-1">维度主键字段</label>
-                                  <select 
-                                    value={field.dimPrimaryKey || ''}
-                                    onChange={(e) => handleFieldChange(idx, 'dimPrimaryKey', e.target.value)}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
-                                  >
-                                    <option value="" disabled>选择主键字段 (如 id)</option>
-                                    {DIM_PRIMARY_KEYS.map(k => (
-                                      <option key={k} value={k}>{k}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div className="flex-1">
-                                  <label className="block text-[11px] font-medium text-blue-600/70 mb-1">维度显示字段</label>
-                                  <select 
-                                    value={field.dimDisplayField || ''}
-                                    onChange={(e) => handleFieldChange(idx, 'dimDisplayField', e.target.value)}
-                                    className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
-                                  >
-                                    <option value="" disabled>选择显示字段 (如 name)</option>
-                                    {DIM_DISPLAY_FIELDS.map(d => (
-                                      <option key={d} value={d}>{d}</option>
-                                    ))}
-                                  </select>
-                                </div>
+                              <div className="flex flex-col gap-3 pl-5 pr-4 py-2.5 mt-1 rounded-lg bg-blue-50/50 border border-blue-50 ml-2 group-hover:bg-blue-100/30 transition-colors">
+                                {(() => {
+                                  const currentDimConfig = DIMENSION_CONFIGS.find(d => d.name === field.name);
+                                  const hasHierarchies = !!(currentDimConfig && currentDimConfig.hierarchies && currentDimConfig.hierarchies.length > 0);
+                                  const selectedHierarchy = currentDimConfig?.hierarchies.find(h => h.field === field.dimPrimaryKey);
+                                  const isLeaf = currentDimConfig && selectedHierarchy && currentDimConfig.hierarchies[currentDimConfig.hierarchies.length - 1].field === field.dimPrimaryKey;
+                                  const showHint = hasHierarchies && field.dimPrimaryKey && !isLeaf;
+
+                                  return (
+                                    <>
+                                      <div className="flex items-start gap-4">
+                                        {field.type === '编码映射' && (
+                                          <div className="flex-[0.6]">
+                                            <label className="block text-[11px] font-medium text-blue-600/70 mb-1">来源系统</label>
+                                            <select
+                                              value={field.sourceSystem || ''}
+                                              onChange={(e) => handleFieldChange(idx, 'sourceSystem', e.target.value)}
+                                              className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs focus:outline-none focus:border-blue-400 text-gray-700"
+                                            >
+                                              <option value="" disabled>选择来源系统</option>
+                                              <option value="HIS系统">HIS系统</option>
+                                              <option value="LIS系统">LIS系统</option>
+                                              <option value="PACS系统">PACS系统</option>
+                                              <option value="EMR系统">EMR系统</option>
+                                            </select>
+                                          </div>
+                                        )}
+                                        <div className="flex-1">
+                                          <label className="block text-[11px] font-medium text-blue-600/70 mb-1">
+                                            {hasHierarchies ? '关联维度层级字段' : '维度主键字段'}
+                                          </label>
+                                          <select 
+                                            value={field.dimPrimaryKey || ''}
+                                            onChange={(e) => handleFieldChange(idx, 'dimPrimaryKey', e.target.value)}
+                                            className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
+                                          >
+                                            <option value="" disabled>{hasHierarchies ? '选择字段' : '选择主键字段 (如 id)'}</option>
+                                            {hasHierarchies ? (
+                                              currentDimConfig?.hierarchies.map(h => (
+                                                <option key={h.field} value={h.field}>{h.name} ({h.field})</option>
+                                              ))
+                                            ) : (
+                                              DIM_PRIMARY_KEYS.map(k => (
+                                                <option key={k} value={k}>{k}</option>
+                                              ))
+                                            )}
+                                          </select>
+                                        </div>
+                                        <div className="flex-1">
+                                          <label className="block text-[11px] font-medium text-blue-600/70 mb-1">维度显示字段</label>
+                                          <select 
+                                            value={field.dimDisplayField || ''}
+                                            onChange={(e) => handleFieldChange(idx, 'dimDisplayField', e.target.value)}
+                                            className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
+                                          >
+                                            <option value="" disabled>选择显示字段 (如 name)</option>
+                                            {DIM_DISPLAY_FIELDS.map(d => (
+                                              <option key={d} value={d}>{d}</option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      </div>
+
+                                      {showHint && selectedHierarchy && (
+                                        <div className="p-2.5 bg-amber-50 border border-amber-100 rounded-md text-[10px] text-amber-700 leading-relaxed animate-in fade-in slide-in-from-top-1">
+                                          <div className="flex gap-2">
+                                            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            <span className="flex-1">
+                                              非主键粒度关联，将自动去重。<br />
+                                              维度表在 <span className="font-bold underline">{selectedHierarchy.name}</span> 粒度下有重复行，系统生成 SQL 时自动加 DISTINCT 子查询。
+                                              该来源表最细可下钻至 <span className="font-bold">L{(currentDimConfig?.hierarchies.indexOf(selectedHierarchy) ?? -1) + 1}（{selectedHierarchy.name}）</span>。
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
@@ -507,9 +593,14 @@ export const SourceTableManagement: React.FC = () => {
                                 className="w-full px-2 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md text-xs font-mono focus:outline-none focus:border-emerald-400 focus:bg-white text-gray-800 transition-colors"
                               >
                                 <option value="" disabled>选择字段</option>
-                                {SOURCE_TABLE_FIELDS.map(f => (
-                                  <option key={f} value={f}>{f}</option>
-                                ))}
+                                {SOURCE_TABLE_FIELDS.map(f => {
+                                  const isUsed = newFields.some((item, i) => item.type === '内嵌分组' && item.field === f && i !== idx);
+                                  return (
+                                    <option key={f} value={f} disabled={isUsed}>
+                                      {f} {isUsed ? '(已选择)' : ''}
+                                    </option>
+                                  );
+                                })}
                               </select>
                             </div>
                             <div className="text-gray-300 mt-4">→</div>

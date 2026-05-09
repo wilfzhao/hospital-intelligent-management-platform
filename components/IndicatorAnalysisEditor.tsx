@@ -4,19 +4,33 @@ import {
   Table as TableIcon, 
   BarChart3, 
   LineChart, 
-  Layout, 
+  Layout,
+  Package,
+  Plus,
+  Check,
+  Search,
+  ChevronRight,
   Move, 
   Trash2,
-  Settings2
+  Settings2,
+  X
 } from 'lucide-react';
 import AnalysisTableWidget from './AnalysisTableWidget';
+
+const MOCK_EXISTING_COMPONENTS = [
+  { id: 'comp-1', title: '门急诊人次月度汇总表', type: 'table', author: '张医生', time: '2024-03-20' },
+  { id: 'comp-2', title: '手术室利用率效能表', type: 'table', author: '李科长', time: '2024-03-21' },
+  { id: 'comp-3', title: '科室满意度排行报表', type: 'table', author: '王主任', time: '2024-03-21' },
+  { id: 'comp-4', title: '全院平均住院日分析', type: 'bar', author: '张医生', time: '2024-03-22' },
+  { id: 'comp-5', title: '财务收入构成趋势图', type: 'line', author: '刘会计', time: '2024-03-23' },
+];
 
 interface EditorProps {
   onBack: () => void;
   onSave: (name: string) => void;
 }
 
-type ComponentType = 'table' | 'bar' | 'line';
+type ComponentType = 'table' | 'bar' | 'line' | 'component';
 
 interface CanvasComponent {
   id: string;
@@ -28,6 +42,9 @@ interface CanvasComponent {
 export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps) {
   const [canvasItems, setCanvasItems] = useState<CanvasComponent[]>([]);
   const [systemTitle, setSystemTitle] = useState('新增指标分析体系');
+  const [showComponentPicker, setShowComponentPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
 
   const handleSave = () => {
     if (!systemTitle.trim()) {
@@ -53,9 +70,36 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
     const titles = {
       table: '指标表格',
       bar: '柱状图分析',
-      line: '折线图趋势'
+      line: '折线图趋势',
+      component: '分析组件'
     };
+    if (type === 'component') {
+      setShowComponentPicker(true);
+      setTempSelectedIds([]);
+      return;
+    }
     setCanvasItems([...canvasItems, { id: Date.now().toString(), type, title: titles[type], isConfiguring: true }]);
+  };
+
+  const handleConfirmAddComponents = () => {
+    const newItems: CanvasComponent[] = tempSelectedIds.map(id => {
+      const comp = MOCK_EXISTING_COMPONENTS.find(c => c.id === id);
+      return {
+        id: `existing-${Date.now()}-${id}`,
+        type: (comp?.type as ComponentType) || 'table',
+        title: comp?.title || '分析组件',
+        isConfiguring: false
+      };
+    });
+    setCanvasItems([...canvasItems, ...newItems]);
+    setShowComponentPicker(false);
+    setTempSelectedIds([]);
+  };
+
+  const toggleTempSelection = (id: string) => {
+    setTempSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const removeComponent = (id: string) => {
@@ -110,19 +154,11 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
             </button>
             <div className="w-px h-4 bg-slate-200 mx-1"></div>
             <button 
-              onClick={() => addComponent('bar')} 
+              onClick={() => addComponent('component')} 
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all group"
             >
-              <BarChart3 size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
-              柱状图
-            </button>
-            <div className="w-px h-4 bg-slate-200 mx-1"></div>
-            <button 
-              onClick={() => addComponent('line')} 
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:bg-white hover:text-emerald-600 hover:shadow-sm transition-all group"
-            >
-              <LineChart size={18} className="text-slate-400 group-hover:text-emerald-500 transition-colors" />
-              折线图
+              <Package size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
+              分析组件
             </button>
           </div>
         </div>
@@ -211,6 +247,106 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
           </div>
         </div>
       </div>
+      {/* Component Picker Modal */}
+      {showComponentPicker && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[85vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <Package size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 leading-none">选择分析组件</h3>
+                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Select existing analysis components</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowComponentPicker(false)}
+                className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors"
+                title="关闭"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-hidden flex flex-col flex-1">
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="搜索组件名称或作者..."
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                />
+              </div>
+
+              <div className="flex-1 overflow-auto custom-scrollbar">
+                <div className="grid grid-cols-2 gap-4">
+                  {MOCK_EXISTING_COMPONENTS
+                    .filter(c => c.title.includes(pickerSearch) || c.author.includes(pickerSearch))
+                    .map((comp) => (
+                    <div 
+                      key={comp.id}
+                      onClick={() => toggleTempSelection(comp.id)}
+                      className={`relative group cursor-pointer border-2 rounded-xl p-4 transition-all ${
+                        tempSelectedIds.includes(comp.id) 
+                          ? 'border-indigo-500 bg-indigo-50/30' 
+                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className={`p-2 rounded-lg ${
+                          comp.type === 'table' ? 'bg-blue-100 text-blue-600' : 
+                          comp.type === 'bar' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
+                        }`}>
+                          {comp.type === 'table' ? <TableIcon size={16} /> : 
+                           comp.type === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
+                        </div>
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                          tempSelectedIds.includes(comp.id)
+                            ? 'bg-indigo-500 border-indigo-500 text-white'
+                            : 'border-slate-200 group-hover:border-slate-300 bg-white'
+                        }`}>
+                          {tempSelectedIds.includes(comp.id) && <Check size={12} strokeWidth={3} />}
+                        </div>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-800 mb-1">{comp.title}</h4>
+                      <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1">创建人: {comp.author}</span>
+                        <span className="flex items-center gap-1">{comp.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">
+                已选择 <span className="text-indigo-600 font-bold">{tempSelectedIds.length}</span> 个组件
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowComponentPicker(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleConfirmAddComponents}
+                  disabled={tempSelectedIds.length === 0}
+                  className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-md active:transform active:scale-95 flex items-center gap-2"
+                >
+                  <Plus size={16} />
+                  确认添加
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

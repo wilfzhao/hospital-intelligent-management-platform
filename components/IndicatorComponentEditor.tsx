@@ -5,6 +5,7 @@ import {
   Search, 
   ChevronRight, 
   ChevronDown, 
+  ChevronUp,
   Database, 
   BarChart2, 
   LineChart as LineChartIcon,
@@ -16,7 +17,14 @@ import {
   X,
   Filter,
   Plus,
-  Code
+  Code,
+  Eye,
+  EyeOff,
+  Pin,
+  PinOff,
+  ArrowUp,
+  ArrowDown,
+  GripVertical
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -199,9 +207,73 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   const [isSqlExpanded, setIsSqlExpanded] = useState(false);
   const [hasRunQuery, setHasRunQuery] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [componentName, setComponentName] = useState('');
+  const [componentDescription, setComponentDescription] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
   const [chartType, setChartType] = useState<'bar' | 'horizontal-bar' | 'line' | 'pie' | 'table'>('bar');
   const [configTab, setConfigTab] = useState<string>('layout');
+  const [showSerialNumber, setShowSerialNumber] = useState(false);
+
+  // Table specific configurations
+  const [rowConfigs, setRowConfigs] = useState<{id: string, label: string, visible: boolean, frozen: boolean}[]>([]);
+  const [colConfigs, setColConfigs] = useState<{id: string, label: string, visible: boolean, frozen: boolean}[]>([]);
+
+  const getDimensionLabel = (id: string) => {
+    const config = (rowConfigs || []).find(c => c.id === id);
+    if (config) return config.label;
+
+    const dim = MOCK_DIMENSIONS.find(d => d.id === id);
+    if (dim) return dim.label;
+    
+    // Look in hierarchies
+    for (const d of MOCK_DIMENSIONS) {
+      if (d.hierarchies) {
+        const h = d.hierarchies.find(hi => hi.id === id);
+        if (h) return h.label;
+      }
+    }
+    
+    // Look in embedded dimensions
+    for (const idList of Object.values(INDICATOR_EMBEDDED_DIMENSIONS)) {
+      const e = idList.find(ei => ei.id === id);
+      if (e) return e.label;
+    }
+    
+    return id;
+  };
+
+  const getIndicatorLabel = (id: string) => {
+    const config = (colConfigs || []).find(c => c.id === id);
+    if (config) return config.label;
+    return MOCK_INDICATORS.flatMap(f => f.children || []).find(i => i.id === id)?.label || id;
+  };
+
+  // Sync rowConfigs with selectedDimensions
+  React.useEffect(() => {
+    setRowConfigs(prev => {
+      // Keep existing configs if id still present, add new ones
+      const next = selectedDimensions.map(id => {
+        const existing = prev.find(p => p.id === id);
+        if (existing) return existing;
+        return { id, label: getDimensionLabel(id), visible: true, frozen: false };
+      });
+      return next;
+    });
+  }, [selectedDimensions]);
+
+  // Sync colConfigs with selectedIndicators
+  React.useEffect(() => {
+    setColConfigs(prev => {
+      const next = selectedIndicators.map(id => {
+        const existing = prev.find(p => p.id === id);
+        if (existing) return existing;
+        return { id, label: getIndicatorLabel(id), visible: true, frozen: false };
+      });
+      return next;
+    });
+  }, [selectedIndicators]);
 
   // Handle tab switching based on chart type
   const getTabs = React.useCallback(() => {
@@ -327,29 +399,16 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
     setReferenceLines(prev => prev.filter(line => line.id !== id));
   };
 
-  const getIndicatorLabel = (id: string) => {
-    return MOCK_INDICATORS.flatMap(f => f.children || []).find(i => i.id === id)?.label || id;
-  };
-
-  const getDimensionLabel = (id: string) => {
-    const dim = MOCK_DIMENSIONS.find(d => d.id === id);
-    if (dim) return dim.label;
-    
-    // Look in hierarchies
-    for (const d of MOCK_DIMENSIONS) {
-      if (d.hierarchies) {
-        const h = d.hierarchies.find(hi => hi.id === id);
-        if (h) return h.label;
+  const moveItem = (type: 'row' | 'col', index: number, direction: 'up' | 'down') => {
+    const setFn = type === 'row' ? setRowConfigs : setColConfigs;
+    setFn(prev => {
+      const next = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex >= 0 && targetIndex < next.length) {
+        [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
       }
-    }
-    
-    // Look in embedded dimensions
-    for (const idList of Object.values(INDICATOR_EMBEDDED_DIMENSIONS)) {
-      const e = idList.find(ei => ei.id === id);
-      if (e) return e.label;
-    }
-    
-    return id;
+      return next;
+    });
   };
 
   const handleRunQuery = () => {
@@ -382,7 +441,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
           const values = DIMENSION_MOCK_DATA[dimId] || ['数据' + (i + 1)];
           entry[dimId] = values[i % values.length];
         });
-
+        
         selectedIndicators.forEach(id => {
           entry[getIndicatorLabel(id)] = Math.floor(Math.random() * 1000 + 500);
         });
@@ -398,6 +457,24 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
       setHasRunQuery(true);
       setIsChartExpanded(true);
     }
+  };
+
+  const handleOpenSaveDialog = () => {
+    setSaveError('');
+    setIsSaveDialogOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+    if (!componentName.trim()) {
+      setSaveError('组件名称不能为空');
+      return;
+    }
+    
+    // Here we would normally call an API to save
+    console.log('Saving component:', { name: componentName, description: componentDescription });
+    setIsSaveDialogOpen(false);
+    // Optionally show success message or go back
+    // onBack(); 
   };
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -467,7 +544,10 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
           <button className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
             取消
           </button>
-          <button className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium">
+          <button 
+            onClick={handleOpenSaveDialog}
+            className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium"
+          >
             <Save size={16} />
             保存组件
           </button>
@@ -699,41 +779,119 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                 {chartType === 'table' ? (
                   <>
                     {configTab === 'generic' && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <section>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">表格设置</label>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-600">显示序号</span>
-                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-600">冻结首列</span>
-                              <div className="w-8 h-4 bg-gray-200 rounded-full relative">
-                                <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-600">单元格边框</span>
-                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              <div 
+                                onClick={() => setShowSerialNumber(!showSerialNumber)}
+                                className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${showSerialNumber ? 'bg-blue-600' : 'bg-gray-200'}`}
+                              >
+                                <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showSerialNumber ? 'right-0.5' : 'left-0.5'}`}></div>
                               </div>
                             </div>
                           </div>
                         </section>
+
+                        {/* Row Data Configuration */}
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">行</label>
+                          <div className="space-y-2">
+                            {rowConfigs.length === 0 ? (
+                              <div className="text-[10px] text-gray-400 text-center py-4 bg-gray-50 rounded-md border border-dashed">
+                                请先在左侧选择维度
+                              </div>
+                            ) : (
+                              rowConfigs.map((config, idx) => (
+                                <div key={config.id} className="p-2 border rounded-md bg-white hover:border-blue-200 transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <div className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 p-0.5">
+                                      <GripVertical size={14} />
+                                    </div>
+                                    <input 
+                                      type="text"
+                                      value={config.label}
+                                      onChange={(e) => {
+                                        const newVal = e.target.value;
+                                        setRowConfigs(prev => prev.map(p => p.id === config.id ? { ...p, label: newVal } : p));
+                                      }}
+                                      className="flex-1 min-w-0 border-none bg-transparent text-xs font-medium focus:ring-0 p-0"
+                                    />
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button 
+                                        onClick={() => setRowConfigs(prev => prev.map(p => p.id === config.id ? { ...p, visible: !p.visible } : p))}
+                                        className={`p-1 rounded transition-colors ${config.visible ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                        title={config.visible ? "显示" : "隐藏"}
+                                      >
+                                        {config.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                      </button>
+                                      <button 
+                                        onClick={() => setRowConfigs(prev => prev.map(p => p.id === config.id ? { ...p, frozen: !p.frozen } : p))}
+                                        className={`p-1 rounded transition-colors ${config.frozen ? 'text-orange-500 hover:bg-orange-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                        title={config.frozen ? "已冻结" : "解冻"}
+                                      >
+                                        {config.frozen ? <Pin size={14} /> : <PinOff size={14} />}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </section>
+
+                        {/* Column Data Configuration */}
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">列</label>
+                          <div className="space-y-2">
+                            {colConfigs.length === 0 ? (
+                              <div className="text-[10px] text-gray-400 text-center py-4 bg-gray-50 rounded-md border border-dashed">
+                                请先在左侧选择指标
+                              </div>
+                            ) : (
+                              colConfigs.map((config, idx) => (
+                                <div key={config.id} className="p-2 border rounded-md bg-white hover:border-emerald-200 transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <div className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 p-0.5">
+                                      <GripVertical size={14} />
+                                    </div>
+                                    <input 
+                                      type="text"
+                                      value={config.label}
+                                      onChange={(e) => {
+                                        const newVal = e.target.value;
+                                        setColConfigs(prev => prev.map(p => p.id === config.id ? { ...p, label: newVal } : p));
+                                      }}
+                                      className="flex-1 min-w-0 border-none bg-transparent text-xs font-medium focus:ring-0 p-0"
+                                    />
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button 
+                                        onClick={() => setColConfigs(prev => prev.map(p => p.id === config.id ? { ...p, visible: !p.visible } : p))}
+                                        className={`p-1 rounded transition-colors ${config.visible ? 'text-emerald-500 hover:bg-emerald-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                        title={config.visible ? "显示" : "隐藏"}
+                                      >
+                                        {config.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                      </button>
+                                      <button 
+                                        onClick={() => setColConfigs(prev => prev.map(p => p.id === config.id ? { ...p, frozen: !p.frozen } : p))}
+                                        className={`p-1 rounded transition-colors ${config.frozen ? 'text-orange-500 hover:bg-orange-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                                        title={config.frozen ? "已冻结" : "解冻"}
+                                      >
+                                        {config.frozen ? <Pin size={14} /> : <PinOff size={14} />}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </section>
+
                         <section>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">文字样式</label>
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-600">对齐方式</span>
-                              <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="左对齐">
-                                <option>左对齐</option>
-                                <option>居中</option>
-                                <option>右对齐</option>
-                              </select>
-                            </div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-600">字体大小</span>
                               <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="12px">
@@ -763,259 +921,259 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                 ) : (
                   <>
                     {configTab === 'layout' && (
-                  <div className="space-y-4">
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">基础信息</label>
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-xs text-gray-600 block mb-1">图表标题</span>
-                          <input type="text" className="w-full h-8 border rounded px-2 text-xs" placeholder="未命名组件" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-600 block mb-1">图表描述</span>
-                          <textarea className="w-full h-16 border rounded px-2 py-1 text-xs resize-none" placeholder="输入描述信息..." />
-                        </div>
-                      </div>
-                    </section>
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">画布设置</label>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">自适应宽度</span>
-                          <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                            <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">内边距 (Padding)</span>
-                          <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="适中">
-                            <option>紧凑</option>
-                            <option>适中</option>
-                            <option>宽松</option>
-                          </select>
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-                )}
-
-                {configTab === 'data' && (
-                  <>
-                    {/* X-Axis */}
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">横轴 (X-Axis)</label>
-                      <div className="space-y-2">
-                        {selectedDimensions.map(id => {
-                          const label = MOCK_DIMENSIONS.find(d => d.id === id)?.label;
-                          return (
-                            <div key={id} className="flex items-center justify-between px-3 py-2 bg-purple-50 border border-purple-100 rounded-md">
-                              <span className="text-xs text-purple-700">{label}</span>
-                              <X size={12} className="text-purple-400 cursor-pointer" onClick={() => toggleDimension(id)} />
-                            </div>
-                          );
-                        })}
-                        {selectedDimensions.length === 0 && (
-                          <div className="p-2 bg-gray-50 border border-dashed border-gray-300 rounded-md text-center">
-                            <span className="text-[10px] text-gray-400">拖拽维度到此处</span>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-
-                    {/* Y-Axis */}
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">纵轴 (Y-Axis)</label>
-                      <div className="space-y-2">
-                        {selectedIndicators.map(id => {
-                          const label = MOCK_INDICATORS.flatMap(f => f.children || []).find(i => i.id === id)?.label;
-                          return (
-                            <div key={id} className="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded-md">
-                              <span className="text-xs text-blue-700">{label}</span>
-                              <X size={12} className="text-blue-400 cursor-pointer" onClick={() => toggleIndicator(id)} />
-                            </div>
-                          );
-                        })}
-                        <div className="p-2 bg-gray-50 border border-dashed border-gray-300 rounded-md text-center">
-                          <span className="text-[10px] text-gray-400">拖拽指标到此处</span>
-                        </div>
-                      </div>
-                    </section>
-                  </>
-                )}
-
-                {configTab === 'axis' && (
-                  <div className="space-y-4">
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">X轴设置</label>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">显示轴线</span>
-                          <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                            <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">轴标题</span>
-                          <input type="text" className="w-24 h-6 border rounded px-1 text-[10px]" placeholder="输入标题" />
-                        </div>
-                      </div>
-                    </section>
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Y轴设置</label>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">显示网格</span>
-                          <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                            <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">最小值</span>
-                          <input type="number" className="w-24 h-6 border rounded px-1 text-[10px]" placeholder="自动" />
-                        </div>
-                      </div>
-                    </section>
-                  </div>
-                )}
-
-                {configTab === 'display' && (
-                  <div className="space-y-4">
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">图例设置</label>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">显示图例</span>
-                          <div className="w-8 h-4 bg-blue-600 rounded-full relative">
-                            <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">图例位置</span>
-                          <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="底部">
-                            <option>顶部</option>
-                            <option>底部</option>
-                            <option>左侧</option>
-                            <option>右侧</option>
-                          </select>
-                        </div>
-                      </div>
-                    </section>
-                    <section>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">样式设置</label>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">堆叠显示</span>
-                          <div className="w-8 h-4 bg-gray-200 rounded-full relative">
-                            <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">显示数值标签</span>
-                          <div className="w-8 h-4 bg-gray-200 rounded-full relative">
-                            <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">辅助线</label>
-                        <button 
-                          onClick={addReferenceLine}
-                          className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
-                          title="新增辅助线"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
                       <div className="space-y-4">
-                        {referenceLines.map((line) => (
-                          <div key={line.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3 relative group">
-                            <button 
-                              onClick={() => removeReferenceLine(line.id)}
-                              className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X size={12} />
-                            </button>
-                            
-                            <div className="space-y-2">
-                              <span className="text-[10px] text-gray-500 font-bold">应用字段</span>
-                              <select 
-                                value={line.field || ''}
-                                onChange={(e) => updateReferenceLine(line.id, { field: e.target.value })}
-                                className="w-full h-7 border rounded px-2 text-xs bg-white"
-                              >
-                                <option value="">选择字段</option>
-                                {selectedIndicators.map(id => {
-                                  const label = getIndicatorLabel(id);
-                                  return <option key={id} value={label}>{label}</option>;
-                                })}
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">基础信息</label>
+                          <div className="space-y-3">
+                            <div>
+                              <span className="text-xs text-gray-600 block mb-1">图表标题</span>
+                              <input type="text" className="w-full h-8 border rounded px-2 text-xs" placeholder="未命名组件" />
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-600 block mb-1">图表描述</span>
+                              <textarea className="w-full h-16 border rounded px-2 py-1 text-xs resize-none" placeholder="输入描述信息..." />
+                            </div>
+                          </div>
+                        </section>
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">画布设置</label>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">自适应宽度</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">内边距 (Padding)</span>
+                              <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="适中">
+                                <option>紧凑</option>
+                                <option>适中</option>
+                                <option>宽松</option>
                               </select>
                             </div>
+                          </div>
+                        </section>
+                      </div>
+                    )}
 
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-gray-500 font-bold">数值</span>
-                                <button 
-                                  onClick={() => updateReferenceLine(line.id, { value: calculateAverage(line.field) })}
-                                  disabled={!line.field}
-                                  className={`text-[9px] ${line.field ? 'text-blue-600 hover:underline' : 'text-gray-300 cursor-not-allowed'}`}
-                                >
-                                  设为平均值
-                                </button>
+                    {configTab === 'data' && (
+                      <>
+                        {/* X-Axis */}
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">横轴 (X-Axis)</label>
+                          <div className="space-y-2">
+                            {selectedDimensions.map(id => {
+                              const label = MOCK_DIMENSIONS.find(d => d.id === id)?.label;
+                              return (
+                                <div key={id} className="flex items-center justify-between px-3 py-2 bg-purple-50 border border-purple-100 rounded-md">
+                                  <span className="text-xs text-purple-700">{label}</span>
+                                  <X size={12} className="text-purple-400 cursor-pointer" onClick={() => toggleDimension(id)} />
+                                </div>
+                              );
+                            })}
+                            {selectedDimensions.length === 0 && (
+                              <div className="p-2 bg-gray-50 border border-dashed border-gray-300 rounded-md text-center">
+                                <span className="text-[10px] text-gray-400">拖拽维度到此处</span>
                               </div>
-                              <input 
-                                type="number" 
-                                value={line.value}
-                                onChange={(e) => updateReferenceLine(line.id, { value: Number(e.target.value) })}
-                                className="w-full h-7 border rounded px-2 text-xs"
-                              />
-                            </div>
+                            )}
+                          </div>
+                        </section>
 
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-gray-500 font-bold">显示名</span>
-                                <div className="flex gap-1">
-                                  {[
-                                    { id: 'start', label: '左' },
-                                    { id: 'middle', label: '中' },
-                                    { id: 'end', label: '右' }
-                                  ].map(pos => (
-                                    <button
-                                      key={pos.id}
-                                      onClick={() => updateReferenceLine(line.id, { position: pos.id as any })}
-                                      className={`px-1.5 py-0.5 text-[9px] border rounded transition-colors ${line.position === pos.id ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                        {/* Y-Axis */}
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">纵轴 (Y-Axis)</label>
+                          <div className="space-y-2">
+                            {selectedIndicators.map(id => {
+                              const label = MOCK_INDICATORS.flatMap(f => f.children || []).find(i => i.id === id)?.label;
+                              return (
+                                <div key={id} className="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded-md">
+                                  <span className="text-xs text-blue-700">{label}</span>
+                                  <X size={12} className="text-blue-400 cursor-pointer" onClick={() => toggleIndicator(id)} />
+                                </div>
+                              );
+                            })}
+                            <div className="p-2 bg-gray-50 border border-dashed border-gray-300 rounded-md text-center">
+                              <span className="text-[10px] text-gray-400">拖拽指标到此处</span>
+                            </div>
+                          </div>
+                        </section>
+                      </>
+                    )}
+
+                    {configTab === 'axis' && (
+                      <div className="space-y-4">
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">X轴设置</label>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">显示轴线</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">轴标题</span>
+                              <input type="text" className="w-24 h-6 border rounded px-1 text-[10px]" placeholder="输入标题" />
+                            </div>
+                          </div>
+                        </section>
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Y轴设置</label>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">显示网格</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">最小值</span>
+                              <input type="number" className="w-24 h-6 border rounded px-1 text-[10px]" placeholder="自动" />
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    )}
+
+                    {configTab === 'display' && (
+                      <div className="space-y-4">
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">图例设置</label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">显示图例</span>
+                              <div className="w-8 h-4 bg-blue-600 rounded-full relative">
+                                <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">图例位置</span>
+                              <select className="text-[10px] border rounded px-1 h-6 bg-white" defaultValue="底部">
+                                <option>顶部</option>
+                                <option>底部</option>
+                                <option>左侧</option>
+                                <option>右侧</option>
+                              </select>
+                            </div>
+                          </div>
+                        </section>
+                        <section>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">样式设置</label>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">堆叠显示</span>
+                              <div className="w-8 h-4 bg-gray-200 rounded-full relative">
+                                <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">显示数值标签</span>
+                              <div className="w-8 h-4 bg-gray-200 rounded-full relative">
+                                <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+
+                        <section>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">辅助线</label>
+                            <button 
+                              onClick={addReferenceLine}
+                              className="p-1 hover:bg-blue-50 text-blue-600 rounded-md transition-colors"
+                              title="新增辅助线"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <div className="space-y-4">
+                            {referenceLines.map((line) => (
+                              <div key={line.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3 relative group">
+                                <button 
+                                  onClick={() => removeReferenceLine(line.id)}
+                                  className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X size={12} />
+                                </button>
+                                
+                                <div className="space-y-2">
+                                  <span className="text-[10px] text-gray-500 font-bold">应用字段</span>
+                                  <select 
+                                    value={line.field || ''}
+                                    onChange={(e) => updateReferenceLine(line.id, { field: e.target.value })}
+                                    className="w-full h-7 border rounded px-2 text-xs bg-white"
+                                  >
+                                    <option value="">选择字段</option>
+                                    {selectedIndicators.map(id => {
+                                      const label = getIndicatorLabel(id);
+                                      return <option key={id} value={label}>{label}</option>;
+                                    })}
+                                  </select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-gray-500 font-bold">数值</span>
+                                    <button 
+                                      onClick={() => updateReferenceLine(line.id, { value: calculateAverage(line.field) })}
+                                      disabled={!line.field}
+                                      className={`text-[9px] ${line.field ? 'text-blue-600 hover:underline' : 'text-gray-300 cursor-not-allowed'}`}
                                     >
-                                      {pos.label}
+                                      设为平均值
                                     </button>
-                                  ))}
+                                  </div>
+                                  <input 
+                                    type="number" 
+                                    value={line.value}
+                                    onChange={(e) => updateReferenceLine(line.id, { value: Number(e.target.value) })}
+                                    className="w-full h-7 border rounded px-2 text-xs"
+                                  />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-gray-500 font-bold">显示名</span>
+                                    <div className="flex gap-1">
+                                      {[
+                                        { id: 'start', label: '左' },
+                                        { id: 'middle', label: '中' },
+                                        { id: 'end', label: '右' }
+                                      ].map(pos => (
+                                        <button
+                                          key={pos.id}
+                                          onClick={() => updateReferenceLine(line.id, { position: pos.id as any })}
+                                          className={`px-1.5 py-0.5 text-[9px] border rounded transition-colors ${line.position === pos.id ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                                        >
+                                          {pos.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <input 
+                                    type="text" 
+                                    value={line.label}
+                                    onChange={(e) => updateReferenceLine(line.id, { label: e.target.value })}
+                                    className="w-full h-7 border rounded px-2 text-xs"
+                                    placeholder="输入显示名"
+                                  />
                                 </div>
                               </div>
-                              <input 
-                                type="text" 
-                                value={line.label}
-                                onChange={(e) => updateReferenceLine(line.id, { label: e.target.value })}
-                                className="w-full h-7 border rounded px-2 text-xs"
-                                placeholder="输入显示名"
-                              />
-                            </div>
+                            ))}
+                            {referenceLines.length === 0 && (
+                              <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center">
+                                <p className="text-[10px] text-gray-400">暂无辅助线</p>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                        {referenceLines.length === 0 && (
-                          <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center">
-                            <p className="text-[10px] text-gray-400">暂无辅助线</p>
-                          </div>
-                        )}
+                        </section>
                       </div>
-                    </section>
-                  </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content Area */}
@@ -1076,41 +1234,62 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                   {hasRunQuery && selectedIndicators.length > 0 ? (
                     <div className="w-full h-full min-h-[300px] flex flex-col">
                       {chartType === 'table' ? (
-                        <div className="w-full h-full overflow-auto bg-white rounded-lg border border-gray-100 shadow-sm">
-                          <table className="w-full text-left border-collapse min-w-full">
-                            <thead className="sticky top-0 bg-gray-50 z-10 shadow-sm">
+                        <div className="w-full h-full overflow-auto bg-white rounded-lg border border-gray-100 shadow-sm custom-scrollbar">
+                          <table className="w-full text-left border-collapse min-w-full table-fixed">
+                            <thead className="sticky top-0 bg-white z-10 shadow-sm">
                               <tr>
-                                {selectedDimensions.length > 0 ? (
-                                  selectedDimensions.map(dimId => (
-                                    <th key={dimId} className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-200 bg-gray-50">
-                                      {getDimensionLabel(dimId)}
-                                    </th>
-                                  ))
-                                ) : (
-                                  <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-200 bg-gray-50">名称</th>
+                                {showSerialNumber && (
+                                  <th className="w-12 px-4 py-3 text-[11px] font-bold text-gray-400 uppercase border-b border-gray-100 bg-white sticky left-0 z-40">
+                                    #
+                                  </th>
                                 )}
-                                {selectedIndicators.map(id => (
-                                  <th key={id} className="px-4 py-3 text-[11px] font-bold text-emerald-600 uppercase border-b border-gray-200 bg-gray-50">
-                                    {getIndicatorLabel(id)}
+                                {rowConfigs.filter(rc => rc.visible).map((config) => (
+                                  <th 
+                                    key={config.id} 
+                                    style={config.frozen ? { position: 'sticky', left: 0, zIndex: 30 } : {}}
+                                    className={`px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-100 bg-white whitespace-nowrap`}
+                                  >
+                                    {config.label}
                                   </th>
                                 ))}
+                                {colConfigs.filter(cc => cc.visible).map((config) => (
+                                  <th 
+                                    key={config.id} 
+                                    style={config.frozen ? { position: 'sticky', right: 0, zIndex: 30 } : {}}
+                                    className={`px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-100 bg-white text-right whitespace-nowrap`}
+                                  >
+                                    {config.label}
+                                  </th>
+                                ))}
+                                {(rowConfigs.filter(r => r.visible).length === 0 && colConfigs.filter(c => c.visible).length === 0) && (
+                                  <th className="px-4 py-3 text-[11px] font-bold text-gray-500 uppercase border-b border-gray-100 bg-white">无选择数据</th>
+                                )}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                               {chartData.map((row, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                  {selectedDimensions.length > 0 ? (
-                                    selectedDimensions.map(dimId => (
-                                      <td key={dimId} className="px-4 py-2.5 text-xs font-medium text-gray-700 border-r border-gray-50 last:border-r-0">
-                                        {row[dimId] || row.name}
-                                      </td>
-                                    ))
-                                  ) : (
-                                    <td className="px-4 py-2.5 text-xs font-medium text-gray-700">{row.name}</td>
+                                <tr key={idx} className="hover:bg-gray-50 transition-colors group">
+                                  {showSerialNumber && (
+                                    <td className="w-12 px-4 py-2.5 text-[10px] text-gray-400 font-mono border-r border-gray-50 bg-white sticky left-0 z-20">
+                                      {idx + 1}
+                                    </td>
                                   )}
-                                  {selectedIndicators.map(id => (
-                                    <td key={id} className="px-4 py-2.5 text-xs text-gray-600 font-mono font-normal">
-                                      {row[getIndicatorLabel(id)]?.toLocaleString()}
+                                  {rowConfigs.filter(rc => rc.visible).map((config) => (
+                                    <td 
+                                      key={config.id} 
+                                      style={config.frozen ? { position: 'sticky', left: 0, zIndex: 10 } : {}}
+                                      className={`px-4 py-2.5 text-xs font-medium text-gray-700 border-r border-gray-50 last:border-r-0 bg-inherit whitespace-nowrap`}
+                                    >
+                                      {row[config.id] || row.name || '-'}
+                                    </td>
+                                  ))}
+                                  {colConfigs.filter(cc => cc.visible).map((config) => (
+                                    <td 
+                                      key={config.id} 
+                                      style={config.frozen ? { position: 'sticky', right: 0, zIndex: 10 } : {}}
+                                      className={`px-4 py-2.5 text-xs text-gray-600 font-mono font-normal text-right bg-inherit whitespace-nowrap`}
+                                    >
+                                      {row[getIndicatorLabel(config.id)]?.toLocaleString() || '-'}
                                     </td>
                                   ))}
                                 </tr>
@@ -1286,44 +1465,58 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                 </div>
               </div>
               {isTableExpanded && (
-                <div className="flex-1 overflow-auto flex flex-col p-4 bg-gray-50/30">
+                <div className="flex-1 overflow-auto flex flex-col p-4 bg-gray-50/30 custom-scrollbar">
                   {selectedIndicators.length > 0 ? (
                     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                       <table className="w-full text-left border-collapse table-fixed">
-                        <thead className="border-b border-gray-100">
+                        <thead className="border-b border-gray-100 bg-gray-50/50">
                           <tr>
-                            {selectedDimensions.map(id => (
-                              <th key={id} className="px-4 py-3 text-[11px] font-bold text-indigo-500 bg-indigo-50/30 uppercase tracking-wider text-left border-r border-gray-100 last:border-r-0">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                  {getDimensionLabel(id)}
-                                </div>
+                            {showSerialNumber && (
+                              <th className="w-12 px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left border-r border-gray-100 bg-inherit sticky left-0 z-20">#</th>
+                            )}
+                            {rowConfigs.filter(rc => rc.visible).map(config => (
+                              <th 
+                                key={config.id} 
+                                style={config.frozen ? { position: 'sticky', left: showSerialNumber ? 48 : 0, zIndex: 10 } : {}}
+                                className="px-4 py-3 text-[11px] font-bold text-indigo-500 bg-inherit uppercase tracking-wider text-left border-r border-gray-100 last:border-r-0 whitespace-nowrap"
+                              >
+                                {config.label}
                               </th>
                             ))}
-                            {selectedIndicators.map(id => (
-                              <th key={id} className="px-4 py-3 text-[11px] font-bold text-emerald-600 bg-emerald-50/30 uppercase tracking-wider text-left border-r border-gray-100 last:border-r-0">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                  {getIndicatorLabel(id)}
-                                </div>
+                            {colConfigs.filter(cc => cc.visible).map(config => (
+                              <th 
+                                key={config.id} 
+                                style={config.frozen ? { position: 'sticky', right: 0, zIndex: 10 } : {}}
+                                className="px-4 py-3 text-[11px] font-bold text-emerald-600 bg-inherit uppercase tracking-wider text-right border-r border-gray-100 last:border-r-0 whitespace-nowrap"
+                              >
+                                {config.label}
                               </th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-gray-100">
                           {hasRunQuery ? (
-                            [1, 2, 3, 4, 5].map(rowIdx => (
-                              <tr key={rowIdx} className="hover:bg-gray-50 transition-colors group">
-                                {selectedDimensions.map(id => (
-                                  <td key={id} className="px-4 py-3.5 text-[13px] text-indigo-600/80 font-medium text-left border-r border-gray-100 last:border-r-0 group-hover:text-indigo-700 transition-colors bg-indigo-50/5">
-                                    {getDimensionLabel(id)} {rowIdx}
+                            chartData.map((row, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50 transition-colors group">
+                                {showSerialNumber && (
+                                  <td className="px-4 py-2.5 text-[10px] text-gray-400 font-mono border-r border-gray-50 bg-inherit sticky left-0 z-10 group-hover:bg-gray-50 transition-colors">{idx + 1}</td>
+                                )}
+                                {rowConfigs.filter(rc => rc.visible).map(config => (
+                                  <td 
+                                    key={config.id} 
+                                    style={config.frozen ? { position: 'sticky', left: (showSerialNumber ? 48 : 0), zIndex: 5 } : {}}
+                                    className="px-4 py-2.5 text-xs text-gray-600 border-r border-gray-50 last:border-r-0 bg-inherit group-hover:bg-gray-50 transition-colors whitespace-nowrap"
+                                  >
+                                    {row[config.id] || row.name || '-'}
                                   </td>
                                 ))}
-                                {selectedIndicators.map(id => (
-                                  <td key={id} className="px-4 py-3.5 text-[13px] text-emerald-700 font-medium text-left border-r border-gray-100 last:border-r-0 group-hover:text-emerald-800 transition-colors bg-emerald-50/5">
-                                    <span className="font-mono">
-                                      {(Math.random() * 1000 + 500).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                    </span>
+                                {colConfigs.filter(cc => cc.visible).map(config => (
+                                  <td 
+                                    key={config.id} 
+                                    style={config.frozen ? { position: 'sticky', right: 0, zIndex: 5 } : {}}
+                                    className="px-4 py-2.5 text-xs text-emerald-700 text-right font-mono border-r border-gray-50 last:border-r-0 bg-inherit group-hover:bg-gray-50 transition-colors whitespace-nowrap"
+                                  >
+                                    {row[getIndicatorLabel(config.id)]?.toLocaleString() || '-'}
                                   </td>
                                 ))}
                               </tr>
@@ -1331,7 +1524,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                           ) : (
                             <tr>
                               <td 
-                                colSpan={selectedIndicators.length + selectedDimensions.length} 
+                                colSpan={(showSerialNumber ? 1 : 0) + rowConfigs.filter(r => r.visible).length + colConfigs.filter(c => c.visible).length} 
                                 className="px-4 py-20 text-center"
                               >
                                 <div className="flex flex-col items-center gap-2">
@@ -1392,6 +1585,73 @@ ORDER BY 1 DESC`}
           </div>
         </div>
       </div>
+
+      {/* Save Component Dialog */}
+      {isSaveDialogOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-800">保存分析组件</h3>
+              <button 
+                onClick={() => setIsSaveDialogOpen(false)}
+                className="p-1 hover:bg-gray-200 rounded-full text-gray-400 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5 flex items-center gap-1">
+                  组件名称
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={componentName}
+                  onChange={(e) => {
+                    setComponentName(e.target.value);
+                    if (e.target.value.trim()) setSaveError('');
+                  }}
+                  placeholder="好的标题能让组件更容易被发现"
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${saveError ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                  autoFocus
+                />
+                {saveError && (
+                  <p className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+                    <X size={12} />
+                    {saveError}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">组件描述</label>
+                <textarea
+                  value={componentDescription}
+                  onChange={(e) => setComponentDescription(e.target.value)}
+                  placeholder="添加一些描述，帮助他人理解这个组件分析了什么..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:border-gray-300 resize-none"
+                />
+                <p className="mt-1.5 text-[10px] text-gray-400">非必填，最多可输入 200 个字符</p>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setIsSaveDialogOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirmSave}
+                className="px-6 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-md active:transform active:scale-95"
+              >
+                确认保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

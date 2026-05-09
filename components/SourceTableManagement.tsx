@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Trash2, Pencil } from 'lucide-react';
 
 interface SourceTableItem {
   id: string;
@@ -9,6 +9,7 @@ interface SourceTableItem {
   domain: string;
   volume: string;
   status: 'published' | 'draft';
+  usageCount: number;
   fields: {
     name: string;
     field: string;
@@ -16,6 +17,7 @@ interface SourceTableItem {
     dimPrimaryKey?: string;
     dimDisplayField?: string;
     sourceSystem?: string;
+    isReferenced?: boolean;
   }[];
 }
 
@@ -28,6 +30,7 @@ const MOCK_DATA: SourceTableItem[] = [
     domain: '门诊域',
     volume: '约 1200万 / 月',
     status: 'published',
+    usageCount: 5,
     fields: [
       { name: '科室', field: 'dept_code', type: '编码映射' },
       { name: '时间', field: 'visit_date', type: '直接关联' },
@@ -45,6 +48,7 @@ const MOCK_DATA: SourceTableItem[] = [
     domain: '住院域',
     volume: '约 80万 / 月',
     status: 'published',
+    usageCount: 3,
     fields: [
       { name: '科室', field: 'dept_code', type: '编码映射' },
       { name: '时间', field: 'admit_date', type: '直接关联' },
@@ -61,6 +65,7 @@ const MOCK_DATA: SourceTableItem[] = [
     domain: '手术域',
     volume: '约 15万 / 月',
     status: 'published',
+    usageCount: 0,
     fields: [
       { name: '时间', field: 'surgery_date', type: '直接关联' },
       { name: '医生', field: 'surgeon_id', type: '直接关联' },
@@ -76,6 +81,7 @@ const MOCK_DATA: SourceTableItem[] = [
     domain: '住院域',
     volume: '约 3万 / 日',
     status: 'published',
+    usageCount: 0,
     fields: [
       { name: '科室', field: 'dept_code', type: '编码映射' },
       { name: '时间', field: 'snap_date', type: '直接关联' },
@@ -164,7 +170,8 @@ const FIELD_NAME_MAP: Record<string, string> = {
 export const SourceTableManagement: React.FC = () => {
   const [sourceTables, setSourceTables] = useState<SourceTableItem[]>(MOCK_DATA);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newFields, setNewFields] = useState<{name: string, field: string, type: '直接关联' | '编码映射' | '内嵌分组', dimPrimaryKey: string, dimDisplayField: string, sourceSystem: string}[]>([{ name: '', field: '', type: '直接关联', dimPrimaryKey: '', dimDisplayField: '', sourceSystem: '' }]);
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [newFields, setNewFields] = useState<{name: string, field: string, type: '直接关联' | '编码映射' | '内嵌分组', dimPrimaryKey: string, dimDisplayField: string, sourceSystem: string, isReferenced?: boolean}[]>([{ name: '', field: '', type: '直接关联', dimPrimaryKey: '', dimDisplayField: '', sourceSystem: '', isReferenced: false }]);
   const [formData, setFormData] = useState({
     name: '',
     tableName: '',
@@ -193,6 +200,7 @@ export const SourceTableManagement: React.FC = () => {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setEditingTableId(null);
     setNewFields([{ name: '', field: '', type: '直接关联', dimPrimaryKey: '', dimDisplayField: '', sourceSystem: '' }]);
     setFormData({
       name: '',
@@ -204,19 +212,71 @@ export const SourceTableManagement: React.FC = () => {
   };
 
   const handleSave = () => {
-    const newTable: SourceTableItem = {
-      id: Date.now().toString(),
-      name: formData.name,
-      tableName: formData.tableName,
-      description: formData.description,
-      domain: formData.domain,
-      volume: formData.volume || '-',
-      status: 'published',
-      fields: newFields.filter(f => f.name && f.field) as SourceTableItem['fields'],
-    };
+    if (editingTableId) {
+      setSourceTables(prev => prev.map(table => {
+        if (table.id === editingTableId) {
+          return {
+            ...table,
+            name: formData.name,
+            tableName: formData.tableName,
+            description: formData.description,
+            domain: formData.domain,
+            volume: formData.volume || table.volume,
+            fields: newFields.filter(f => f.name && f.field) as SourceTableItem['fields'],
+          };
+        }
+        return table;
+      }));
+    } else {
+      const newTable: SourceTableItem = {
+        id: Date.now().toString(),
+        name: formData.name,
+        tableName: formData.tableName,
+        description: formData.description,
+        domain: formData.domain,
+        volume: formData.volume || '-',
+        status: 'published',
+        usageCount: 0,
+        fields: newFields.filter(f => f.name && f.field) as SourceTableItem['fields'],
+      };
+      setSourceTables([newTable, ...sourceTables]);
+    }
     
-    setSourceTables([newTable, ...sourceTables]);
     handleModalClose();
+  };
+
+  const handleEdit = (table: SourceTableItem) => {
+    setEditingTableId(table.id);
+    setFormData({
+      name: table.name,
+      tableName: table.tableName,
+      description: table.description,
+      domain: table.domain,
+      volume: table.volume,
+    });
+    // In a real app, this would check which specific fields are used in indicators.
+    // For demo, we mark dimensions as referenced if the table has usageCount > 0
+    setNewFields(table.fields.map((f, idx) => ({
+      name: f.name,
+      field: f.field,
+      type: f.type,
+      dimPrimaryKey: f.dimPrimaryKey || '',
+      dimDisplayField: f.dimDisplayField || '',
+      sourceSystem: f.sourceSystem || '',
+      isReferenced: table.usageCount > 0 && idx < 2, // Simulate: first two fields are used
+    })));
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string, usageCount: number, name: string) => {
+    if (usageCount > 0) {
+      alert(`来源表 "${name}" 已被指标引用 ${usageCount} 次，无法移除。`);
+      return;
+    }
+    
+    if (window.confirm(`确定要移除来源表 "${name}" 吗？此操作不可恢复。`)) {
+      setSourceTables(prev => prev.filter(t => t.id !== id));
+    }
   };
 
   return (
@@ -310,9 +370,26 @@ export const SourceTableManagement: React.FC = () => {
                         )}
                       </td>
                       <td className="py-4 px-6 align-top text-right">
-                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors opacity-0 group-hover:opacity-100">
-                          配置
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => handleEdit(item)}
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                            title="编辑"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(item.id, item.usageCount, item.name)}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              item.usageCount > 0 
+                                ? 'text-gray-200 cursor-not-allowed' 
+                                : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                            }`}
+                            title={item.usageCount > 0 ? "已有指标使用，不可移除" : "移除"}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -328,9 +405,9 @@ export const SourceTableManagement: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0">
-              <h3 className="text-lg font-bold text-gray-800">注册来源表</h3>
+              <h3 className="text-lg font-bold text-gray-800">{editingTableId ? '编辑来源表' : '注册来源表'}</h3>
               <button 
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
               >
                 <X size={20} />
@@ -340,8 +417,13 @@ export const SourceTableManagement: React.FC = () => {
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">物理表名 <span className="text-red-500">*</span></label>
+                  <div className="space-y-2 text-left">
+                    <label className="text-sm font-medium text-gray-700">
+                      表名 <span className="text-red-500">*</span>
+                      {editingTableId && (sourceTables.find(t => t.id === editingTableId)?.usageCount || 0) > 0 && (
+                        <span className="ml-1 text-[10px] text-amber-600 font-normal">(已被指标引用，慎重修改)</span>
+                      )}
+                    </label>
                     <select 
                       value={formData.tableName}
                       onChange={(e) => {
@@ -355,14 +437,14 @@ export const SourceTableManagement: React.FC = () => {
                       }}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-gray-700"
                     >
-                      <option value="" disabled>请选择物理表名</option>
+                      <option value="" disabled>数仓中的实际表名</option>
                       {AVAILABLE_TABLES.map(t => (
                         <option key={t.tableName} value={t.tableName}>{t.tableName}</option>
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">来源表名称 <span className="text-red-500">*</span></label>
+                  <div className="space-y-2 text-left">
+                    <label className="text-sm font-medium text-gray-700">中文名称 <span className="text-red-500">*</span></label>
                     <input 
                       type="text" 
                       value={formData.name}
@@ -389,7 +471,7 @@ export const SourceTableManagement: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="space-y-3">
+                    <div className="space-y-3 text-left">
                       {newFields.filter(f => f.type !== '内嵌分组').length === 0 && (
                         <div className="text-sm text-gray-400 py-4 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
                           暂无维度映射，点击右上角添加
@@ -401,19 +483,30 @@ export const SourceTableManagement: React.FC = () => {
                         const selectedDimensions = newFields.map(f => f.name).filter(Boolean);
                         
                         return (
-                          <div key={idx} className="flex flex-col gap-3 bg-white p-4 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
+                          <div key={idx} className={`flex flex-col gap-3 bg-white p-4 rounded-xl border shadow-sm relative overflow-hidden group transition-colors ${field.isReferenced ? 'border-amber-200 bg-amber-50/10' : 'border-blue-100 hover:border-blue-300'}`}>
                             {/* Decorative accent */}
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${field.isReferenced ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
                             
                             <div className="space-y-4 pl-2">
                               {/* Row 1: Source Table Field */}
                               <div className="flex items-end gap-3">
                                 <div className="flex-1">
-                                  <label className="block text-[11px] font-medium text-gray-500 mb-1">来源表字段</label>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-medium text-gray-500">来源表字段</label>
+                                    {field.isReferenced && (
+                                      <span className="text-[10px] text-amber-600 font-bold bg-amber-100 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m11-3V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-3z" />
+                                        </svg>
+                                        已被指标引用，不可修改/删除
+                                      </span>
+                                    )}
+                                  </div>
                                   <select 
+                                    disabled={field.isReferenced}
                                     value={field.field}
                                     onChange={(e) => handleFieldChange(idx, 'field', e.target.value)}
-                                    className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500 focus:bg-white text-gray-800 transition-colors"
+                                    className={`w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-50 hover:bg-gray-100 border-gray-200 focus:border-blue-500 focus:bg-white text-gray-800'}`}
                                   >
                                     <option value="" disabled>选择来源表字段</option>
                                     {SOURCE_TABLE_FIELDS.map(f => (
@@ -422,22 +515,24 @@ export const SourceTableManagement: React.FC = () => {
                                   </select>
                                 </div>
                                 <button 
+                                  disabled={field.isReferenced}
                                   onClick={() => handleRemoveField(idx)}
-                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="删除"
+                                  className={`p-2 rounded-lg transition-colors ${field.isReferenced ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                                  title={field.isReferenced ? "该维度已被引用，不可删除" : "删除"}
                                 >
                                   <X size={16} />
                                 </button>
                               </div>
 
                               {/* Row 2: Dimension and Association */}
-                                <div className="flex items-center gap-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                                <div className={`flex items-center gap-4 p-3 rounded-lg border ${field.isReferenced ? 'bg-gray-100 border-gray-200' : 'bg-gray-50/50 border-gray-100'}`}>
                                   <div className="flex-1">
                                     <label className="block text-[11px] font-medium text-gray-500 mb-1">映射主维度</label>
                                     <select 
+                                      disabled={field.isReferenced}
                                       value={field.name}
                                       onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
-                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-800 transition-colors"
+                                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-gray-200 focus:border-blue-500 text-gray-800'}`}
                                     >
                                       <option value="" disabled>选择主维度</option>
                                       {DIMENSIONS.map(dim => (
@@ -451,9 +546,10 @@ export const SourceTableManagement: React.FC = () => {
                                   <div className="flex-1">
                                     <label className="block text-[11px] font-medium text-gray-500 mb-1">关联方式</label>
                                     <select 
+                                      disabled={field.isReferenced}
                                       value={field.type}
                                       onChange={(e) => handleFieldChange(idx, 'type', e.target.value)}
-                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-800 transition-colors"
+                                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-gray-200 focus:border-blue-500 text-gray-800'}`}
                                     >
                                       <option value="直接关联">直接关联</option>
                                       <option value="编码映射">编码映射</option>
@@ -463,7 +559,7 @@ export const SourceTableManagement: React.FC = () => {
                             </div>
                             
                             {(field.type === '直接关联' || field.type === '编码映射') && (
-                              <div className="flex flex-col gap-3 pl-5 pr-4 py-2.5 mt-1 rounded-lg bg-blue-50/50 border border-blue-50 ml-2 group-hover:bg-blue-100/30 transition-colors">
+                              <div className={`flex flex-col gap-3 pl-5 pr-4 py-2.5 mt-1 rounded-lg border ml-2 transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-100' : 'bg-blue-50/50 border-blue-50 group-hover:bg-blue-100/30'}`}>
                                 {(() => {
                                   const currentDimConfig = DIMENSION_CONFIGS.find(d => d.name === field.name);
                                   const hasHierarchies = !!(currentDimConfig && currentDimConfig.hierarchies && currentDimConfig.hierarchies.length > 0);
@@ -476,11 +572,12 @@ export const SourceTableManagement: React.FC = () => {
                                       <div className="flex items-start gap-4">
                                         {field.type === '编码映射' && (
                                           <div className="flex-[0.6]">
-                                            <label className="block text-[11px] font-medium text-blue-600/70 mb-1">来源系统</label>
+                                            <label className={`block text-[11px] font-medium mb-1 ${field.isReferenced ? 'text-gray-400' : 'text-blue-600/70'}`}>来源系统</label>
                                             <select
+                                              disabled={field.isReferenced}
                                               value={field.sourceSystem || ''}
                                               onChange={(e) => handleFieldChange(idx, 'sourceSystem', e.target.value)}
-                                              className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs focus:outline-none focus:border-blue-400 text-gray-700"
+                                              className={`w-full px-2.5 py-1.5 border rounded-md text-xs focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-blue-100 focus:border-blue-400 text-gray-700'}`}
                                             >
                                               <option value="" disabled>选择来源系统</option>
                                               <option value="HIS系统">HIS系统</option>
@@ -491,18 +588,19 @@ export const SourceTableManagement: React.FC = () => {
                                           </div>
                                         )}
                                         <div className="flex-1">
-                                          <label className="block text-[11px] font-medium text-blue-600/70 mb-1">
+                                          <label className={`block text-[11px] font-medium mb-1 ${field.isReferenced ? 'text-gray-400' : 'text-blue-600/70'}`}>
                                             {hasHierarchies ? '关联维度层级字段' : '维度主键字段'}
                                           </label>
                                           <select 
+                                            disabled={field.isReferenced}
                                             value={field.dimPrimaryKey || ''}
                                             onChange={(e) => handleFieldChange(idx, 'dimPrimaryKey', e.target.value)}
-                                            className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
+                                            className={`w-full px-2.5 py-1.5 border rounded-md text-xs font-mono focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-blue-100 focus:border-blue-400 text-gray-700'}`}
                                           >
                                             <option value="" disabled>{hasHierarchies ? '选择字段' : '选择主键字段 (如 id)'}</option>
                                             {hasHierarchies ? (
-                                              currentDimConfig?.hierarchies.map(h => (
-                                                <option key={h.field} value={h.field}>{h.name} ({h.field})</option>
+                                              currentDimConfig?.hierarchies.map((h, hIdx) => (
+                                                <option key={h.field} value={h.field}>L{hIdx + 1} - {h.name} ({h.field})</option>
                                               ))
                                             ) : (
                                               DIM_PRIMARY_KEYS.map(k => (
@@ -512,11 +610,12 @@ export const SourceTableManagement: React.FC = () => {
                                           </select>
                                         </div>
                                         <div className="flex-1">
-                                          <label className="block text-[11px] font-medium text-blue-600/70 mb-1">维度显示字段</label>
+                                          <label className={`block text-[11px] font-medium mb-1 ${field.isReferenced ? 'text-gray-400' : 'text-blue-600/70'}`}>维度显示字段</label>
                                           <select 
+                                            disabled={field.isReferenced}
                                             value={field.dimDisplayField || ''}
                                             onChange={(e) => handleFieldChange(idx, 'dimDisplayField', e.target.value)}
-                                            className="w-full px-2.5 py-1.5 bg-white border border-blue-100 rounded-md text-xs font-mono focus:outline-none focus:border-blue-400 text-gray-700"
+                                            className={`w-full px-2.5 py-1.5 border rounded-md text-xs font-mono focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border-blue-100 focus:border-blue-400 text-gray-700'}`}
                                           >
                                             <option value="" disabled>选择显示字段 (如 name)</option>
                                             {DIM_DISPLAY_FIELDS.map(d => (
@@ -566,7 +665,7 @@ export const SourceTableManagement: React.FC = () => {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 text-left">
                       {newFields.filter(f => f.type === '内嵌分组').length === 0 && (
                         <div className="col-span-2 text-sm text-gray-400 py-4 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
                           暂无内嵌维度字段，点击右上角添加
@@ -576,12 +675,13 @@ export const SourceTableManagement: React.FC = () => {
                         if (field.type !== '内嵌分组') return null;
                         
                         return (
-                          <div key={idx} className="flex items-center gap-2 bg-white p-3 rounded-xl border border-emerald-100 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-colors">
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-xl"></div>
+                          <div key={idx} className={`flex items-center gap-2 bg-white p-3 rounded-xl border shadow-sm relative overflow-hidden group transition-colors ${field.isReferenced ? 'border-amber-200 bg-amber-50/10' : 'border-emerald-100 hover:border-emerald-300'}`}>
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${field.isReferenced ? 'bg-amber-400' : 'bg-emerald-500'}`}></div>
                             
                             <div className="flex-1 pl-2">
-                              <label className="block text-[10px] font-medium text-emerald-600/70 mb-1">来源表字段</label>
+                              <label className={`block text-[10px] font-medium mb-1 ${field.isReferenced ? 'text-gray-400' : 'text-emerald-600/70'}`}>来源表字段</label>
                               <select 
+                                disabled={field.isReferenced}
                                 value={field.field}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -590,7 +690,7 @@ export const SourceTableManagement: React.FC = () => {
                                     handleFieldChange(idx, 'name', FIELD_NAME_MAP[val]);
                                   }
                                 }}
-                                className="w-full px-2 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md text-xs font-mono focus:outline-none focus:border-emerald-400 focus:bg-white text-gray-800 transition-colors"
+                                className={`w-full px-2 py-1.5 border rounded-md text-xs font-mono focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-50 hover:bg-gray-100 border-gray-200 focus:border-emerald-400 focus:bg-white text-gray-800'}`}
                               >
                                 <option value="" disabled>选择字段</option>
                                 {SOURCE_TABLE_FIELDS.map(f => {
@@ -605,19 +705,21 @@ export const SourceTableManagement: React.FC = () => {
                             </div>
                             <div className="text-gray-300 mt-4">→</div>
                             <div className="flex-1">
-                              <label className="block text-[10px] font-medium text-emerald-600/70 mb-1">展示名称</label>
+                              <label className={`block text-[10px] font-medium mb-1 ${field.isReferenced ? 'text-gray-400' : 'text-emerald-600/70'}`}>展示名称</label>
                               <input 
+                                disabled={field.isReferenced}
                                 type="text"
                                 value={field.name}
                                 onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
                                 placeholder="展示名称"
-                                className="w-full px-2 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md text-xs focus:outline-none focus:border-emerald-400 focus:bg-white text-gray-800 transition-colors"
+                                className={`w-full px-2 py-1.5 border rounded-md text-xs focus:outline-none transition-colors ${field.isReferenced ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-50 hover:bg-gray-100 border-gray-200 focus:border-emerald-400 focus:bg-white text-gray-800'}`}
                               />
                             </div>
                             <button 
+                              disabled={field.isReferenced}
                               onClick={() => handleRemoveField(idx)}
-                              className="mt-4 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors flex-shrink-0"
-                              title="删除"
+                              className={`mt-4 p-1.5 rounded-md transition-colors flex-shrink-0 ${field.isReferenced ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                              title={field.isReferenced ? "该字段已被引用，不可删除" : "删除"}
                             >
                               <X size={14} />
                             </button>

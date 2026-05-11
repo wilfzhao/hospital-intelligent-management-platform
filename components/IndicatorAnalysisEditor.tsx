@@ -143,7 +143,7 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
       <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
         
         {/* Toolbar */}
-        <div className="flex-none py-3 flex justify-center border-b border-slate-200 bg-white shadow-sm z-20 relative">
+        <div className="flex-none py-3 px-8 flex justify-start border-b border-slate-200 bg-white shadow-sm z-20 relative">
           <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl">
             <button 
               onClick={() => addComponent('table')} 
@@ -194,37 +194,40 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
                     {/* Component Header */}
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                       <div className="flex items-center gap-3">
-                        <div className="cursor-move p-1 -ml-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded transition-colors">
-                          <Move size={14} />
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            item.type === 'table' ? 'bg-blue-100 text-blue-600' : 
+                            item.type === 'bar' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
+                          }`}>
+                            {item.type === 'table' ? <TableIcon size={16} /> : 
+                             item.type === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
+                          </div>
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => updateComponentTitle(item.id, e.target.value)}
+                            className="text-sm font-bold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none px-1 py-0.5 transition-colors w-64"
+                            placeholder="输入组件名称"
+                          />
                         </div>
-                        <input
-                          type="text"
-                          value={item.title}
-                          onChange={(e) => updateComponentTitle(item.id, e.target.value)}
-                          className="text-sm font-medium text-slate-700 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none px-1 py-0.5 transition-colors w-48"
-                          placeholder="输入组件名称"
-                        />
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => setComponentConfiguring(item.id, !item.isConfiguring)}
-                          className={`p-1.5 rounded-md transition-colors ${item.isConfiguring ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
-                          title={item.isConfiguring ? "完成配置" : "重新配置"}
-                        >
-                          <Settings2 size={14} />
-                        </button>
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => removeComponent(item.id)} 
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title="删除"
                         >
                           <Trash2 size={14} />
                         </button>
+                        <div className="cursor-move p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded transition-colors" title="拖拽排序">
+                          <Move size={14} />
+                        </div>
                       </div>
                     </div>
                     
                     {/* Component Body */}
                     {item.type === 'table' ? (
-                      <div className="p-0">
+                      <div className="p-0 border-t border-slate-50">
                         <AnalysisTableWidget 
                           isConfiguring={item.isConfiguring} 
                           onReconfigure={() => setComponentConfiguring(item.id, true)}
@@ -232,7 +235,7 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
                         />
                       </div>
                     ) : (
-                      <div className="p-6 flex items-center justify-center bg-slate-50/30 h-72">
+                      <div className="p-4 flex items-center justify-center bg-slate-50/10 h-64 border-t border-slate-50">
                         <div className="flex flex-col items-center gap-3 text-slate-300">
                           {item.type === 'bar' && <BarChart3 size={48} strokeWidth={1} />}
                           {item.type === 'line' && <LineChart size={48} strokeWidth={1} />}
@@ -258,7 +261,6 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-800 leading-none">选择分析组件</h3>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Select existing analysis components</p>
                 </div>
               </div>
               <button 
@@ -283,43 +285,68 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
               </div>
 
               <div className="flex-1 overflow-auto custom-scrollbar">
-                <div className="grid grid-cols-2 gap-4">
-                  {MOCK_EXISTING_COMPONENTS
-                    .filter(c => c.title.includes(pickerSearch) || c.author.includes(pickerSearch))
-                    .map((comp) => (
-                    <div 
-                      key={comp.id}
-                      onClick={() => toggleTempSelection(comp.id)}
-                      className={`relative group cursor-pointer border-2 rounded-xl p-4 transition-all ${
-                        tempSelectedIds.includes(comp.id) 
-                          ? 'border-indigo-500 bg-indigo-50/30' 
-                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`p-2 rounded-lg ${
-                          comp.type === 'table' ? 'bg-blue-100 text-blue-600' : 
-                          comp.type === 'bar' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'
-                        }`}>
-                          {comp.type === 'table' ? <TableIcon size={16} /> : 
-                           comp.type === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
-                        </div>
-                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                          tempSelectedIds.includes(comp.id)
-                            ? 'bg-indigo-500 border-indigo-500 text-white'
-                            : 'border-slate-200 group-hover:border-slate-300 bg-white'
-                        }`}>
-                          {tempSelectedIds.includes(comp.id) && <Check size={12} strokeWidth={3} />}
-                        </div>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 mb-1">{comp.title}</h4>
-                      <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                        <span className="flex items-center gap-1">创建人: {comp.author}</span>
-                        <span className="flex items-center gap-1">{comp.time}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="border border-slate-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        <th className="w-12 px-4 py-3"></th>
+                        <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">组件名称</th>
+                        <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">类型</th>
+                        <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">创建人</th>
+                        <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">更新时间</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {MOCK_EXISTING_COMPONENTS
+                        .filter(c => c.title.includes(pickerSearch) || c.author.includes(pickerSearch))
+                        .map((comp) => (
+                        <tr 
+                          key={comp.id}
+                          onClick={() => toggleTempSelection(comp.id)}
+                          className={`group cursor-pointer transition-colors ${
+                            tempSelectedIds.includes(comp.id) 
+                              ? 'bg-indigo-50/50' 
+                              : 'hover:bg-slate-50/80'
+                          }`}
+                        >
+                          <td className="px-4 py-3">
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                              tempSelectedIds.includes(comp.id)
+                                ? 'bg-indigo-500 border-indigo-500 text-white'
+                                : 'border-slate-200 group-hover:border-slate-300 bg-white'
+                            }`}>
+                              {tempSelectedIds.includes(comp.id) && <Check size={12} strokeWidth={3} />}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-slate-700">{comp.title}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-500">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`p-1 rounded ${
+                                comp.type === 'table' ? 'bg-blue-50 text-blue-500' : 
+                                comp.type === 'bar' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'
+                              }`}>
+                                {comp.type === 'table' ? <TableIcon size={12} /> : 
+                                 comp.type === 'bar' ? <BarChart3 size={12} /> : <LineChart size={12} />}
+                              </div>
+                              {comp.type === 'table' ? '表格' : comp.type === 'bar' ? '柱状图' : '折线图'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-500">{comp.author}</td>
+                          <td className="px-4 py-3 text-xs text-slate-400 text-right font-mono">{comp.time}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+                {MOCK_EXISTING_COMPONENTS.filter(c => c.title.includes(pickerSearch) || c.author.includes(pickerSearch)).length === 0 && (
+                  <div className="py-20 text-center">
+                    <p className="text-sm text-slate-400">未找到匹配的组件</p>
+                  </div>
+                )}
               </div>
             </div>
 

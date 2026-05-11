@@ -1208,7 +1208,7 @@ const OperationalDecisionCenter: React.FC = () => {
   // View 1: Dashboard Grid (Entry Point)
   // --------------------------------------------------------------------------
   const renderDashboard = () => (
-    <div className="flex flex-col h-full w-full gap-6 p-2 max-w-7xl mx-auto">
+    <div className="flex flex-col h-full w-full gap-6 p-2">
       {/* Header / Welcome Section */}
       <div className="flex flex-col gap-1 mb-2">
          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">运营决策中心</h1>

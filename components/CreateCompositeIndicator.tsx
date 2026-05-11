@@ -118,7 +118,7 @@ export const CreateCompositeIndicator: React.FC<CreateCompositeIndicatorProps> =
       <div className="flex flex-1 overflow-hidden">
         {/* Main Form Content */}
         <div className="flex-1 overflow-y-auto p-8 relative">
-          <div className="max-w-3xl mx-auto space-y-12 pb-24">
+          <div className="w-full space-y-12 pb-24">
             
             {/* 基本信息 */}
             <section id="basic" className="scroll-mt-8 relative">

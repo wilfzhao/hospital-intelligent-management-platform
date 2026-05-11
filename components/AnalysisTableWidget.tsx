@@ -61,7 +61,10 @@ const COMMON_DIMENSIONS = [
   '出院科室'
 ];
 
-const MOCK_DEPARTMENTS = ['心血管内科', '神经内科', '呼吸内科', '消化内科', '普通外科', '骨科'];
+const MOCK_DEPARTMENTS = [
+  '心血管内科', '神经内科', '呼吸内科', '消化内科', '普通外科', 
+  '骨科', '妇产科', '儿科', '急诊科', '重症医学科', '康复科'
+];
 
 interface AnalysisTableWidgetProps {
   isConfiguring?: boolean;
@@ -70,9 +73,9 @@ interface AnalysisTableWidgetProps {
 }
 
 export default function AnalysisTableWidget({ isConfiguring, onReconfigure, onGenerate }: AnalysisTableWidgetProps = {}) {
-  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
-  const [rows, setRows] = useState<string[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>(['门诊人次', '急诊人次', '出院人次', '手术台次']);
+  const [rows, setRows] = useState<string[]>(['出院科室']);
+  const [columns, setColumns] = useState<string[]>(['指标']);
   const [dateRange, setDateRange] = useState('');
   const [internalShowPreview, setInternalShowPreview] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);

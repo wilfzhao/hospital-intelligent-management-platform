@@ -300,7 +300,7 @@ const App: React.FC = () => {
                 ? '' 
                 : (currentView === 'odc_dashboard' || currentView === 'featured_plan_config' || currentView === 'associate_indicators' || currentView === 'indicator_analysis_editor' || currentView === 'indicator_component_editor')
                     ? 'w-full !p-0' // Remove max-width and padding for full-screen views
-                    : 'max-w-7xl mx-auto w-full'
+                    : 'max-w-7xl w-full'
         }`}>
           {renderContent()}
         </main>

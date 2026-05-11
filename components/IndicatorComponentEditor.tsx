@@ -1632,7 +1632,7 @@ ORDER BY 1 DESC`}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:border-gray-300 resize-none"
                 />
-                <p className="mt-1.5 text-[10px] text-gray-400">非必填，最多可输入 200 个字符</p>
+
               </div>
             </div>
             <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-3">

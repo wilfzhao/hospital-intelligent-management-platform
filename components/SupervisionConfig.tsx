@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle, CalendarDays } from 'lucide-react';
 export const SupervisionConfig: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [deptSource, setDeptSource] = useState<'platform' | 'data_dev'>('platform');
-  const [configMode, setConfigMode] = useState<'unified' | 'custom'>('unified');
+  const [configMode, setConfigMode] = useState<'unified' | 'custom' | 'none'>('unified');
 
   const [startDay, setStartDay] = useState<number>(20);
   const [endDay, setEndDay] = useState<number>(10);
@@ -116,14 +116,9 @@ export const SupervisionConfig: React.FC = () => {
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               填报时间配置
             </h2>
-            <p className="text-sm text-gray-500 mt-1">设置各季度任务填报的开启和结束时间控制</p>
           </div>
           
-          {/* Mode Selection */}
           <div className="mb-6">
-            <h3 className="text-md font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              配置模式
-            </h3>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
               <label className={`flex-1 flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${configMode === 'unified' ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300'}`}>
                 <input
@@ -151,6 +146,20 @@ export const SupervisionConfig: React.FC = () => {
               <div>
                 <div className="font-medium text-gray-900">按季度自定义</div>
                 <div className="text-sm text-gray-500 mt-0.5">为每个季度单独设置具体的开启和结束日期</div>
+              </div>
+            </label>
+            <label className={`flex-1 flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${configMode === 'none' ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300'}`}>
+              <input
+                type="radio"
+                name="configMode"
+                value="none"
+                checked={configMode === 'none'}
+                onChange={() => setConfigMode('none')}
+                className="w-4 h-4 text-blue-600"
+              />
+              <div>
+                <div className="font-medium text-gray-900">无控制</div>
+                <div className="text-sm text-gray-500 mt-0.5">不设置填报时间限制，全时段可填报</div>
               </div>
             </label>
           </div>
@@ -326,6 +335,7 @@ export const SupervisionConfig: React.FC = () => {
             </div>
           </div>
         )}
+
         </div>
         
         {/* Bottom Action */}

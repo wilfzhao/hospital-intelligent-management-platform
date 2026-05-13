@@ -49,6 +49,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan, onAssociate 
     switch (target) {
       case 'department': return '科室';
       case 'discipline': return '学科';
+      case 'professionalGroup': return '专业组';
       case 'person': return '人员';
       default: return '-';
     }
@@ -107,9 +108,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ onAddPlan, onAssociate 
             />
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="bg-gray-100 px-2 py-1 rounded text-xs">共 {filteredPlans.length} 个方案</span>
-          </div>
+
         </div>
       </div>
 

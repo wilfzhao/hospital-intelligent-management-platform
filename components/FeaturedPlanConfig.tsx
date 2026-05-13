@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, Users, Layers, Info, Search, ChevronRight, ChevronDown, 
   Check, X, Filter, Plus, Trash2, Edit2, Target, Percent, AlertCircle, 
-  FileText, Hash, Trophy, Settings
+  FileText, Hash, Trophy, Settings, Database
 } from 'lucide-react';
 import { Plan, Department, Indicator } from '../types';
 import { DEPARTMENTS, INDICATORS } from '../constants';
@@ -67,6 +67,33 @@ const MOCK_PEOPLE = [
     { id: 'u8', name: '孙勇', dept: '医务处', deptId: 'd1-1', type: '职能' },
     { id: 'u9', name: '周涛', dept: '骨科', deptId: 'd2-5', type: '外科' },
     { id: 'u10', name: '吴艳', dept: '妇产科', deptId: 'd2-7', type: '外科' },
+];
+
+const MOCK_PROFESSIONAL_GROUPS_TREE = [
+    {
+        id: 'dept-1',
+        name: '心血管内科',
+        groups: [
+            { id: 'pg-1', name: '冠心病诊疗组', leader: '张主任', members: '王医生、李护士', type: '诊疗组' },
+            { id: 'pg-2', name: '心律失常诊疗组', leader: '李副主任', members: '赵医生、孙护士', type: '诊疗组' },
+        ]
+    },
+    {
+        id: 'dept-2',
+        name: '普通外科',
+        groups: [
+            { id: 'pg-6', name: '胃肠肿瘤诊疗组', leader: '刘主任', members: '陈医生、黄护士', type: '诊疗组' },
+            { id: 'pg-7', name: '肝胆胰诊疗组', leader: '周主任', members: '吴医生、郑护士', type: '诊疗组' },
+        ]
+    },
+    {
+        id: 'dept-3',
+        name: '胸外科',
+        groups: [
+            { id: 'pg-11', name: '胸外科一组', leader: '赵主任', members: '钱医生、孙护士', type: '诊疗组' },
+            { id: 'pg-12', name: '胸外科二组', leader: '孙主任', members: '李医生、周护士', type: '诊疗组' },
+        ]
+    }
 ];
 
 const DIMENSION_TEMPLATES: Record<string, DimensionNode[]> = {
@@ -231,6 +258,12 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
       } else if (targetType === 'person') {
           MOCK_PEOPLE.forEach(p => {
               if (selectedIds.has(p.id)) items.push({ id: p.id, name: p.name, sub: p.dept, type: p.type });
+          });
+      } else if (targetType === 'professionalGroup') {
+          MOCK_PROFESSIONAL_GROUPS_TREE.forEach(dept => {
+              dept.groups.forEach(pg => {
+                  if (selectedIds.has(pg.id)) items.push({ id: pg.id, name: pg.name, sub: dept.name, type: pg.type });
+              });
           });
       }
       return items;
@@ -1049,18 +1082,21 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                     {targetType === 'department' && <Layers size={18} className="text-blue-500" />}
                                     {targetType === 'discipline' && <Check size={18} className="text-purple-500" />}
                                     {targetType === 'person' && <Users size={18} className="text-green-500" />}
+                                    {targetType === 'professionalGroup' && <Database size={18} className="text-blue-500" />}
                                     
                                     {targetType === 'department' && '选择使用科室'}
                                     {targetType === 'discipline' && '选择使用学科'}
                                     {targetType === 'person' && '选择使用人员'}
                                 </h3>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <Filter size={12} />
-                                    <span>当前模式: {
-                                        targetType === 'department' ? '按科室' : 
-                                        targetType === 'discipline' ? '按学科' : '按人员'
-                                    }</span>
-                                </div>
+                                {targetType !== 'professionalGroup' && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                        <Filter size={12} />
+                                        <span>当前模式: {
+                                            targetType === 'department' ? '按科室' : 
+                                            targetType === 'discipline' ? '按学科' : '按人员'
+                                        }</span>
+                                    </div>
+                                )}
                             </div>
                             
                             {/* Search */}
@@ -1069,7 +1105,11 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                                     <input 
                                         type="text" 
                                         className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                                        placeholder={`搜索${targetType === 'department' ? '科室' : targetType === 'discipline' ? '学科' : '人员'}...`}
+                                        placeholder={`搜索${
+                                            targetType === 'department' ? '科室' : 
+                                            targetType === 'discipline' ? '学科' : 
+                                            targetType === 'professionalGroup' ? '专业组' : '人员'
+                                        }...`}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
@@ -1085,6 +1125,53 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
                             </div>
                         )}
                         {targetType === 'discipline' && renderDisciplineList()}
+                        {targetType === 'professionalGroup' && (
+                            <div className="space-y-4">
+                                {MOCK_PROFESSIONAL_GROUPS_TREE.filter(dept => 
+                                    dept.name.includes(searchTerm) || 
+                                    dept.groups.some(pg => pg.name.includes(searchTerm))
+                                ).map(dept => (
+                                    <div key={dept.id} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
+                                        <div className="bg-gray-50/50 px-4 py-2 text-xs font-bold text-gray-500 border-b border-gray-100 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                            {dept.name}
+                                        </div>
+                                        <div className="p-2 space-y-1">
+                                            {dept.groups.filter(pg => pg.name.includes(searchTerm) || dept.name.includes(searchTerm)).map(pg => (
+                                                <div 
+                                                    key={pg.id}
+                                                    onClick={() => toggleSelection(pg.id)}
+                                                    className={`
+                                                        flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
+                                                        ${selectedIds.has(pg.id) 
+                                                            ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                                                            : 'bg-white border-transparent hover:bg-gray-50'}
+                                                    `}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedIds.has(pg.id) ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}>
+                                                            {selectedIds.has(pg.id) && <Check size={10} className="text-white" />}
+                                                        </div>
+                                                        <div>
+                                                            <div className={`text-sm font-medium ${selectedIds.has(pg.id) ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                                {pg.name}
+                                                            </div>
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">组长: {pg.leader}</span>
+                                                                <span className="text-[10px] text-gray-400">组员: {pg.members}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-blue-100 text-blue-600 text-[10px] px-1.5 py-0.5 rounded uppercase font-bold">
+                                                        诊疗组
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         {targetType === 'person' && (
                             <div className="space-y-1">
                                 {renderPersonTree()}

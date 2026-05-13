@@ -1,10 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertCircle, CalendarDays } from 'lucide-react';
+import { CheckCircle2, AlertCircle, CalendarDays, Users, ChevronDown, Check, X } from 'lucide-react';
 
 export const SupervisionConfig: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [deptSource, setDeptSource] = useState<'platform' | 'data_dev'>('platform');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [configMode, setConfigMode] = useState<'unified' | 'custom' | 'none'>('unified');
+
+  const roles = ['院领导', '科主任', '质管科', '运营办', '医务部', '护理部', '信息科', '财务科'];
+
+  const toggleRole = (role: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
 
   const [startDay, setStartDay] = useState<number>(20);
   const [endDay, setEndDay] = useState<number>(10);
@@ -108,6 +118,64 @@ export const SupervisionConfig: React.FC = () => {
               </div>
             </label>
           </div>
+        </div>
+
+        {/* Review Notification Roles Configuration */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            审核通知接收角色
+          </h2>
+          <div className="relative max-w-xl">
+            <div 
+              className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-all shadow-sm"
+              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+            >
+              <div className="flex flex-wrap gap-2 items-center">
+                <Users size={16} className="text-blue-500 mr-2 shrink-0" />
+                {selectedRoles.length === 0 ? (
+                  <span className="text-gray-400 text-sm">选择需要接收通知的角色...</span>
+                ) : (
+                  selectedRoles.map(role => (
+                    <span key={role} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-100">
+                      {role}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleRole(role);
+                        }}
+                        className="hover:text-blue-900"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+              <ChevronDown size={18} className={`text-gray-400 transition-transform ${showRoleDropdown ? 'rotate-180' : ''}`} />
+            </div>
+
+            {showRoleDropdown && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowRoleDropdown(false)} />
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-xl z-20 py-1 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto">
+                  {roles.map(role => (
+                    <div 
+                      key={role}
+                      className="px-4 py-2 hover:bg-gray-50 flex items-center justify-between cursor-pointer group transition-colors"
+                      onClick={() => toggleRole(role)}
+                    >
+                      <span className={`text-sm ${selectedRoles.includes(role) ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>{role}</span>
+                      {selectedRoles.includes(role) && <Check size={16} className="text-blue-600" />}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-400 flex items-center gap-1">
+            <AlertCircle size={12} />
+            选中的角色将在任务进入待审核状态时收到相关的企微或短信通知
+          </p>
         </div>
 
         {/* Time Configuration Section */}

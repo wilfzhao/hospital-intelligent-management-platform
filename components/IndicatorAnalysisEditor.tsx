@@ -9,13 +9,24 @@ import {
   Plus,
   Check,
   Search,
-  ChevronRight,
   Move, 
   Trash2,
-  Settings2,
-  X
+  X,
+  ChevronDown,
+  ChevronRight,
+  MoreHorizontal,
+  Type,
+  Hash
 } from 'lucide-react';
 import AnalysisTableWidget from './AnalysisTableWidget';
+
+interface FilterCondition {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+  type: 'string' | 'number' | 'date';
+}
 
 const MOCK_EXISTING_COMPONENTS = [
   { id: 'comp-1', title: '门急诊人次月度汇总表', type: 'table', author: '张医生', time: '2024-03-20' },
@@ -45,6 +56,31 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
   const [showComponentPicker, setShowComponentPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
+
+  // Global Filter states
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [matchMode, setMatchMode] = useState<'all' | 'any'>('all');
+  const [filters, setFilters] = useState<FilterCondition[]>([
+    { id: '1', field: 'Basket total', operator: 'is', value: '', type: 'number' },
+    { id: '2', field: 'Item id', operator: 'is', value: '', type: 'string' },
+    { id: '3', field: 'Currency', operator: 'is', value: '', type: 'string' }
+  ]);
+
+  const addFilter = () => {
+    setFilters([...filters, { id: Date.now().toString(), field: 'New field', operator: 'is', value: '', type: 'string' }]);
+  };
+
+  const removeFilter = (id: string) => {
+    setFilters(filters.filter(f => f.id !== id));
+  };
+
+  const clearAllFilters = () => {
+    setFilters([]);
+  };
+
+  const updateFilter = (id: string, updates: Partial<FilterCondition>) => {
+    setFilters(filters.map(f => f.id === id ? { ...f, ...updates } : f));
+  };
 
   const handleSave = () => {
     if (!systemTitle.trim()) {
@@ -172,8 +208,122 @@ export default function IndicatorAnalysisEditor({ onBack, onSave }: EditorProps)
             backgroundPosition: '-11px -11px'
           }}
         >
-          <div className="min-h-full w-full relative">
+          <div className="max-w-6xl mx-auto min-h-full w-full relative">
             
+            {/* Global Filters Section */}
+            <div className="mb-8 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <button 
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                className="w-full flex items-center justify-between px-6 py-4 text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors"
+                id="global-filters-toggle"
+              >
+                <div className="flex items-center gap-2">
+                  {isFiltersExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  <span>全局筛选配置</span>
+                  <span className="ml-2 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-medium uppercase tracking-wider">Global Filters</span>
+                </div>
+                {filters.length > 0 && !isFiltersExpanded && (
+                  <span className="text-xs font-normal text-slate-400">已配置 {filters.length} 个条件</span>
+                )}
+              </button>
+
+              {isFiltersExpanded && (
+                <div className="p-6 border-t border-slate-100 bg-white animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="relative">
+                      <select 
+                        value={matchMode}
+                        onChange={(e) => setMatchMode(e.target.value as 'all' | 'any')}
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer hover:bg-slate-100"
+                      >
+                        <option value="all">All</option>
+                        <option value="any">Any</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                    <span className="text-sm text-slate-400">of the following conditions match:</span>
+                  </div>
+
+                  <div className="relative pl-6 space-y-4">
+                    {/* Vertical Line Connector */}
+                    <div className="absolute left-[11px] top-0 bottom-0 w-px bg-slate-200" />
+                    
+                    {filters.map((filter) => (
+                      <div key={filter.id} className="relative flex items-center gap-3 animate-in fade-in slide-in-from-left-2 duration-200">
+                        {/* Horizontal Connector Hook */}
+                        <div className="absolute -left-[14px] top-1/2 -translate-y-1/2 w-[14px] h-px bg-slate-200" />
+                        
+                        {/* Field Selector */}
+                        <div className="flex-1 flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all group shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                          {filter.type === 'number' ? (
+                            <Hash size={18} className="text-blue-500 shrink-0" />
+                          ) : (
+                            <Type size={18} className="text-blue-500 shrink-0" />
+                          )}
+                          <input 
+                            type="text" 
+                            value={filter.field}
+                            onChange={(e) => updateFilter(filter.id, { field: e.target.value })}
+                            className="bg-transparent text-sm font-bold text-slate-700 outline-none w-full"
+                          />
+                          <ChevronDown size={14} className="text-slate-300 group-hover:text-slate-400 transition-colors" />
+                        </div>
+
+                        {/* Operator Selector */}
+                        <div className="w-40 flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all group shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                          <span className="text-sm text-slate-700 font-medium">{filter.operator}</span>
+                          <ChevronDown size={14} className="text-slate-300 group-hover:text-slate-400 transition-colors" />
+                        </div>
+
+                        {/* Value Input */}
+                        <div className="flex-[2] flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                          <input 
+                            type="text" 
+                            placeholder={filter.type === 'number' ? "Enter value(s)" : "Start typing to filter results"}
+                            value={filter.value}
+                            onChange={(e) => updateFilter(filter.id, { value: e.target.value })}
+                            className="bg-transparent text-sm text-slate-600 outline-none w-full placeholder:text-slate-300"
+                          />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          <button 
+                            onClick={() => removeFilter(filter.id)}
+                            className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm border border-slate-100 hover:border-red-100"
+                            title="移除条件"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          <button className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all" title="更多">
+                            <MoreHorizontal size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add Filter Button */}
+                    <div className="flex items-center justify-between mt-8 pt-4 border-t border-slate-50">
+                      <button 
+                        onClick={addFilter}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-blue-500 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                      >
+                        <Plus size={20} strokeWidth={3} />
+                        Add filter
+                      </button>
+
+                      <button 
+                        onClick={clearAllFilters}
+                        className="px-5 py-2.5 bg-slate-50 text-slate-500 text-sm font-bold rounded-xl hover:bg-slate-100 hover:text-slate-700 transition-all"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {canvasItems.length === 0 ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none">
                 <div className="w-20 h-20 mb-6 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">

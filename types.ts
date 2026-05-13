@@ -47,7 +47,7 @@ export interface Plan {
   status: 'enabled' | 'disabled';
   application?: string;
   // Featured Plan specific fields
-  target?: 'department' | 'discipline' | 'person'; // 考核对象
+  target?: 'department' | 'discipline' | 'person' | 'professionalGroup'; // 考核对象
   cycle?: 'year' | 'quarter' | 'month'; // 考核周期
 }
 

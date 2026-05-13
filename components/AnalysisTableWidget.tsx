@@ -81,7 +81,7 @@ export default function AnalysisTableWidget({ isConfiguring, onReconfigure, onGe
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelected, setTempSelected] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<string[]>(['1', '1-2']);
-
+  
   const showPreview = isConfiguring !== undefined ? !isConfiguring : internalShowPreview;
 
   const handleSetShowPreview = (val: boolean) => {

@@ -24,7 +24,7 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
   const [error, setError] = useState('');
   
   // Featured Specific State
-  const [target, setTarget] = useState<'department' | 'discipline' | 'person'>('department');
+  const [target, setTarget] = useState<'department' | 'discipline' | 'person' | 'professionalGroup'>('department');
   const [cycle, setCycle] = useState<'year' | 'quarter' | 'month'>('year');
 
   // Custom Dropdown State for Application
@@ -299,10 +299,11 @@ const CreatePlanModal: React.FC<CreatePlanModalProps> = ({ isOpen, onClose, onCo
                                 <select 
                                     className="w-full border border-purple-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-purple-500 text-gray-700 shadow-sm"
                                     value={target}
-                                    onChange={(e) => setTarget(e.target.value as 'department' | 'discipline' | 'person')}
+                                    onChange={(e) => setTarget(e.target.value as 'department' | 'discipline' | 'person' | 'professionalGroup')}
                                 >
                                     <option value="department">科室</option>
                                     <option value="discipline">学科</option>
+                                    <option value="professionalGroup">专业组</option>
                                     <option value="person">人员</option>
                                 </select>
                              </div>

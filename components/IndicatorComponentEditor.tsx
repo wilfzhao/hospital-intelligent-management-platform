@@ -5,7 +5,6 @@ import {
   Search, 
   ChevronRight, 
   ChevronDown, 
-  ChevronUp,
   Database, 
   BarChart2, 
   LineChart as LineChartIcon,
@@ -22,8 +21,6 @@ import {
   EyeOff,
   Pin,
   PinOff,
-  ArrowUp,
-  ArrowDown,
   GripVertical
 } from 'lucide-react';
 import { 
@@ -397,18 +394,6 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
 
   const removeReferenceLine = (id: string) => {
     setReferenceLines(prev => prev.filter(line => line.id !== id));
-  };
-
-  const moveItem = (type: 'row' | 'col', index: number, direction: 'up' | 'down') => {
-    const setFn = type === 'row' ? setRowConfigs : setColConfigs;
-    setFn(prev => {
-      const next = [...prev];
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      if (targetIndex >= 0 && targetIndex < next.length) {
-        [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-      }
-      return next;
-    });
   };
 
   const handleRunQuery = () => {
@@ -804,7 +789,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                                 请先在左侧选择维度
                               </div>
                             ) : (
-                              rowConfigs.map((config, idx) => (
+                              rowConfigs.map((config) => (
                                 <div key={config.id} className="p-2 border rounded-md bg-white hover:border-blue-200 transition-colors">
                                   <div className="flex items-center gap-2">
                                     <div className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 p-0.5">
@@ -851,7 +836,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                                 请先在左侧选择指标
                               </div>
                             ) : (
-                              colConfigs.map((config, idx) => (
+                              colConfigs.map((config) => (
                                 <div key={config.id} className="p-2 border rounded-md bg-white hover:border-emerald-200 transition-colors">
                                   <div className="flex items-center gap-2">
                                     <div className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-400 p-0.5">

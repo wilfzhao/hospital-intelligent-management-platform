@@ -16,6 +16,10 @@ import {
   X,
   Filter,
   Plus,
+  Trash2,
+  MoreHorizontal,
+  Type,
+  Hash,
   Code,
   Eye,
   EyeOff,
@@ -45,6 +49,14 @@ interface IndicatorNode {
   label: string;
   type: 'folder' | 'indicator';
   children?: IndicatorNode[];
+}
+
+interface FilterCondition {
+  id: string;
+  field: string;
+  operator: string;
+  value: string;
+  type: 'string' | 'number' | 'date';
 }
 
 interface DimensionHierarchy {
@@ -155,6 +167,8 @@ const MOCK_INDICATORS: IndicatorNode[] = [
       { id: 'i4', label: '出院人次', type: 'indicator' },
       { id: 'i5', label: '平均住院日', type: 'indicator' },
       { id: 'i6', label: '床位使用率', type: 'indicator' },
+      { id: '5', label: '非计划再次手术率', type: 'indicator' },
+      { id: '11', label: '日间手术占比', type: 'indicator' },
     ]
   },
   {
@@ -212,6 +226,30 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   const [chartType, setChartType] = useState<'bar' | 'horizontal-bar' | 'line' | 'pie' | 'table'>('bar');
   const [configTab, setConfigTab] = useState<string>('layout');
   const [showSerialNumber, setShowSerialNumber] = useState(false);
+
+  // Global Filter states
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [matchMode, setMatchMode] = useState<'all' | 'any'>('all');
+  const [filters, setFilters] = useState<FilterCondition[]>([
+    { id: '1', field: '时间范围', operator: 'is', value: '最近30天', type: 'date' },
+    { id: '2', field: '科室', operator: 'is', value: '全部', type: 'string' }
+  ]);
+
+  const addFilter = () => {
+    setFilters([...filters, { id: Date.now().toString(), field: '新字段', operator: 'is', value: '', type: 'string' }]);
+  };
+
+  const removeFilter = (id: string) => {
+    setFilters(filters.filter(f => f.id !== id));
+  };
+
+  const clearAllFilters = () => {
+    setFilters([]);
+  };
+
+  const updateFilter = (id: string, updates: Partial<FilterCondition>) => {
+    setFilters(filters.map(f => f.id === id ? { ...f, ...updates } : f));
+  };
 
   // Table specific configurations
   const [rowConfigs, setRowConfigs] = useState<{id: string, label: string, visible: boolean, frozen: boolean}[]>([]);
@@ -440,7 +478,6 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
       })));
       
       setHasRunQuery(true);
-      setIsChartExpanded(true);
     }
   };
 
@@ -1163,29 +1200,127 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden bg-gray-100/30">
-          {/* Query/Filters Bar */}
-          <div className="p-3 border-b border-gray-200 bg-white flex items-center gap-4 shrink-0 overflow-x-auto">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-600">
-              <Filter size={14} className="text-gray-400" />
-              <span>时间范围: 最近30天</span>
+          {/* Query/Filters Bar (Ported from Global Filter Configuration) */}
+          <div className="border-b border-gray-200 bg-white shrink-0 overflow-hidden">
+            <div className="px-4 py-2 bg-gray-50/50 flex items-center justify-between border-b border-gray-100">
+              <button 
+                onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                className="flex items-center gap-2 text-[11px] font-bold text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                {isFiltersExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <Filter size={14} className="text-gray-400" />
+                <span>全局筛选配置</span>
+                {filters.length > 0 && !isFiltersExpanded && (
+                  <span className="ml-2 font-normal text-gray-400">({filters.length} 个条件)</span>
+                )}
+              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleRunQuery}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-colors text-xs font-bold ${selectedIndicators.length > 0 ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700' : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'}`}
+                  disabled={selectedIndicators.length === 0}
+                >
+                  <Play size={12} fill="currentColor" />
+                  运行查询
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-600">
-              <Filter size={14} className="text-gray-400" />
-              <span>科室: 全部</span>
-            </div>
-            <button className="flex items-center gap-1 text-blue-600 text-xs font-medium hover:underline">
-              <Plus size={14} />
-              添加筛选
-            </button>
-            <div className="flex-1"></div>
-            <button 
-              onClick={handleRunQuery}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-colors text-xs font-bold ${selectedIndicators.length > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100' : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'}`}
-              disabled={selectedIndicators.length === 0}
-            >
-              <Play size={14} fill="currentColor" />
-              运行查询
-            </button>
+
+            {isFiltersExpanded && (
+              <div className="p-4 bg-white animate-in fade-in slide-in-from-top-2 duration-200 max-h-[40vh] overflow-y-auto custom-scrollbar">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="relative">
+                    <select 
+                      value={matchMode}
+                      onChange={(e) => setMatchMode(e.target.value as 'all' | 'any')}
+                      className="appearance-none bg-gray-50 border border-gray-200 rounded-lg px-4 py-1.5 pr-8 text-[11px] font-medium text-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer hover:bg-gray-100"
+                    >
+                      <option value="all">All</option>
+                      <option value="any">Any</option>
+                    </select>
+                    <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  </div>
+                  <span className="text-[11px] text-gray-400">of the following conditions match:</span>
+                </div>
+
+                <div className="relative pl-5 space-y-3">
+                  {/* Vertical Line Connector */}
+                  <div className="absolute left-[9px] top-0 bottom-0 w-px bg-gray-100" />
+                  
+                  {filters.map((filter) => (
+                    <div key={filter.id} className="relative flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                      {/* Horizontal Connector Hook */}
+                      <div className="absolute -left-[12px] top-1/2 -translate-y-1/2 w-[12px] h-px bg-gray-100" />
+                      
+                      {/* Field Selector */}
+                      <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-all group shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                        {filter.type === 'number' ? (
+                          <Hash size={14} className="text-blue-500 shrink-0" />
+                        ) : (
+                          <Type size={14} className="text-blue-500 shrink-0" />
+                        )}
+                        <input 
+                          type="text" 
+                          value={filter.field}
+                          onChange={(e) => updateFilter(filter.id, { field: e.target.value })}
+                          className="bg-transparent text-xs font-bold text-gray-700 outline-none w-full"
+                        />
+                        <ChevronDown size={12} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+                      </div>
+
+                      {/* Operator Selector */}
+                      <div className="w-32 flex items-center justify-between px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-all group shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                        <span className="text-xs text-gray-700 font-medium">{filter.operator}</span>
+                        <ChevronDown size={12} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+                      </div>
+
+                      {/* Value Input */}
+                      <div className="flex-[2] flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                        <input 
+                          type="text" 
+                          placeholder={filter.type === 'number' ? "Enter value(s)" : "Start typing to filter results"}
+                          value={filter.value}
+                          onChange={(e) => updateFilter(filter.id, { value: e.target.value })}
+                          className="bg-transparent text-xs text-gray-600 outline-none w-full placeholder:text-gray-300"
+                        />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => removeFilter(filter.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all shadow-sm border border-gray-100 hover:border-red-100"
+                          title="移除条件"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all" title="更多">
+                          <MoreHorizontal size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add Filter Button */}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
+                    <button 
+                      onClick={addFilter}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-500 text-blue-600 text-[11px] font-bold rounded-lg hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                    >
+                      <Plus size={14} strokeWidth={3} />
+                      添加条件
+                    </button>
+
+                    <button 
+                      onClick={clearAllFilters}
+                      className="px-3 py-1.5 bg-gray-50 text-gray-500 text-[11px] font-bold rounded-lg hover:bg-gray-100 hover:text-gray-700 transition-all"
+                    >
+                      清空全部
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Visualization Area */}
@@ -1456,13 +1591,11 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                       <table className="w-full text-left border-collapse table-fixed">
                         <thead className="border-b border-gray-100 bg-gray-50/50">
                           <tr>
-                            {showSerialNumber && (
-                              <th className="w-12 px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left border-r border-gray-100 bg-inherit sticky left-0 z-20">#</th>
-                            )}
+                            <th className="w-12 px-4 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left border-r border-gray-100 bg-inherit sticky left-0 z-20">#</th>
                             {rowConfigs.filter(rc => rc.visible).map(config => (
                               <th 
                                 key={config.id} 
-                                style={config.frozen ? { position: 'sticky', left: showSerialNumber ? 48 : 0, zIndex: 10 } : {}}
+                                style={config.frozen ? { position: 'sticky', left: 48, zIndex: 10 } : {}}
                                 className="px-4 py-3 text-[11px] font-bold text-indigo-500 bg-inherit uppercase tracking-wider text-left border-r border-gray-100 last:border-r-0 whitespace-nowrap"
                               >
                                 {config.label}
@@ -1483,13 +1616,11 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                           {hasRunQuery ? (
                             chartData.map((row, idx) => (
                               <tr key={idx} className="hover:bg-gray-50 transition-colors group">
-                                {showSerialNumber && (
-                                  <td className="px-4 py-2.5 text-[10px] text-gray-400 font-mono border-r border-gray-50 bg-inherit sticky left-0 z-10 group-hover:bg-gray-50 transition-colors">{idx + 1}</td>
-                                )}
+                                <td className="px-4 py-2.5 text-[10px] text-gray-400 font-mono border-r border-gray-50 bg-inherit sticky left-0 z-10 group-hover:bg-gray-50 transition-colors">{idx + 1}</td>
                                 {rowConfigs.filter(rc => rc.visible).map(config => (
                                   <td 
                                     key={config.id} 
-                                    style={config.frozen ? { position: 'sticky', left: (showSerialNumber ? 48 : 0), zIndex: 5 } : {}}
+                                    style={config.frozen ? { position: 'sticky', left: 48, zIndex: 5 } : {}}
                                     className="px-4 py-2.5 text-xs text-gray-600 border-r border-gray-50 last:border-r-0 bg-inherit group-hover:bg-gray-50 transition-colors whitespace-nowrap"
                                   >
                                     {row[config.id] || row.name || '-'}
@@ -1509,15 +1640,18 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                           ) : (
                             <tr>
                               <td 
-                                colSpan={(showSerialNumber ? 1 : 0) + rowConfigs.filter(r => r.visible).length + colConfigs.filter(c => c.visible).length} 
+                                colSpan={1 + rowConfigs.filter(r => r.visible).length + colConfigs.filter(c => c.visible).length} 
                                 className="px-4 py-20 text-center"
                               >
-                                <div className="flex flex-col items-center gap-2">
-                                  <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-400 mb-2">
-                                    <Play size={20} fill="currentColor" />
+                                <div 
+                                  onClick={handleRunQuery}
+                                  className={`flex flex-col items-center gap-2 group cursor-pointer transition-all ${selectedIndicators.length === 0 ? 'opacity-50 pointer-events-none' : 'hover:scale-105 active:scale-95'}`}
+                                >
+                                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 mb-2 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                                    <Play size={24} fill="currentColor" />
                                   </div>
-                                  <p className="text-sm text-gray-500 font-medium">待运行查询</p>
-                                  <p className="text-xs text-gray-400">点击上方“运行查询”按钮以加载实时数据预览</p>
+                                  <p className="text-sm text-gray-700 font-bold group-hover:text-blue-600 transition-colors">待运行查询</p>
+                                  <p className="text-xs text-gray-400">点击此处或上方“运行查询”按钮以加载实时数据预览</p>
                                 </div>
                               </td>
                             </tr>

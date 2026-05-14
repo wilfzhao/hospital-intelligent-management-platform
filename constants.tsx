@@ -190,7 +190,8 @@ export const INDICATORS: Indicator[] = [
     fillPermission: false,
     displayEntry: false,
     children: [
-      { id: '5', name: '非计划二次手术率', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '5', name: '非计划再次手术率', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
+      { id: '11', name: '日间手术占比', scheme: '三级医院等级评审', readPermission: false, fillPermission: false, displayEntry: false },
       { id: '6', name: '床位周转率', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
       { id: '7', name: '费用消耗指数', scheme: '', readPermission: false, fillPermission: false, displayEntry: false, tag: 'sub' },
     ]

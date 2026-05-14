@@ -6818,7 +6818,7 @@ const OperationalDecisionCenter: React.FC = () => {
 
     const surgeryKPIs = [
       { name: '四级手术占比', value: '25%', score: 22, maxScore: 25, icon: PieChart },
-      { name: '非计划二次手术率', value: '0.5%', score: 24, maxScore: 25, icon: RotateCcw },
+      { name: '非计划再次手术率', value: '0.5%', score: 24, maxScore: 25, icon: RotateCcw },
       { name: '床位周转率', value: '95%', score: 23, maxScore: 25, icon: RefreshCw },
       { name: '费用消耗指数', value: '0.88', score: 23.8, maxScore: 25, icon: TrendingUp },
     ];

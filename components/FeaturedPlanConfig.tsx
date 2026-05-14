@@ -545,26 +545,32 @@ export const FeaturedPlanConfig: React.FC<FeaturedPlanConfigProps> = ({ plan, on
           // Helper to find names
           const findIndicatorName = (nodes: Indicator[], id: string): string => {
               for(const node of nodes) {
-                  if (node.id === id) return node.name;
-                  if (node.children) {
+                  // Direct comparison with string conversion for safety
+                  if (String(node.id) === String(id)) return node.name;
+                  if (node.children && node.children.length > 0) {
                       const found = findIndicatorName(node.children, id);
-                      if (found) return found;
+                      if (found !== String(id)) return found;
                   }
               }
-              return id;
+              return String(id);
           };
 
           // Synchronize selection: 
-          // 1. If ID exists, keep old config. 
+          // 1. If ID exists, keep old config but update name. 
           // 2. If new, create new config.
           // 3. Implicitly removes IDs not in the 'ids' array.
           const mergedIndicators: AssociatedIndicatorConfig[] = ids.map(id => {
+              const latestName = findIndicatorName(INDICATORS, id);
               if (existingMap.has(id)) {
-                  return existingMap.get(id)!;
+                  const existing = existingMap.get(id)!;
+                  return {
+                      ...existing,
+                      name: latestName // Ensure name is always the latest from constants
+                  };
               }
               return {
                   id,
-                  name: findIndicatorName(INDICATORS, id),
+                  name: latestName,
                   weight: 0,
                   score: 0,
                   scoringType: 'achievement' // Default to '达成率计分法'

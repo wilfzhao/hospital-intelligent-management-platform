@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CheckCircle2, AlertCircle, CalendarDays, Users, ChevronDown, Check, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, CalendarDays, Users, ChevronDown, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
 
 export const SupervisionConfig: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -7,6 +7,23 @@ export const SupervisionConfig: React.FC = () => {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [configMode, setConfigMode] = useState<'unified' | 'custom' | 'none'>('unified');
+
+  const [leaders, setLeaders] = useState([
+    { id: '1', name: '张院长', title: '院长', avatar: '张' },
+    { id: '2', name: '王院长', title: '副院长', avatar: '王' },
+    { id: '3', name: '李院长', title: '副院长', avatar: '李' },
+    { id: '4', name: '赵副院长', title: '纪委书记', avatar: '赵' },
+    { id: '5', name: '孙副院长', title: '副院长', avatar: '孙' },
+  ]);
+
+  const moveLeader = (index: number, direction: 'up' | 'down') => {
+    const newLeaders = [...leaders];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < newLeaders.length) {
+      [newLeaders[index], newLeaders[targetIndex]] = [newLeaders[targetIndex], newLeaders[index]];
+      setLeaders(newLeaders);
+    }
+  };
 
   const roles = ['院领导', '科主任', '质管科', '运营办', '医务部', '护理部', '信息科', '财务科'];
 
@@ -175,6 +192,47 @@ export const SupervisionConfig: React.FC = () => {
           <p className="mt-2 text-xs text-gray-400 flex items-center gap-1">
             <AlertCircle size={12} />
             选中的角色将在任务进入待审核状态时收到相关的企微或短信通知
+          </p>
+        </div>
+
+        {/* Responsible Leader Sorting Configuration */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            责任领导排序
+          </h2>
+          <div className="max-w-xl space-y-2">
+            {leaders.map((leader, index) => (
+              <div 
+                key={leader.id} 
+                className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:border-blue-200 transition-all group"
+              >
+                <div className="text-sm font-bold text-gray-800">
+                  {leader.name}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => moveLeader(index, 'up')}
+                    disabled={index === 0}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    title="上移"
+                  >
+                    <ArrowUp size={16} />
+                  </button>
+                  <button 
+                    onClick={() => moveLeader(index, 'down')}
+                    disabled={index === leaders.length - 1}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    title="下移"
+                  >
+                    <ArrowDown size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-gray-400 flex items-center gap-1">
+            <AlertCircle size={12} />
+            此排序将影响“党委决策督办平台”中责任领导在列表和筛选器中的展示顺序
           </p>
         </div>
 

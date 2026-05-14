@@ -18,7 +18,7 @@ const MOCK_DATA = [
     id: 2,
     year: '2026',
     category: '医疗质量',
-    target: '全面提升医疗服务质量，降低非计划二次手术率。',
+    target: '全面提升医疗服务质量，降低非计划再次手术率。',
     leader: '李院长',
     department: '医务处',
     coDepartment: '护理部',

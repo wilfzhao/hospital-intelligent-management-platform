@@ -43,7 +43,7 @@ const App: React.FC = () => {
 
   // Header Items State
   const [headerItems, setHeaderItems] = useState<string[]>([
-    '党委决策督办平台',
+    '党委督办管理系统',
     '医院等级评审', 
     '公立医院绩效考核', 
     '运营决策中心', 
@@ -53,7 +53,7 @@ const App: React.FC = () => {
 
   // Derive sidebar items based on active module
   const currentSidebarItems = useMemo(() => {
-    if (activeModule === '党委决策督办平台') {
+    if (activeModule === '党委督办管理系统') {
       return SUPERVISION_SIDEBAR_ITEMS;
     }
     if (activeModule === '医院等级评审') {
@@ -73,7 +73,7 @@ const App: React.FC = () => {
     setActiveModule(moduleName);
     
     // Reset view to the first item of the new module's sidebar
-    if (moduleName === '党委决策督办平台') {
+    if (moduleName === '党委督办管理系统') {
       setCurrentView(SUPERVISION_SIDEBAR_ITEMS[0].id);
     } else if (moduleName === '医院等级评审') {
       setCurrentView('review_summary');

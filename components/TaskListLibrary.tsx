@@ -103,6 +103,8 @@ interface Task {
   leader: string;
   department: string;
   coDepartment: string;
+  execDept?: string;
+  executor?: string;
   status: string;
 }
 
@@ -119,6 +121,8 @@ export const TaskListLibrary: React.FC = () => {
   const [expandedDepts, setExpandedDepts] = useState<string[]>(['d1', 'd2']);
   const [showCoDeptSelector, setShowCoDeptSelector] = useState(false);
   const [expandedCoDepts, setExpandedCoDepts] = useState<string[]>(['d1', 'd2']);
+  const [showExecDeptSelector, setShowExecDeptSelector] = useState(false);
+  const [expandedExecDepts, setExpandedExecDepts] = useState<string[]>(['d1', 'd2']);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -138,6 +142,14 @@ export const TaskListLibrary: React.FC = () => {
       setExpandedCoDepts(expandedCoDepts.filter(deptId => deptId !== id));
     } else {
       setExpandedCoDepts([...expandedCoDepts, id]);
+    }
+  };
+
+  const toggleExecDeptExpand = (id: string) => {
+    if (expandedExecDepts.includes(id)) {
+      setExpandedExecDepts(expandedExecDepts.filter(deptId => deptId !== id));
+    } else {
+      setExpandedExecDepts([...expandedExecDepts, id]);
     }
   };
 
@@ -197,10 +209,13 @@ export const TaskListLibrary: React.FC = () => {
                 leader: LEADERS[0],
                 department: '',
                 coDepartment: '无',
+                execDept: '',
+                executor: '',
                 status: '进行中'
               });
               setShowDeptSelector(false);
               setShowCoDeptSelector(false);
+              setShowExecDeptSelector(false);
               setShowCategorySelector(false);
               setIsAddingCategory(false);
               setNewCategoryName('');
@@ -252,7 +267,7 @@ export const TaskListLibrary: React.FC = () => {
             <div className="relative group">
               <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">
                 <Filter size={16} className="text-gray-400" />
-                <span>督办院领导 {selectedLeaders.length > 0 && `(${selectedLeaders.length})`}</span>
+                <span>责任领导 {selectedLeaders.length > 0 && `(${selectedLeaders.length})`}</span>
                 <ChevronDown size={14} className="text-gray-400" />
               </button>
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-100 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2">
@@ -315,7 +330,7 @@ export const TaskListLibrary: React.FC = () => {
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24 text-center">年度</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">大项分类</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">项目名称</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">督办院领导</th>
+                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">责任领导</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">主责部门</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">协办部门</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-28">推进状态</th>
@@ -391,6 +406,7 @@ export const TaskListLibrary: React.FC = () => {
                   setEditingTask(null);
                   setShowDeptSelector(false);
                   setShowCoDeptSelector(false);
+                  setShowExecDeptSelector(false);
                   setShowCategorySelector(false);
                   setIsAddingCategory(false);
                   setNewCategoryName('');
@@ -569,17 +585,18 @@ export const TaskListLibrary: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">督办院领导</label>
-                  <select 
-                    value={editingTask.leader}
-                    onChange={(e) => setEditingTask({...editingTask, leader: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                  >
-                    {LEADERS.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">责任领导</label>
+                <select 
+                  value={editingTask.leader}
+                  onChange={(e) => setEditingTask({...editingTask, leader: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                  {LEADERS.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">主责部门</label>
                   <div 
@@ -670,6 +687,59 @@ export const TaskListLibrary: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">执行部门</label>
+                  <div 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all cursor-pointer flex justify-between items-center bg-white"
+                    onClick={() => setShowExecDeptSelector(!showExecDeptSelector)}
+                  >
+                    <span className={editingTask.execDept ? 'text-gray-900' : 'text-gray-400'}>
+                      {editingTask.execDept || '请选择执行部门'}
+                    </span>
+                    <ChevronDown size={16} className="text-gray-400" />
+                  </div>
+
+                  {showExecDeptSelector && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {DEPARTMENTS_TREE.map(group => (
+                        <div key={group.id}>
+                          <div 
+                            className="flex items-center gap-1 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm font-medium text-gray-800"
+                            onClick={() => toggleExecDeptExpand(group.id)}
+                          >
+                            {expandedExecDepts.includes(group.id) ? <ChevronDown size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
+                            {group.name}
+                          </div>
+                          {expandedExecDepts.includes(group.id) && group.children.map(dept => (
+                            <div 
+                              key={dept.id}
+                              className={`pl-8 pr-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${editingTask.execDept === dept.name ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-600'}`}
+                              onClick={() => {
+                                setEditingTask({...editingTask, execDept: dept.name});
+                                setShowExecDeptSelector(false);
+                              }}
+                            >
+                              {dept.name}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">执行人</label>
+                  <input 
+                    type="text"
+                    value={editingTask.executor || ''}
+                    onChange={(e) => setEditingTask({...editingTask, executor: e.target.value})}
+                    placeholder="请输入执行人姓名"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
@@ -678,6 +748,7 @@ export const TaskListLibrary: React.FC = () => {
                   setEditingTask(null);
                   setShowDeptSelector(false);
                   setShowCoDeptSelector(false);
+                  setShowExecDeptSelector(false);
                   setShowCategorySelector(false);
                   setIsAddingCategory(false);
                   setNewCategoryName('');
@@ -696,6 +767,7 @@ export const TaskListLibrary: React.FC = () => {
                   setEditingTask(null);
                   setShowDeptSelector(false);
                   setShowCoDeptSelector(false);
+                  setShowExecDeptSelector(false);
                   setShowCategorySelector(false);
                   setIsAddingCategory(false);
                   setNewCategoryName('');

@@ -418,10 +418,17 @@ export const TaskSupervisionDetail: React.FC<TaskSupervisionDetailProps> = ({ on
                         </button>
                         <button 
                           onClick={() => handleOpenModal('audit', phase)}
+                          className="px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded transition-colors" 
+                          title="主办部门复核操作"
+                        >
+                          部门审核
+                        </button>
+                        <button 
+                          onClick={() => handleOpenModal('audit', phase)}
                           className="px-2.5 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors" 
                           title="院办督办操作"
                         >
-                          审核
+                          督办审核
                         </button>
                         <button 
                           onClick={() => handleOpenModal('review', phase)}

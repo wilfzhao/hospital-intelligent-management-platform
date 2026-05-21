@@ -6,6 +6,8 @@ export const SupervisionConfig: React.FC = () => {
   const [deptSource, setDeptSource] = useState<'platform' | 'data_dev'>('platform');
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [selectedLaggingUsers, setSelectedLaggingUsers] = useState<string[]>([]);
+  const [showLaggingDropdown, setShowLaggingDropdown] = useState(false);
   const [configMode, setConfigMode] = useState<'unified' | 'custom' | 'none'>('unified');
 
   const [leaders, setLeaders] = useState([
@@ -30,6 +32,12 @@ export const SupervisionConfig: React.FC = () => {
   const toggleRole = (role: string) => {
     setSelectedRoles(prev => 
       prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const toggleLaggingUser = (userName: string) => {
+    setSelectedLaggingUsers(prev => 
+      prev.includes(userName) ? prev.filter(u => u !== userName) : [...prev, userName]
     );
   };
 
@@ -195,6 +203,60 @@ export const SupervisionConfig: React.FC = () => {
           </p>
         </div>
 
+        {/* Project Seriously Lagging Notification Recipients Configuration */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            项目严重滞后通知接收用户
+          </h2>
+          <div className="relative max-w-xl">
+            <div 
+              className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 flex items-center justify-between cursor-pointer hover:border-gray-300 transition-all shadow-sm"
+              onClick={() => setShowLaggingDropdown(!showLaggingDropdown)}
+            >
+              <div className="flex flex-wrap gap-2 items-center">
+                <Users size={16} className="text-orange-500 mr-2 shrink-0" />
+                {selectedLaggingUsers.length === 0 ? (
+                  <span className="text-gray-400 text-sm">选择需要接收通知的用户</span>
+                ) : (
+                  selectedLaggingUsers.map(userName => (
+                    <span key={userName} className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 text-orange-700 text-xs font-medium rounded-md border border-orange-100">
+                      {userName}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLaggingUser(userName);
+                        }}
+                        className="hover:text-orange-900"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+              <ChevronDown size={18} className={`text-gray-400 transition-transform ${showLaggingDropdown ? 'rotate-180' : ''}`} />
+            </div>
+
+            {showLaggingDropdown && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowLaggingDropdown(false)} />
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-lg shadow-xl z-20 py-1 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto">
+                  {leaders.map(leader => (
+                    <div 
+                      key={leader.id}
+                      className="px-4 py-2 hover:bg-gray-50 flex items-center justify-between cursor-pointer group transition-colors"
+                      onClick={() => toggleLaggingUser(leader.name)}
+                    >
+                      <span className={`text-sm ${selectedLaggingUsers.includes(leader.name) ? 'text-orange-600 font-medium' : 'text-gray-700'}`}>{leader.name}</span>
+                      {selectedLaggingUsers.includes(leader.name) && <Check size={16} className="text-orange-600" />}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Responsible Leader Sorting Configuration */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -232,7 +294,7 @@ export const SupervisionConfig: React.FC = () => {
           </div>
           <p className="mt-4 text-xs text-gray-400 flex items-center gap-1">
             <AlertCircle size={12} />
-            此排序将影响“党委决策督办平台”中责任领导在列表和筛选器中的展示顺序
+            此排序将影响“党委督办管理系统”中责任领导在列表和筛选器中的展示顺序
           </p>
         </div>
 

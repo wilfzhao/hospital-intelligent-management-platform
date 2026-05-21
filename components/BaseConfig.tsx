@@ -15,7 +15,7 @@ const BaseConfig: React.FC = () => {
     { id: 'review', label: '医院等级评审' },
     { id: 'performance', label: '公立医院绩效监测' },
     { id: 'mobile', label: '移动运营' },
-    { id: 'supervision', label: '党委决策督办平台' },
+    { id: 'supervision', label: '党委督办管理系统' },
   ];
 
   return (

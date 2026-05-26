@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Eye, Copy, X, Check, Code } from 'lucide-react';
 
 type DimensionType = '主维度' | '内嵌维度';
 type MappingType = '编码映射' | '直接关联' | null;
@@ -47,9 +47,34 @@ export const CreateBaseIndicator: React.FC<CreateBaseIndicatorProps> = ({ onBack
   const [resultTable, setResultTable] = useState('');
   const [detailTable, setDetailTable] = useState('');
   const [selectedDims, setSelectedDims] = useState<string[]>([]);
+  const [filterText, setFilterText] = useState('');
+  const [showSqlPreview, setShowSqlPreview] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const activeTableName = resultTable || detailTable;
   const availableDims = activeTableName ? (MOCK_TABLES.find(t => t.name === activeTableName)?.dimensions || []) : [];
+
+  const handleCopySql = (sql: string) => {
+    navigator.clipboard.writeText(sql);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const generatedSql = () => {
+    const tableName = resultTable || detailTable || '[未选择表]';
+    const dims = selectedDims.length > 0 
+      ? selectedDims.map(d => {
+          const dim = availableDims.find(ad => ad.name === d);
+          return dim ? dim.factField : d;
+        }).join(',\n    ')
+      : '*';
+    
+    let sql = `SELECT\n    ${dims}\nFROM ${tableName}`;
+    if (filterText) {
+      sql += `\nWHERE ${filterText}`;
+    }
+    return sql;
+  };
 
   const handleResultTableChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -376,9 +401,35 @@ export const CreateBaseIndicator: React.FC<CreateBaseIndicatorProps> = ({ onBack
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">技术口径</label>
-                  <textarea rows={3} className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none"></textarea>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">筛选条件</label>
+                      <button 
+                        onClick={() => setShowSqlPreview(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-100 bg-blue-50 text-blue-600 rounded-md text-xs font-semibold hover:bg-blue-100 transition-colors"
+                      >
+                        <Eye size={13} />
+                        SQL 预览
+                      </button>
+                    </div>
+                    <textarea 
+                      rows={2} 
+                      placeholder="请输入 SQL 过滤条件 (例如：status = '1' AND type = 'A')" 
+                      value={filterText}
+                      onChange={(e) => setFilterText(e.target.value)}
+                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">技术口径</label>
+                    <textarea 
+                      rows={3} 
+                      placeholder="在此描述技术实现逻辑或口径细节"
+                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow resize-none"
+                    ></textarea>
+                  </div>
                 </div>
 
                 <div>
@@ -451,6 +502,56 @@ export const CreateBaseIndicator: React.FC<CreateBaseIndicatorProps> = ({ onBack
           取消
         </button>
       </div>
+
+      {/* SQL Preview Modal */}
+      {showSqlPreview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSqlPreview(false)}></div>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative z-10 flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <Code size={18} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">SQL 预览</h3>
+              </div>
+              <button 
+                onClick={() => setShowSqlPreview(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="relative group">
+                <pre className="bg-gray-900 text-blue-300 p-6 rounded-xl font-mono text-sm leading-relaxed overflow-x-auto selection:bg-blue-500/30">
+                  {generatedSql()}
+                </pre>
+                <button 
+                  onClick={() => handleCopySql(generatedSql())}
+                  className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    isCopied 
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' 
+                      : 'bg-white/10 text-white hover:bg-white/20 backdrop-blur-md'
+                  }`}
+                >
+                  {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                  {isCopied ? '已复制' : '复制代码'}
+                </button>
+              </div>
+              {/* Removed advisory text */}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+              <button 
+                onClick={() => setShowSqlPreview(false)}
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200"
+              >
+                关闭预览
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

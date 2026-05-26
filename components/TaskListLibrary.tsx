@@ -362,20 +362,18 @@ export const TaskListLibrary: React.FC = () => {
                     {getStatusBadge(item.status)}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-3">
                       <button 
                         onClick={() => setEditingTask({ ...item })}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors" 
-                        title="编辑"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                       >
-                        <Edit size={16} />
+                        编辑
                       </button>
                       <button 
                         onClick={() => setTasks(tasks.filter(t => t.id !== item.id))}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
-                        title="删除"
+                        className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
                       >
-                        <Trash2 size={16} />
+                        删除
                       </button>
                     </div>
                   </td>

@@ -60,6 +60,16 @@ export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
     label: '项目清单',
     icon: <ListTodo size={20} />,
   },
+  {
+    id: 'discipline_construction',
+    label: '学科建设专题',
+    icon: <Target size={20} />,
+    expanded: false,
+    subItems: [
+      { id: 'discipline_overview', label: '综合概览', icon: null },
+      { id: 'discipline_ledger', label: '议定事项台账', icon: null }
+    ]
+  },
 ];
 
 export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [

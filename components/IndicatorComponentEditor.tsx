@@ -226,6 +226,7 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
   const [chartType, setChartType] = useState<'bar' | 'horizontal-bar' | 'line' | 'pie' | 'table'>('bar');
   const [configTab, setConfigTab] = useState<string>('layout');
   const [showSerialNumber, setShowSerialNumber] = useState(false);
+  const [tableStructure, setTableStructure] = useState<'flat' | 'tree'>('flat');
 
   // Global Filter states
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
@@ -812,6 +813,24 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
                                 className={`w-8 h-4 rounded-full relative cursor-pointer transition-colors ${showSerialNumber ? 'bg-blue-600' : 'bg-gray-200'}`}
                               >
                                 <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${showSerialNumber ? 'right-0.5' : 'left-0.5'}`}></div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-600">表格结构</span>
+                              <div className="flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg">
+                                <button 
+                                  onClick={() => setTableStructure('flat')}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${tableStructure === 'flat' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                  平面
+                                </button>
+                                <button 
+                                  onClick={() => setTableStructure('tree')}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${tableStructure === 'tree' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                  树形
+                                </button>
                               </div>
                             </div>
                           </div>

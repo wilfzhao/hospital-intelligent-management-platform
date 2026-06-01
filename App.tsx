@@ -14,6 +14,8 @@ import { AssociateIndicators } from './components/AssociateIndicators';
 import { FeaturedPlanConfig } from './components/FeaturedPlanConfig';
 import { TaskListLibrary } from './components/TaskListLibrary';
 import { SupervisionDashboard } from './components/SupervisionDashboard';
+import { DisciplineOverview } from './components/DisciplineOverview';
+import { DisciplineLedger } from './components/DisciplineLedger';
 import { ScoringRules } from './components/ScoringRules';
 import ReviewSummary from './components/ReviewSummary';
 import IndicatorAnalysis from './components/IndicatorAnalysis';
@@ -126,6 +128,10 @@ const App: React.FC = () => {
         return <TaskListLibrary />;
       case 'supervision_dashboard':
         return <SupervisionDashboard />;
+      case 'discipline_overview':
+        return <DisciplineOverview />;
+      case 'discipline_ledger':
+        return <DisciplineLedger />;
 
       // --- Operational Decision Center ---
       case 'odc_dashboard':

@@ -18,6 +18,7 @@ import { DisciplineOverview } from './components/DisciplineOverview';
 import { DisciplineLedger } from './components/DisciplineLedger';
 import { ScoringRules } from './components/ScoringRules';
 import ReviewSummary from './components/ReviewSummary';
+import { ResourceConfigIndicators } from './components/ResourceConfigIndicators';
 import IndicatorAnalysis from './components/IndicatorAnalysis';
 import IndicatorAnalysisEditor from './components/IndicatorAnalysisEditor';
 import { IndicatorAnalysisComponents } from './components/IndicatorAnalysisComponents';
@@ -180,9 +181,10 @@ const App: React.FC = () => {
         return <ReportCenter onOpenEditor={() => setCurrentView('report_editor')} />;
       case 'review_summary':
         return <ReviewSummary />;
+      case 'resource_config':
+        return <ResourceConfigIndicators />;
 
       case 'review_overview':
-      case 'resource_config':
       case 'medical_quality':
       case 'key_specialty':
       case 'single_disease':

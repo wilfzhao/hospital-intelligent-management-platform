@@ -1,8 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  Search, FileText, Target, ChevronRight, Plus, Upload, X, Calendar as CalendarIcon, Info
+  Search, Target, ChevronRight, Plus, Upload, X, Calendar as CalendarIcon, AlertCircle
 } from 'lucide-react';
+import { DisciplineLedgerDetail } from './DisciplineLedgerDetail';
 
 interface LedgerItem {
   id: string;
@@ -17,7 +18,18 @@ interface LedgerItem {
   lastUpdated: string;
 }
 
-const YEARS = ['2025-2026年度', '2026-2027年度', '2027-2028年度', '2028-2029年度', '2029-2030年度', '2030-2031年度', '2031-2032年度'];
+const YEARS = [
+  '2026-2027年度', 
+  '2027-2028年度', 
+  '2028-2029年度', 
+  '2029-2030年度', 
+  '2030-2031年度', 
+  '2031-2032年度',
+  '2032-2033年度',
+  '2033-2034年度',
+  '2034-2035年度',
+  '2035-2036年度'
+];
 const DISCIPLINES = ['心血管内科', '神经外科', '呼吸与危重症医学科', '康复医学科', '生物信息医学中心', '消化内科', '肾内科', '妇产科', '儿科'];
 const REPORTERS = ['张志诚', '林德华', '王海滨', '陈静云', '李明远', '赵继武', '孙博才', '钱晓芳'];
 
@@ -81,7 +93,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     progress: '7/8',
     overallStatus: '待召开',
     lastUpdated: '2026-05-20'
-  },
+  }
 ];
 
 export const DisciplineLedger: React.FC = () => {
@@ -89,6 +101,18 @@ export const DisciplineLedger: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('全部');
   const [statusFilter, setStatusFilter] = useState('全部');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<LedgerItem | null>(null);
+  const [issueError, setIssueError] = useState('');
+
+  const stats = useMemo(() => {
+    const totalMatters = MOCK_LEDGER_DATA.reduce((acc, item) => acc + item.agreedMattersCount, 0);
+    const completedMatters = MOCK_LEDGER_DATA.reduce((acc, item) => {
+      const [done] = item.progress.split('/').map(Number);
+      return acc + done;
+    }, 0);
+    const percentage = totalMatters > 0 ? ((completedMatters / totalMatters) * 100).toFixed(1) : '0';
+    return { totalMatters, completedMatters, percentage };
+  }, []);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -108,7 +132,7 @@ export const DisciplineLedger: React.FC = () => {
   const handleOpenAddModal = () => {
     const maxIssue = Math.max(...MOCK_LEDGER_DATA.map(item => item.issue), 0);
     setFormData({
-      year: YEARS[1], // Default to 2026-2027
+      year: YEARS[0], 
       issue: (maxIssue + 1).toString(),
       meetingDate: new Date().toISOString().split('T')[0],
       category: '高峰学科',
@@ -120,7 +144,17 @@ export const DisciplineLedger: React.FC = () => {
       corePainPoints: '',
       leadershipOpinions: ''
     });
+    setIssueError('');
     setShowAddModal(true);
+  };
+
+  const handleIssueChange = (val: string) => {
+    setFormData({ ...formData, issue: val });
+    if (MOCK_LEDGER_DATA.some(item => item.issue.toString() === val)) {
+      setIssueError('该期数已存在，请勿重复输入');
+    } else {
+      setIssueError('');
+    }
   };
 
   const filteredData = useMemo(() => {
@@ -162,6 +196,10 @@ export const DisciplineLedger: React.FC = () => {
     }
   };
 
+  if (selectedItem) {
+    return <DisciplineLedgerDetail item={selectedItem} onBack={() => setSelectedItem(null)} />;
+  }
+
   return (
     <div className="flex-1 flex flex-col gap-5 overflow-hidden">
       {/* Header & Stats Summary */}
@@ -171,10 +209,8 @@ export const DisciplineLedger: React.FC = () => {
             <Target size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">议定事项台账</h1>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">会议跟踪台账</h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-gray-400 font-medium tracking-tight">学科建设会议决策执行跟踪系统</span>
-              <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
               <span className="text-xs text-gray-500 font-bold">数据更新: 2026-05-28</span>
             </div>
           </div>
@@ -184,15 +220,15 @@ export const DisciplineLedger: React.FC = () => {
             <div className="flex bg-white border border-gray-100 rounded-xl p-1 shadow-sm overflow-hidden mr-2">
                 <div className="px-4 py-2 flex flex-col items-center border-r border-gray-50">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">议定合计数</span>
-                    <span className="text-sm font-black text-gray-900">41 <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
+                    <span className="text-sm font-black text-gray-900">{stats.totalMatters} <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
                 </div>
                 <div className="px-4 py-2 flex flex-col items-center border-r border-gray-50">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">已完成</span>
-                    <span className="text-sm font-black text-emerald-600">19 <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
+                    <span className="text-sm font-black text-emerald-600">{stats.completedMatters} <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
                 </div>
                 <div className="px-4 py-2 flex flex-col items-center">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">总体进度</span>
-                    <span className="text-sm font-black text-blue-600">46.3%</span>
+                    <span className="text-sm font-black text-blue-600">{stats.percentage}%</span>
                 </div>
             </div>
             <div className="flex items-center gap-2">
@@ -201,15 +237,11 @@ export const DisciplineLedger: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
               >
                   <Plus size={16} />
-                  新建事项
+                  新建
               </button>
               <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95">
                   <Upload size={16} className="text-gray-400" />
-                  导入事项
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95">
-                  <FileText size={16} className="text-gray-400" />
-                  导出台账
+                  导入
               </button>
             </div>
         </div>
@@ -260,10 +292,6 @@ export const DisciplineLedger: React.FC = () => {
             </select>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 text-gray-400">
-            <span className="text-xs font-medium">筛选结果: <span className="text-indigo-600 font-bold ml-1">{filteredData.length}</span> / {MOCK_LEDGER_DATA.length}</span>
-        </div>
       </div>
 
       {/* Main Table */}
@@ -303,9 +331,12 @@ export const DisciplineLedger: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    <div className="text-sm font-bold text-gray-900 leading-tight">
+                    <button 
+                      onClick={() => setSelectedItem(row)}
+                      className="text-sm font-bold text-indigo-600 hover:text-indigo-800 leading-tight hover:underline transition-all cursor-pointer text-left"
+                    >
                       {row.reportedDiscipline}
-                    </div>
+                    </button>
                   </td>
                   <td className="px-6 py-5 text-center">
                     <span className="text-sm font-medium text-gray-700">{row.reporter}</span>
@@ -357,22 +388,7 @@ export const DisciplineLedger: React.FC = () => {
           )}
         </div>
 
-        {/* Footer info */}
-        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    正常指标项: 12
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                    偏差预警项: 3
-                </div>
-            </div>
-            <div className="text-[10px] font-bold text-gray-300 tracking-widest uppercase">
-                Smart Hospital Administrative Platform
-            </div>
-        </div>
+
       </div>
       {/* New Matter Modal */}
       {showAddModal && (
@@ -386,7 +402,6 @@ export const DisciplineLedger: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">新建议定事项</h3>
-                  <p className="text-xs text-gray-400 font-medium">录入学科建设会议最新决策事项</p>
                 </div>
               </div>
               <button 
@@ -422,9 +437,15 @@ export const DisciplineLedger: React.FC = () => {
                         type="number" 
                         placeholder="请输入期数"
                         value={formData.issue}
-                        onChange={(e) => setFormData({...formData, issue: e.target.value})}
-                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-gray-400 font-mono"
+                        onChange={(e) => handleIssueChange(e.target.value)}
+                        className={`w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 focus:ring-2 outline-none transition-all placeholder:text-gray-400 font-mono ${issueError ? 'ring-2 ring-rose-500/20' : 'focus:ring-indigo-500/20'}`}
                       />
+                      {issueError && (
+                        <div className="flex items-center gap-1 mt-1 text-[10px] font-bold text-rose-500">
+                          <AlertCircle size={10} />
+                          {issueError}
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">会议日期</label>
@@ -551,11 +572,7 @@ export const DisciplineLedger: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-8 py-5 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-gray-400">
-                <Info size={14} />
-                <span className="text-[11px] font-bold uppercase tracking-widest">表单项将实时保存至草稿箱</span>
-              </div>
+            <div className="px-8 py-5 border-t border-gray-50 bg-gray-50/50 flex items-center justify-end">
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setShowAddModal(false)}
@@ -566,7 +583,7 @@ export const DisciplineLedger: React.FC = () => {
                 <button 
                   className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
                 >
-                  提交事项
+                  提交
                 </button>
               </div>
             </div>

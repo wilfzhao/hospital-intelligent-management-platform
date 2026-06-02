@@ -42,11 +42,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     label: '指标权限',
     icon: <BarChart size={20} />,
   },
-  {
-    id: 'report_template',
-    label: '报告模版',
-    icon: <Layout size={20} />,
-  },
 ];
 
 export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
@@ -67,7 +62,7 @@ export const SUPERVISION_SIDEBAR_ITEMS: SidebarItem[] = [
     expanded: false,
     subItems: [
       { id: 'discipline_overview', label: '综合概览', icon: null },
-      { id: 'discipline_ledger', label: '议定事项台账', icon: null }
+      { id: 'discipline_ledger', label: '会议跟踪台账', icon: null }
     ]
   },
 ];
@@ -108,6 +103,11 @@ export const INDICATOR_MANAGEMENT_SIDEBAR_ITEMS: SidebarItem[] = [
         id: 'indicator_analysis_system',
         label: '分析体系',
         icon: <BarChart size={20} />,
+      },
+      {
+        id: 'report_template',
+        label: '报告模版',
+        icon: <Layout size={20} />,
       }
     ]
   },

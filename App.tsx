@@ -161,7 +161,6 @@ const App: React.FC = () => {
         return (
           <ReportEditor 
             onBack={() => setCurrentView('report_template')} 
-            analysisSystems={analysisSystems}
           />
         );
       case 'indicator_auth':

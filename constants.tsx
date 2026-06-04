@@ -343,6 +343,14 @@ export const DEPARTMENTS: Department[] = [
   }
 ];
 
+export const MOCK_ANALYSIS_COMPONENTS = [
+  { id: 'comp-1', title: '门急诊人次月度汇总表', type: 'table', author: '张医生', time: '2024-03-20', lastModified: '2024-03-20 10:23:45' },
+  { id: 'comp-2', title: '手术室利用率效能表', type: 'table', author: '李科长', time: '2024-03-21', lastModified: '2024-03-21 15:12:30' },
+  { id: 'comp-3', title: '科室满意度排行报表', type: 'table', author: '王主任', time: '2024-03-21', lastModified: '2024-03-21 09:45:12' },
+  { id: 'comp-4', title: '全院平均住院日分析', type: 'bar', author: '张医生', time: '2024-03-22', lastModified: '2024-03-22 14:30:00' },
+  { id: 'comp-5', title: '财务收入构成趋势图', type: 'line', author: '刘会计', time: '2024-03-23', lastModified: '2024-03-23 11:20:00' },
+];
+
 export const MOCK_ANALYSIS_SYSTEMS: AnalysisSystem[] = [
   { id: '1', name: '出院手术患者分析', url: 'http://zjeuzlikyp.ru/wgtmveywft' },
   { id: '2', name: '次均药费分析', url: 'http://wrpbxx.ag/wymmpfg' },

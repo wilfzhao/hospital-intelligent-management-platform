@@ -19,6 +19,7 @@ import {
   Hash
 } from 'lucide-react';
 import AnalysisTableWidget from './AnalysisTableWidget';
+import { MOCK_ANALYSIS_COMPONENTS } from '../constants';
 
 interface FilterCondition {
   id: string;
@@ -28,13 +29,7 @@ interface FilterCondition {
   type: 'string' | 'number' | 'date';
 }
 
-const MOCK_EXISTING_COMPONENTS = [
-  { id: 'comp-1', title: '门急诊人次月度汇总表', type: 'table', author: '张医生', time: '2024-03-20' },
-  { id: 'comp-2', title: '手术室利用率效能表', type: 'table', author: '李科长', time: '2024-03-21' },
-  { id: 'comp-3', title: '科室满意度排行报表', type: 'table', author: '王主任', time: '2024-03-21' },
-  { id: 'comp-4', title: '全院平均住院日分析', type: 'bar', author: '张医生', time: '2024-03-22' },
-  { id: 'comp-5', title: '财务收入构成趋势图', type: 'line', author: '刘会计', time: '2024-03-23' },
-];
+const MOCK_EXISTING_COMPONENTS = MOCK_ANALYSIS_COMPONENTS;
 
 interface EditorProps {
   onBack: () => void;

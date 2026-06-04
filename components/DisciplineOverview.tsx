@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, AreaChart, Area
+  PieChart, Pie, Cell
 } from 'recharts';
 import { 
   TrendingUp, CheckCircle2, Clock, AlertTriangle, 
@@ -27,15 +27,6 @@ const DEPT_WORKLOAD_DATA = [
   { name: '信息中心', tasks: 28, completed: 15, risk: 5 },
   { name: '财务处', tasks: 12, completed: 12, risk: 0 },
   { name: '后勤保障处', tasks: 10, completed: 8, risk: 1 },
-];
-
-const MONTHLY_TREND_DATA = [
-  { name: '1月', total: 45, completed: 38 },
-  { name: '2月', total: 52, completed: 42 },
-  { name: '3月', total: 48, completed: 40 },
-  { name: '4月', total: 60, completed: 45 },
-  { name: '5月', total: 65, completed: 52 },
-  { name: '6月', total: 72, completed: 58 },
 ];
 
 const CATEGORY_STATS = [
@@ -70,12 +61,11 @@ export const DisciplineOverview: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">综合执行概览</h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Comprehensive Execution Dashboard</p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm">
            <Calendar size={14} className="text-gray-400" />
-           <span className="text-xs font-bold text-gray-600">统计周期: 2026年度 (截至今日)</span>
+           <span className="text-xs font-bold text-gray-600">统计周期: 2026-2027年度</span>
         </div>
       </div>
 
@@ -147,141 +137,93 @@ export const DisciplineOverview: React.FC = () => {
         ))}
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Status Distribution */}
-        <div className="col-span-1 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">办结状态分布</h3>
-            <span className="text-[10px] font-bold text-gray-400">STATUS DIST.</span>
-          </div>
-          <div className="flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={MOCK_SUMMARY_DATA}
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {MOCK_SUMMARY_DATA.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  itemStyle={{ fontWeight: '800', fontSize: '12px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-            {MOCK_SUMMARY_DATA.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                <span className="text-[11px] font-bold text-gray-500 whitespace-nowrap">{item.name}</span>
-                <span className="text-[11px] font-black text-gray-900 ml-auto">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Task Completion Trend */}
-        <div className="col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">年度事项办结趋势</h3>
-            <div className="flex items-center gap-3">
-               <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-indigo-200"></div>
-                  <span className="text-[10px] font-bold text-gray-400">总事项</span>
-               </div>
-               <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
-                  <span className="text-[10px] font-bold text-gray-400">已完结</span>
-               </div>
+      {/* Main Charts Grid Area */}
+      <div className="grid grid-cols-5 gap-6">
+        {/* Left Side: Status and Workload */}
+        <div className="col-span-3 space-y-6">
+          {/* Status Distribution - Widened */}
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">办结状态分布</h3>
+            </div>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={MOCK_SUMMARY_DATA}
+                    innerRadius={80}
+                    outerRadius={110}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {MOCK_SUMMARY_DATA.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    itemStyle={{ fontWeight: '800', fontSize: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-3 gap-y-2 gap-x-4">
+              {MOCK_SUMMARY_DATA.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-[11px] font-bold text-gray-500 whitespace-nowrap">{item.name}</span>
+                  <span className="text-[11px] font-black text-gray-900 ml-auto">{item.value}</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MONTHLY_TREND_DATA}>
-                <defs>
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
-                />
-                <Tooltip 
-                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Area type="monotone" dataKey="total" stroke="#e2e8f0" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={2} />
-                <Area type="monotone" dataKey="completed" stroke="#4f46e5" fillOpacity={0} strokeWidth={3} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-5 gap-6">
-        {/* Departmental Workload */}
-        <div className="col-span-3 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">各归口部门事项分布</h3>
-            <span className="text-[10px] font-bold text-gray-400">DEPT WORKLOAD</span>
-          </div>
-          <div className="flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={DEPT_WORKLOAD_DATA} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }}
-                  width={80}
-                />
-                <Tooltip 
-                   cursor={{ fill: '#f8fafc' }}
-                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="completed" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} barSize={20} />
-                <Bar dataKey="tasks" stackId="a" fill="#e2e8f0" radius={[0, 4, 4, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Departmental Workload */}
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">各归口部门事项分布</h3>
+            </div>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={DEPT_WORKLOAD_DATA} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }}
+                    width={80}
+                  />
+                  <Tooltip 
+                     cursor={{ fill: '#f8fafc' }}
+                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="completed" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} barSize={20} />
+                  <Bar dataKey="tasks" stackId="a" fill="#e2e8f0" radius={[0, 4, 4, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
-        {/* Warning Items Table */}
-        <div className="col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
-          <div className="flex items-center justify-between">
+        {/* Right Side: Tall Warning Section */}
+        <div className="col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[824px]">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">高风险/异常事项速览</h3>
             <div className="flex items-center gap-1 text-rose-500">
                <AlertTriangle size={14} />
-               <span className="text-[10px] font-black uppercase tracking-widest">Priority Warning</span>
             </div>
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-2">
-            {WARNING_ITEMS.map((item) => (
-              <div key={item.id} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:bg-white hover:border-rose-100 transition-all cursor-pointer">
+          <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
+            {/* Added more items for a fuller list since height increased */}
+            {[...WARNING_ITEMS, ...WARNING_ITEMS, ...WARNING_ITEMS].map((item, idx) => (
+              <div key={`${item.id}-${idx}`} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:bg-white hover:border-rose-100 transition-all cursor-pointer">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <h4 className="text-xs font-black text-gray-900 leading-relaxed flex-1 group-hover:text-rose-600 transition-colors">
                     {item.matter}
+                    {idx > 2 && <span className="ml-2 text-[10px] text-gray-300 font-normal">#复制项-{idx}</span>}
                   </h4>
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${item.status === '遇阻' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
                     {item.status}
@@ -303,8 +245,8 @@ export const DisciplineOverview: React.FC = () => {
               </div>
             ))}
           </div>
-          <button className="w-full py-2 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest rounded-xl border border-gray-100 hover:bg-white hover:text-indigo-600 hover:border-indigo-100 transition-all">
-            查看更多预警事项 View All
+          <button className="w-full py-3 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest rounded-xl border border-gray-100 hover:bg-white hover:text-indigo-600 hover:border-indigo-100 transition-all mt-auto shadow-sm">
+            查看更多预警事项
           </button>
         </div>
       </div>
@@ -313,7 +255,6 @@ export const DisciplineOverview: React.FC = () => {
       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">各学科类别执行表现</h3>
-          <span className="text-[10px] font-bold text-gray-400">DISCIPLINE CATEGORY ANALYSIS</span>
         </div>
         <div className="grid grid-cols-4 gap-6">
           {CATEGORY_STATS.map((item, idx) => (

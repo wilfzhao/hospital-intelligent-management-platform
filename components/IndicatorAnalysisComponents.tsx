@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { MOCK_ANALYSIS_COMPONENTS } from '../constants';
 
 interface ComponentItem {
   id: string;
@@ -7,11 +8,11 @@ interface ComponentItem {
   lastModified: string;
 }
 
-const MOCK_COMPONENTS: ComponentItem[] = [
-  { id: '1', name: '门急诊收入分析组件', lastModified: '2026-04-08 10:23:45' },
-  { id: '2', name: '手术量趋势分析组件', lastModified: '2026-04-07 15:12:30' },
-  { id: '3', name: '病床使用率组件', lastModified: '2026-04-06 09:45:12' },
-];
+const MOCK_COMPONENTS: ComponentItem[] = MOCK_ANALYSIS_COMPONENTS.map(c => ({
+  id: c.id,
+  name: c.title,
+  lastModified: c.lastModified
+}));
 
 interface IndicatorAnalysisComponentsProps {
   onAddComponent: () => void;

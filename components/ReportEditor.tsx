@@ -8,10 +8,10 @@ import {
   Database, FileCode, Activity,
   Send, Undo, Redo, Wand2, Clock, Globe, File as FileIcon, CalendarDays,
   ArrowDownToLine, ArrowRightToLine, Columns, Rows, Merge, Split,
-  Loader2, Check
+  Loader2, Check, BarChart3, LineChart
 } from 'lucide-react';
-import { PLANS } from '../constants';
-import { AnalysisSystem } from '../types';
+import { PLANS, MOCK_ANALYSIS_COMPONENTS } from '../constants';
+import { } from '../types';
 
 // TipTap Imports
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
@@ -39,7 +39,6 @@ import TableHeader from '@tiptap/extension-table-header';
 
 interface ReportEditorProps {
   onBack: () => void;
-  analysisSystems: AnalysisSystem[];
 }
 
 interface ChartSettings {
@@ -644,7 +643,7 @@ const ChartSettingsModal: React.FC<ChartSettingsModalProps> = ({ isOpen, onClose
 // 5. MAIN EDITOR COMPONENT
 // ----------------------------------------------------------------------
 
-const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) => {
+const ReportEditor: React.FC<ReportEditorProps> = ({ onBack }) => {
   const [activeSidebarTab, setActiveSidebarTab] = useState<'indicator' | 'analysis'>('indicator');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['p4']));
   const [timeParam, setTimeParam] = useState<string | null>(null);
@@ -875,29 +874,7 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) 
                                         </div>
                                      </div>
   
-                                     {/* Item 4: Time Chart */}
-                                     <div 
-                                       className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs mt-1.5 border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
-                                       onDoubleClick={handleInsertChart}
-                                       title="双击插入图表"
-                                     >
-                                        <div className="flex items-center gap-2">
-                                           <BarChartIcon size={14} className="text-purple-500" />
-                                           <span className="text-gray-700 font-medium group-hover/item:text-blue-700">时间分析趋势图</span>
-                                        </div>
-                                     </div>
-  
-                                     {/* Item 5: Dept Chart */}
-                                     <div 
-                                       className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-blue-50 cursor-pointer group/item text-xs border border-transparent hover:border-blue-100 hover:shadow-sm transition-all select-none"
-                                       onDoubleClick={handleInsertChart}
-                                       title="双击插入图表"
-                                     >
-                                        <div className="flex items-center gap-2">
-                                           <BarChartIcon size={14} className="text-purple-500" />
-                                           <span className="text-gray-700 font-medium group-hover/item:text-blue-700">科室分析趋势图</span>
-                                        </div>
-                                     </div>
+
   
                                  </div>
                                )}
@@ -908,21 +885,29 @@ const ReportEditor: React.FC<ReportEditorProps> = ({ onBack, analysisSystems }) 
                ))
              ) : (
                <div className="space-y-1">
-                 {analysisSystems.map((system) => (
+                 {MOCK_ANALYSIS_COMPONENTS.map((comp) => (
                    <div 
-                     key={system.id} 
-                     className="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer group transition-colors border border-transparent hover:border-blue-100"
+                     key={comp.id} 
+                     className="flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50/50 rounded-lg cursor-pointer group transition-colors border border-transparent hover:border-indigo-100"
                      onClick={handleInsertChart}
-                     title="点击插入图表"
+                     title="点击插入组件"
                    >
-                     <div className="w-8 h-8 rounded bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:text-blue-500 transition-colors">
-                       <Activity size={16} />
+                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors shadow-sm ${
+                       comp.type === 'table' ? 'bg-blue-50 text-blue-600' : 
+                       comp.type === 'bar' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                     }`}>
+                        {comp.type === 'table' ? <TableIcon size={16} /> : 
+                         comp.type === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
                      </div>
                      <div className="flex-1 min-w-0">
-                       <div className="text-sm text-gray-700 font-medium truncate group-hover:text-blue-700">{system.name}</div>
-                       <div className="text-[10px] text-gray-400 truncate">分析组件</div>
+                       <div className="text-[13px] text-gray-700 font-bold truncate group-hover:text-indigo-700">{comp.title}</div>
+                       <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-gray-400 font-medium">{comp.author}</span>
+                          <span className="w-1 h-1 rounded-full bg-gray-200"></span>
+                          <span className="text-[10px] text-gray-400 font-mono">{comp.time}</span>
+                       </div>
                      </div>
-                     <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
+                     <ChevronRight size={14} className="text-gray-300 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all" />
                    </div>
                  ))}
                </div>

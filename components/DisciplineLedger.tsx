@@ -1,13 +1,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  Search, Target, Plus, Upload, X, Calendar as CalendarIcon, AlertCircle
+  Search, Plus, Upload, X, Calendar as CalendarIcon, AlertCircle
 } from 'lucide-react';
 import { DisciplineLedgerDetail } from './DisciplineLedgerDetail';
 
 interface LedgerItem {
   id: string;
   issue: number;
+  year: string;
   meetingDate: string;
   reportedDiscipline: string;
   reporter: string;
@@ -36,6 +37,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   {
     id: '1',
     issue: 12,
+    year: '2026-2027年度',
     meetingDate: '2026-05-15',
     reportedDiscipline: '心血管内科',
     reporter: '张志诚',
@@ -47,6 +49,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   {
     id: '2',
     issue: 12,
+    year: '2026-2027年度',
     meetingDate: '2026-05-15',
     reportedDiscipline: '神经外科',
     reporter: '林德华',
@@ -58,6 +61,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   {
     id: '3',
     issue: 11,
+    year: '2026-2027年度',
     meetingDate: '2026-04-20',
     reportedDiscipline: '呼吸与危重症医学科',
     reporter: '王海滨',
@@ -69,6 +73,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   {
     id: '4',
     issue: 11,
+    year: '2026-2027年度',
     meetingDate: '2026-04-20',
     reportedDiscipline: '康复医学科',
     reporter: '陈静云',
@@ -80,6 +85,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   {
     id: '5',
     issue: 10,
+    year: '2026-2027年度',
     meetingDate: '2026-03-15',
     reportedDiscipline: '生物信息医学中心',
     reporter: '李明远',
@@ -92,20 +98,11 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
 
 export const DisciplineLedger: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedYear, setSelectedYear] = useState(YEARS[0]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LedgerItem | null>(null);
   const [issueError, setIssueError] = useState('');
 
-  const stats = useMemo(() => {
-    const totalMatters = MOCK_LEDGER_DATA.reduce((acc, item) => acc + item.agreedMattersCount, 0);
-    const completedMatters = MOCK_LEDGER_DATA.reduce((acc, item) => {
-      const [done] = item.progress.split('/').map(Number);
-      return acc + done;
-    }, 0);
-    const percentage = totalMatters > 0 ? ((completedMatters / totalMatters) * 100).toFixed(1) : '0';
-    return { totalMatters, completedMatters, percentage };
-  }, []);
-  
   // Form State
   const [formData, setFormData] = useState({
     year: YEARS[0],
@@ -143,13 +140,14 @@ export const DisciplineLedger: React.FC = () => {
 
   const filteredData = useMemo(() => {
     return [...MOCK_LEDGER_DATA]
-      .sort((a, b) => a.issue - b.issue)
       .filter(item => {
         const matchSearch = item.reportedDiscipline.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             item.reporter.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchSearch;
-      });
-  }, [searchTerm]);
+        const matchYear = !selectedYear || item.year === selectedYear;
+        return matchSearch && matchYear;
+      })
+      .sort((a, b) => b.issue - a.issue);
+  }, [searchTerm, selectedYear]);
 
   if (selectedItem) {
     return <DisciplineLedgerDetail item={selectedItem} onBack={() => setSelectedItem(null)} />;
@@ -159,33 +157,10 @@ export const DisciplineLedger: React.FC = () => {
     <div className="flex-1 flex flex-col gap-5 overflow-hidden">
       {/* Header & Stats Summary */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-white border border-gray-100 rounded-xl shadow-sm text-indigo-600">
-            <Target size={24} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">会议跟踪台账</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-gray-500 font-bold">数据更新: 2026-05-28</span>
-            </div>
-          </div>
-        </div>
+        <div />
+
 
         <div className="flex items-center gap-2">
-            <div className="flex bg-white border border-gray-100 rounded-xl p-1 shadow-sm overflow-hidden mr-2">
-                <div className="px-4 py-2 flex flex-col items-center border-r border-gray-50">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">议定合计数</span>
-                    <span className="text-sm font-black text-gray-900">{stats.totalMatters} <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
-                </div>
-                <div className="px-4 py-2 flex flex-col items-center border-r border-gray-50">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">已完成</span>
-                    <span className="text-sm font-black text-emerald-600">{stats.completedMatters} <span className="text-[10px] font-medium text-gray-400 ml-0.5">条</span></span>
-                </div>
-                <div className="px-4 py-2 flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">总体进度</span>
-                    <span className="text-sm font-black text-blue-600">{stats.percentage}%</span>
-                </div>
-            </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={handleOpenAddModal}
@@ -204,12 +179,25 @@ export const DisciplineLedger: React.FC = () => {
 
       {/* Filters Area */}
       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center gap-6 flex-1">
+          <div className="flex items-center gap-3">
+             <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">年度筛选</span>
+             <select 
+               value={selectedYear}
+               onChange={(e) => setSelectedYear(e.target.value)}
+               className="bg-gray-50 border-none rounded-xl px-4 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all min-w-[160px]"
+             >
+               {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+             </select>
+          </div>
+
+          <div className="h-6 w-px bg-gray-100"></div>
+
           <div className="relative group flex-1 max-w-sm">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
             <input 
               type="text" 
-              placeholder="搜索报告学科..." 
+              placeholder="搜索报告学科或报告人..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white outline-none transition-all placeholder:text-gray-400"

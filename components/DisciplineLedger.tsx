@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  Search, Target, ChevronRight, Plus, Upload, X, Calendar as CalendarIcon, AlertCircle
+  Search, Target, Plus, Upload, X, Calendar as CalendarIcon, AlertCircle
 } from 'lucide-react';
 import { DisciplineLedgerDetail } from './DisciplineLedgerDetail';
 
@@ -9,7 +9,6 @@ interface LedgerItem {
   id: string;
   issue: number;
   meetingDate: string;
-  category: '高峰学科' | '高原学科' | '特色学科' | '新兴学科';
   reportedDiscipline: string;
   reporter: string;
   agreedMattersCount: number;
@@ -38,7 +37,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     id: '1',
     issue: 12,
     meetingDate: '2026-05-15',
-    category: '高峰学科',
     reportedDiscipline: '心血管内科',
     reporter: '张志诚',
     agreedMattersCount: 9,
@@ -50,7 +48,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     id: '2',
     issue: 12,
     meetingDate: '2026-05-15',
-    category: '高峰学科',
     reportedDiscipline: '神经外科',
     reporter: '林德华',
     agreedMattersCount: 7,
@@ -62,7 +59,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     id: '3',
     issue: 11,
     meetingDate: '2026-04-20',
-    category: '高原学科',
     reportedDiscipline: '呼吸与危重症医学科',
     reporter: '王海滨',
     agreedMattersCount: 12,
@@ -74,7 +70,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     id: '4',
     issue: 11,
     meetingDate: '2026-04-20',
-    category: '特色学科',
     reportedDiscipline: '康复医学科',
     reporter: '陈静云',
     agreedMattersCount: 5,
@@ -86,7 +81,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
     id: '5',
     issue: 10,
     meetingDate: '2026-03-15',
-    category: '新兴学科',
     reportedDiscipline: '生物信息医学中心',
     reporter: '李明远',
     agreedMattersCount: 8,
@@ -98,8 +92,6 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
 
 export const DisciplineLedger: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('全部');
-  const [statusFilter, setStatusFilter] = useState('全部');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LedgerItem | null>(null);
   const [issueError, setIssueError] = useState('');
@@ -119,14 +111,10 @@ export const DisciplineLedger: React.FC = () => {
     year: YEARS[0],
     issue: '',
     meetingDate: '',
-    category: '高峰学科',
     reportedDiscipline: '',
     reporter: '',
-    constructionSummary: '',
-    benchmarkingGap: '',
-    developmentDirection: '',
-    corePainPoints: '',
-    leadershipOpinions: ''
+    analysisSummary: '',
+    painPoints: ''
   });
 
   const handleOpenAddModal = () => {
@@ -135,14 +123,10 @@ export const DisciplineLedger: React.FC = () => {
       year: YEARS[0], 
       issue: (maxIssue + 1).toString(),
       meetingDate: new Date().toISOString().split('T')[0],
-      category: '高峰学科',
       reportedDiscipline: '',
       reporter: '',
-      constructionSummary: '',
-      benchmarkingGap: '',
-      developmentDirection: '',
-      corePainPoints: '',
-      leadershipOpinions: ''
+      analysisSummary: '',
+      painPoints: ''
     });
     setIssueError('');
     setShowAddModal(true);
@@ -163,38 +147,9 @@ export const DisciplineLedger: React.FC = () => {
       .filter(item => {
         const matchSearch = item.reportedDiscipline.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             item.reporter.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchCategory = categoryFilter === '全部' || item.category === categoryFilter;
-        const matchStatus = statusFilter === '全部' || item.overallStatus === statusFilter;
-        return matchSearch && matchCategory && matchStatus;
+        return matchSearch;
       });
-  }, [searchTerm, categoryFilter, statusFilter]);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case '待召开':
-        return <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200 uppercase tracking-tight">待召开</span>;
-      case '已召开-推进中':
-        return <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-tight">推进中</span>;
-      case '已召开-推进滞后':
-        return <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-tight">推进滞后</span>;
-      case '已召开-推进受阻':
-        return <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 uppercase tracking-tight">推进受阻</span>;
-      case '事项全部办结':
-        return <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-tight">全部办结</span>;
-      default:
-        return null;
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case '高峰学科': return 'text-indigo-600 bg-indigo-50/50';
-      case '高原学科': return 'text-emerald-600 bg-emerald-50/50';
-      case '特色学科': return 'text-amber-600 bg-amber-50/50';
-      case '新兴学科': return 'text-purple-600 bg-purple-50/50';
-      default: return 'text-gray-600 bg-gray-50/50';
-    }
-  };
+  }, [searchTerm]);
 
   if (selectedItem) {
     return <DisciplineLedgerDetail item={selectedItem} onBack={() => setSelectedItem(null)} />;
@@ -254,42 +209,11 @@ export const DisciplineLedger: React.FC = () => {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
             <input 
               type="text" 
-              placeholder="搜索报告学科、报告人..." 
+              placeholder="搜索报告学科..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white outline-none transition-all placeholder:text-gray-400"
             />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-2">学科类别:</span>
-            <select 
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-gray-50 border-none rounded-xl px-3 py-2 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
-            >
-              <option value="全部">全部类别</option>
-              <option value="高峰学科">高峰学科</option>
-              <option value="高原学科">高原学科</option>
-              <option value="特色学科">特色学科</option>
-              <option value="新兴学科">新兴学科</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-2">推进状态:</span>
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-gray-50 border-none rounded-xl px-3 py-2 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
-            >
-              <option value="全部">全部状态</option>
-              <option value="待召开">待召开</option>
-              <option value="已召开-推进中">已召开-推进中</option>
-              <option value="已召开-推进滞后">已召开-推进滞后</option>
-              <option value="已召开-推进受阻">已召开-推进受阻</option>
-              <option value="事项全部办结">事项全部办结</option>
-            </select>
           </div>
         </div>
       </div>
@@ -302,12 +226,10 @@ export const DisciplineLedger: React.FC = () => {
               <tr className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 border-b border-gray-50">
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">期数</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">会议日期</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">类别</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">报告学科</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap text-center">报告人</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap text-center">议定事项</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap text-center">办结/跟踪</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">总体推进状态</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap text-right">最近更新</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap text-right">操作</th>
               </tr>
@@ -324,11 +246,6 @@ export const DisciplineLedger: React.FC = () => {
                     <div className="text-sm font-semibold text-gray-700">
                       {row.meetingDate}
                     </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-2 py-1 rounded text-[10px] font-black tracking-tight ${getCategoryColor(row.category)}`}>
-                      {row.category}
-                    </span>
                   </td>
                   <td className="px-6 py-5">
                     <button 
@@ -361,16 +278,14 @@ export const DisciplineLedger: React.FC = () => {
                         </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    {getStatusBadge(row.overallStatus)}
-                  </td>
                   <td className="px-6 py-5 text-right">
                     <div className="text-[13px] font-bold text-gray-700">{row.lastUpdated}</div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button className="p-2 text-gray-300 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-none hover:shadow-sm">
-                      <ChevronRight size={18} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="text-[13px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors px-2 py-1 hover:bg-indigo-50 rounded-lg">编辑</button>
+                      <button className="text-[13px] font-bold text-rose-500 hover:text-rose-700 transition-colors px-2 py-1 hover:bg-rose-50 rounded-lg">删除</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -401,7 +316,7 @@ export const DisciplineLedger: React.FC = () => {
                   <Plus size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">新建议定事项</h3>
+                  <h3 className="text-lg font-bold text-gray-900">新建</h3>
                 </div>
               </div>
               <button 
@@ -460,20 +375,6 @@ export const DisciplineLedger: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">类别</label>
-                      <div className="flex gap-2">
-                        {['高峰学科', '高原学科', '特色学科', '新兴学科'].map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setFormData({...formData, category: cat as LedgerItem['category']})}
-                            className={`flex-1 px-2 py-2 rounded-xl text-[10px] font-bold transition-all border ${formData.category === cat ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100' : 'bg-white text-gray-500 border-gray-100 hover:border-indigo-200'}`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
                       <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">报告学科</label>
                       <select 
                         value={formData.reportedDiscipline}
@@ -498,75 +399,37 @@ export const DisciplineLedger: React.FC = () => {
                   </div>
                 </section>
 
-                {/* Section 2: Discipline Analysis */}
+                {/* Section 2: Discipline Analysis Summary */}
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
                     <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">学科剖析情况摘要</h4>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">建设 / 梯队 / 新技术</label>
-                      <textarea 
-                        rows={3}
-                        placeholder="请输入建设进展、梯队建设及新技术应用情况..."
-                        value={formData.constructionSummary}
-                        onChange={(e) => setFormData({...formData, constructionSummary: e.target.value})}
-                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none placeholder:text-gray-300"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">对标差距</label>
-                        <textarea 
-                          rows={3}
-                          placeholder="请输入与对标学科的实际差距分析..."
-                          value={formData.benchmarkingGap}
-                          onChange={(e) => setFormData({...formData, benchmarkingGap: e.target.value})}
-                          className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none placeholder:text-gray-300"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">发展方向</label>
-                        <textarea 
-                          rows={3}
-                          placeholder="请输入未来发展重点及具体方向..."
-                          value={formData.developmentDirection}
-                          onChange={(e) => setFormData({...formData, developmentDirection: e.target.value})}
-                          className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none placeholder:text-gray-300"
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-1.5">
+                    <textarea 
+                      rows={6}
+                      placeholder="请输入学科剖析情况摘要（包含建设进展、梯队建设、新技术应用及对标差距等内容）..."
+                      value={formData.analysisSummary}
+                      onChange={(e) => setFormData({...formData, analysisSummary: e.target.value})}
+                      className="w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-4 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-100 outline-none transition-all resize-none placeholder:text-gray-300 leading-relaxed"
+                    />
                   </div>
                 </section>
 
-                {/* Section 3: Pain Points & Opinions */}
+                {/* Section 3: Pain Points */}
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-1.5 h-4 bg-amber-500 rounded-full"></div>
-                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">痛点和院领导意见</h4>
+                    <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">痛点</h4>
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">核心痛点 (归口)</label>
-                      <textarea 
-                        rows={4}
-                        placeholder="请输入学科发展中亟待解决的核心痛点问题..."
-                        value={formData.corePainPoints}
-                        onChange={(e) => setFormData({...formData, corePainPoints: e.target.value})}
-                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none placeholder:text-gray-300"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">院领导现场办公意见摘要</label>
-                      <textarea 
-                        rows={4}
-                        placeholder="请输入院领导在现场办公中给出的具体指导意见..."
-                        value={formData.leadershipOpinions}
-                        onChange={(e) => setFormData({...formData, leadershipOpinions: e.target.value})}
-                        className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-none placeholder:text-gray-300"
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <textarea 
+                      rows={6}
+                      placeholder="请输入核心痛点及院领导现场办公意见总结..."
+                      value={formData.painPoints}
+                      onChange={(e) => setFormData({...formData, painPoints: e.target.value})}
+                      className="w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-4 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-100 outline-none transition-all resize-none placeholder:text-gray-300 leading-relaxed"
+                    />
                   </div>
                 </section>
               </div>

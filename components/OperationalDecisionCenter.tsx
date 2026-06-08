@@ -15,6 +15,7 @@ import { RotateCcw, List, Calendar, Check, RefreshCw, Clock, AlertCircle, FlaskC
 import { motion, AnimatePresence } from 'motion/react';
 import DeanCockpit from './operational-decision-center/cockpits/DeanCockpit';
 import { StatisticalReport } from './operational-decision-center/StatisticalReport';
+import InsightWorkshop from './operational-decision-center/InsightWorkshop';
 
 // --- Talent Development Types & Helpers ---
 
@@ -595,6 +596,14 @@ const MODULES = [
     icon: BarChart3, 
     gradient: 'from-emerald-500 to-teal-600',
     shadowColor: 'shadow-emerald-200'
+  },
+  { 
+    id: 'insight_workshop', 
+    title: '洞察工坊', 
+    desc: '语义建模与多维分析组件库', 
+    icon: Sparkles, 
+    gradient: 'from-fuchsia-500 to-pink-600',
+    shadowColor: 'shadow-fuchsia-200'
   },
   { 
     id: 'doc', 
@@ -1208,7 +1217,7 @@ const OperationalDecisionCenter: React.FC = () => {
   // View 1: Dashboard Grid (Entry Point)
   // --------------------------------------------------------------------------
   const renderDashboard = () => (
-    <div className="flex flex-col h-full w-full gap-6 p-2">
+    <div className="flex flex-col h-full w-full gap-8 px-10 py-8">
       {/* Header / Welcome Section */}
       <div className="flex flex-col gap-1 mb-2">
          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">运营决策中心</h1>
@@ -1281,7 +1290,7 @@ const OperationalDecisionCenter: React.FC = () => {
     return (
       <div className="flex flex-col w-full bg-[#eef2f6] min-h-full">
         {/* Main Content Area */}
-        <div className="px-6 pt-6 relative z-10 flex flex-col gap-4 pb-6">
+        <div className="px-10 pt-8 relative z-10 flex flex-col gap-6 pb-10">
           
           {/* Tabs */}
           <div className="flex items-center justify-center w-full">
@@ -7114,7 +7123,7 @@ const OperationalDecisionCenter: React.FC = () => {
     if (activeCockpitId === 'dean') return <DeanCockpit onBack={() => setActiveCockpitId(null)} />;
 
     return (
-      <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col items-center pt-12 px-8 relative bg-[#f8fafc]">
+      <div className="w-full flex-1 min-h-0 overflow-y-auto flex flex-col items-center pt-12 px-12 relative bg-[#f8fafc]">
         {/* Background Grid Pattern */}
         <div className="absolute inset-0 pointer-events-none" style={{
           backgroundImage: 'linear-gradient(45deg, #e2e8f0 1px, transparent 1px), linear-gradient(-45deg, #e2e8f0 1px, transparent 1px)',
@@ -7280,7 +7289,7 @@ const OperationalDecisionCenter: React.FC = () => {
 
   const renderReportCenter = () => {
     return (
-      <div className="flex flex-col w-full bg-[#f8fafc] min-h-full p-6 gap-6">
+      <div className="flex flex-col w-full bg-[#f8fafc] min-h-full px-10 py-8 gap-8">
         {/* Filter Section */}
         <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-4">
@@ -7640,7 +7649,7 @@ const OperationalDecisionCenter: React.FC = () => {
         {/* Full Width Content Area */}
         <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-white relative z-0">
            {/* Content Body */}
-           <div className={`flex-1 flex flex-col min-h-0 ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' || activeModuleId === 'attending-kpi' || activeModuleId === 'theme' || activeModuleId === 'report' ? 'bg-gray-50/30 p-0' : 'p-6 bg-gray-50/30'}`}>
+           <div className={`flex-1 flex flex-col min-h-0 ${activeModuleId === 'cockpit' || activeModuleId === 'er_return_monitor' || activeModuleId === 'doc' || activeModuleId === 'attending-kpi' || activeModuleId === 'theme' || activeModuleId === 'report' || activeModuleId === 'insight_workshop' ? 'bg-gray-50/30 p-0' : 'px-10 py-8 bg-gray-50/30'}`}>
               {activeModuleId === 'cockpit' ? renderCockpitDetail() : 
                activeModuleId === 'er_return_monitor' ? renderERReturnMonitor() : 
                activeModuleId === 'doc' ? renderReportCenter() :
@@ -7648,6 +7657,7 @@ const OperationalDecisionCenter: React.FC = () => {
                activeModuleId === 'theme' ? renderThemeAnalysis() :
                activeModuleId === 'talent' ? renderTalentDevelopment() :
                activeModuleId === 'report' ? <StatisticalReport /> :
+               activeModuleId === 'insight_workshop' ? <InsightWorkshop /> :
                renderGenericDetail()}
            </div>
         </main>

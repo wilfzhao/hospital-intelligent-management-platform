@@ -2,7 +2,7 @@ import React from 'react';
 
 const PathologyAnalysis = () => {
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-10 py-8 space-y-6">
       {/* 1) Filter Bar */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-wrap gap-4">
         <div className="text-sm text-gray-500">全局筛选区 (待实现)</div>

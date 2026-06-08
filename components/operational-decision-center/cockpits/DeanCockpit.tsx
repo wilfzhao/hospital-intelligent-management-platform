@@ -125,7 +125,7 @@ export const DeanCockpit: React.FC<DeanCockpitProps> = ({ onBack }) => {
         
         <button 
           onClick={onBack}
-          className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors z-10"
+          className="absolute left-10 top-1/2 -translate-y-1/2 flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors z-10"
         >
           <ChevronLeft size={24} />
           <span className="font-medium">返回</span>
@@ -135,13 +135,13 @@ export const DeanCockpit: React.FC<DeanCockpitProps> = ({ onBack }) => {
           医院管理主题分析大屏
         </h1>
 
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-cyan-400/70 text-sm z-10">
+        <div className="absolute right-10 top-1/2 -translate-y-1/2 text-cyan-400/70 text-sm z-10">
           更新时间: 2026/04/13 09:23:36
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 grid grid-cols-12 gap-4 overflow-hidden">
+      <div className="flex-1 px-8 py-6 grid grid-cols-12 gap-4 overflow-hidden">
         
         {/* Left Column */}
         <div className="col-span-3 flex flex-col gap-4 overflow-hidden">

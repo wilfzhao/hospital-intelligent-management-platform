@@ -2,11 +2,10 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  TrendingUp, CheckCircle2, Clock, AlertTriangle, 
+  CheckCircle2, Clock, 
   Target, Users, Calendar, ArrowUpRight, Activity
 } from 'lucide-react';
 
@@ -29,26 +28,17 @@ const DEPT_WORKLOAD_DATA = [
   { name: '后勤保障处', tasks: 10, completed: 8, risk: 1 },
 ];
 
-const CATEGORY_STATS = [
-  { category: '高峰学科', count: 12, completion: 85 },
-  { category: '高原学科', count: 8, completion: 72 },
-  { category: '特色学科', count: 6, completion: 90 },
-  { category: '新兴学科', count: 4, completion: 60 },
-];
-
 const WARNING_ITEMS = [
-  { id: '1', matter: '智慧医疗HIS系统数据中台API接口开放', dept: '信息中心', deadline: '2026-06-15', status: '滞后', impact: '高' },
-  { id: '2', matter: '学科专项绩效考核办法修订', dept: '人事处', deadline: '2026-07-20', status: '遇阻', impact: '高' },
-  { id: '3', matter: '海外高层次人才引进配套经费拨付', dept: '财务处', deadline: '2026-06-10', status: '推进中', impact: '中', risk: '预计逾期' },
+  { id: '1', matter: '智慧医疗HIS系统数据中台API接口开放', dept: '信息中心', updatedAt: '2026-06-05', action: '填报' },
+  { id: '2', matter: '学科专项绩效考核办法修订', dept: '人事处', updatedAt: '2026-06-07', action: '审核' },
+  { id: '3', matter: '海外高层次人才引进配套经费拨付', dept: '财务处', updatedAt: '2026-06-06', action: '填报' },
 ];
 
 export const DisciplineOverview: React.FC = () => {
   const stats = useMemo(() => {
     const total = MOCK_SUMMARY_DATA.reduce((acc, item) => acc + item.value, 0);
     const completed = MOCK_SUMMARY_DATA.find(i => i.name === '已办结')?.value || 0;
-    const abnormal = MOCK_SUMMARY_DATA.filter(i => ['滞后', '遇阻'].includes(i.name)).reduce((acc, item) => acc + item.value, 0);
-    const rate = ((completed / total) * 100).toFixed(1);
-    return { total, completed, abnormal, rate };
+    return { total, completed };
   }, []);
 
   return (
@@ -70,7 +60,7 @@ export const DisciplineOverview: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-5 gap-6">
+      <div className="grid grid-cols-3 gap-6">
         {/* Total Periods Card - Special Layout */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -91,24 +81,23 @@ export const DisciplineOverview: React.FC = () => {
               </div>
             </div>
             
-            {/* Discipline Categories breakdown - Compact Inline Version */}
-            <div className="mt-4 pt-4 border-t border-gray-50 flex flex-wrap items-center gap-x-2 gap-y-1">
-              {CATEGORY_STATS.map((cat, idx) => (
-                <div key={idx} className="flex items-center gap-1">
-                  <span className="text-[10px] font-bold text-gray-500">{cat.category.substring(0, 2)}</span>
-                  <span className="text-[10px] font-black text-indigo-600">{cat.count}</span>
-                  {idx < CATEGORY_STATS.length - 1 && <span className="text-[10px] text-gray-200">/</span>}
-                </div>
-              ))}
+            {/* Meetings count - Opened/Not Opened */}
+            <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400">已召开:</span>
+                <span className="text-[10px] font-black text-emerald-600">28 期</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400">未召开:</span>
+                <span className="text-[10px] font-black text-rose-500">4 期</span>
+              </div>
             </div>
           </div>
         </motion.div>
 
         {[
-          { label: '议定事项总数', value: stats.total, unit: '条', sub: '本年度累计决策', icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+          { label: '问题清单总数', value: stats.total, unit: '条', sub: '本年度累计决策', icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
           { label: '累计办结完成', value: stats.completed, unit: '条', sub: '已审核归档事项', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-          { label: '异常/预警事项', value: stats.abnormal, unit: '条', sub: '滞后或遇阻事项', icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-          { label: '总体办结率', value: stats.rate, unit: '%', sub: '同比提升 4.2%', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
         ].map((item, idx) => (
           <motion.div 
             key={idx}
@@ -141,47 +130,10 @@ export const DisciplineOverview: React.FC = () => {
       <div className="grid grid-cols-5 gap-6">
         {/* Left Side: Status and Workload */}
         <div className="col-span-3 space-y-6">
-          {/* Status Distribution - Widened */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">办结状态分布</h3>
-            </div>
-            <div className="flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={MOCK_SUMMARY_DATA}
-                    innerRadius={80}
-                    outerRadius={110}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {MOCK_SUMMARY_DATA.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontWeight: '800', fontSize: '12px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="grid grid-cols-3 gap-y-2 gap-x-4">
-              {MOCK_SUMMARY_DATA.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-[11px] font-bold text-gray-500 whitespace-nowrap">{item.name}</span>
-                  <span className="text-[11px] font-black text-gray-900 ml-auto">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Departmental Workload */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[400px]">
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[824px]">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">各归口部门事项分布</h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">主责部门事项分布</h3>
             </div>
             <div className="flex-1">
               <ResponsiveContainer width="100%" height="100%">
@@ -208,25 +160,25 @@ export const DisciplineOverview: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Tall Warning Section */}
+        {/* Right Side: Tall Work Records Section */}
         <div className="col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4 h-[824px]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">高风险/异常事项速览</h3>
-            <div className="flex items-center gap-1 text-rose-500">
-               <AlertTriangle size={14} />
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">工作记录</h3>
+            <div className="flex items-center gap-1 text-indigo-500">
+               <Activity size={14} />
             </div>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
             {/* Added more items for a fuller list since height increased */}
             {[...WARNING_ITEMS, ...WARNING_ITEMS, ...WARNING_ITEMS].map((item, idx) => (
-              <div key={`${item.id}-${idx}`} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:bg-white hover:border-rose-100 transition-all cursor-pointer">
+              <div key={`${item.id}-${idx}`} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 group hover:bg-white hover:border-indigo-100 transition-all cursor-pointer">
                 <div className="flex items-start justify-between gap-4 mb-2">
-                  <h4 className="text-xs font-black text-gray-900 leading-relaxed flex-1 group-hover:text-rose-600 transition-colors">
+                  <h4 className="text-xs font-black text-gray-900 leading-relaxed flex-1 group-hover:text-indigo-600 transition-colors">
                     {item.matter}
                     {idx > 2 && <span className="ml-2 text-[10px] text-gray-300 font-normal">#复制项-{idx}</span>}
                   </h4>
-                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${item.status === '遇阻' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
-                    {item.status}
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${item.action === '审核' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                    {item.action}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -237,58 +189,19 @@ export const DisciplineOverview: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1.5">
                        <Clock size={10} className="text-gray-400" />
-                       <span className="text-[10px] font-bold text-gray-500">截止: {item.deadline}</span>
+                       <span className="text-[10px] font-bold text-gray-500">更新: {item.updatedAt}</span>
                     </div>
                   </div>
-                  <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1 rounded uppercase">影响: {item.impact}</span>
                 </div>
               </div>
             ))}
           </div>
           <button className="w-full py-3 bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest rounded-xl border border-gray-100 hover:bg-white hover:text-indigo-600 hover:border-indigo-100 transition-all mt-auto shadow-sm">
-            查看更多预警事项
+            查看更多记录
           </button>
         </div>
       </div>
 
-      {/* Discipline Category Section */}
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">各学科类别执行表现</h3>
-        </div>
-        <div className="grid grid-cols-4 gap-6">
-          {CATEGORY_STATS.map((item, idx) => (
-            <div key={idx} className="p-5 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col gap-4 hover:shadow-md hover:bg-white transition-all group">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-gray-900">{item.category}</span>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
-                  {item.count} 项
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-400">整体办结进度</span>
-                  <span className="text-xs font-black text-gray-900">{item.completion}%</span>
-                </div>
-                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${item.completion}%` }}
-                    className="h-full bg-indigo-600 rounded-full group-hover:bg-indigo-500 transition-colors"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-[10px] font-bold mt-1">
-                 <span className="text-emerald-500 flex items-center gap-1">
-                    <CheckCircle2 size={10} />
-                    按期完成
-                 </span>
-                 <span className="text-gray-400">平均周期: 12.4d</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

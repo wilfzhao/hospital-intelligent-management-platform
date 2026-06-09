@@ -50,7 +50,7 @@ export const DisciplineOverview: React.FC = () => {
             <Activity size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">综合执行概览</h1>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">综合概览</h1>
           </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl shadow-sm">

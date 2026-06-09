@@ -601,11 +601,6 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             返回列表
           </button>
-          <div className="flex items-center gap-2">
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
-                  编辑基本信息
-              </button>
-          </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-4 px-6">
@@ -617,9 +612,6 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
                   <h1 className="text-xl font-black text-gray-900 leading-tight">{item.reportedDiscipline}</h1>
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 italic font-black text-[9px]">
-                    {item.overallStatus}
-                  </div>
                 </div>
               </div>
             </div>
@@ -1241,7 +1233,7 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
                     }}
                     className="px-4 py-2 text-rose-500 text-sm font-bold hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100"
                   >
-                    撤销记录
+                    撤销
                   </button>
                   <div className="flex items-center gap-3">
                     <button 

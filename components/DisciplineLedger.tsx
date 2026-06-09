@@ -48,7 +48,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   },
   {
     id: '2',
-    issue: 12,
+    issue: 11,
     year: '2026-2027年度',
     meetingDate: '2026-05-15',
     reportedDiscipline: '神经外科',
@@ -60,7 +60,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   },
   {
     id: '3',
-    issue: 11,
+    issue: 10,
     year: '2026-2027年度',
     meetingDate: '2026-04-20',
     reportedDiscipline: '呼吸与危重症医学科',
@@ -72,7 +72,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   },
   {
     id: '4',
-    issue: 11,
+    issue: 9,
     year: '2026-2027年度',
     meetingDate: '2026-04-20',
     reportedDiscipline: '康复医学科',
@@ -84,7 +84,7 @@ const MOCK_LEDGER_DATA: LedgerItem[] = [
   },
   {
     id: '5',
-    issue: 10,
+    issue: 8,
     year: '2026-2027年度',
     meetingDate: '2026-03-15',
     reportedDiscipline: '生物信息医学中心',

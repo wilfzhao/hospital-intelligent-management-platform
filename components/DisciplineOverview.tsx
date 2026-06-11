@@ -8,31 +8,7 @@ import {
   CheckCircle2, Clock, 
   Target, Users, Calendar, ArrowUpRight, Activity
 } from 'lucide-react';
-
-// Shared data structures from Ledger components (Simplified for Overview)
-const MOCK_SUMMARY_DATA = [
-  { name: '已办结', value: 42, color: '#10b981' },
-  { name: '推进中', value: 35, color: '#4f46e5' },
-  { name: '刚启动', value: 15, color: '#3b82f6' },
-  { name: '滞后', value: 8, color: '#f59e0b' },
-  { name: '未启动', value: 5, color: '#94a3b8' },
-  { name: '遇阻', value: 3, color: '#ef4444' },
-];
-
-const DEPT_WORKLOAD_DATA = [
-  { name: '医务处', tasks: 24, completed: 18, risk: 2 },
-  { name: '人事处', tasks: 18, completed: 12, risk: 3 },
-  { name: '科技处', tasks: 15, completed: 10, risk: 1 },
-  { name: '信息中心', tasks: 28, completed: 15, risk: 5 },
-  { name: '财务处', tasks: 12, completed: 12, risk: 0 },
-  { name: '后勤保障处', tasks: 10, completed: 8, risk: 1 },
-];
-
-const WARNING_ITEMS = [
-  { id: '1', matter: '智慧医疗HIS系统数据中台API接口开放', dept: '信息中心', updatedAt: '2026-06-05', action: '填报' },
-  { id: '2', matter: '学科专项绩效考核办法修订', dept: '人事处', updatedAt: '2026-06-07', action: '审核' },
-  { id: '3', matter: '海外高层次人才引进配套经费拨付', dept: '财务处', updatedAt: '2026-06-06', action: '填报' },
-];
+import { MOCK_SUMMARY_DATA, DEPT_WORKLOAD_DATA, WARNING_ITEMS } from '../src/data/mockDisciplineData';
 
 export const DisciplineOverview: React.FC = () => {
   const stats = useMemo(() => {

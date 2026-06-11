@@ -3,57 +3,17 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Plus, Upload, Clock, X, Calendar, Search, ChevronDown, Check,
-  CheckCircle2, FileText, Eye, Download, Trash2,
+  CheckCircle2, FileText, Eye, Download, Trash2, AlertCircle,
   LayoutDashboard, ClipboardList, TrendingUp, MessageSquare
 } from 'lucide-react';
-
-interface ProgressPhase {
-  id: string;
-  date: string;
-  content: string;
-  reporter: string;
-  status: TrackingItem['status'];
-  attachments?: string[];
-}
-
-interface TrackingItem {
-  id: string;
-  issue: number;
-  discipline: string;
-  itemNo: string;
-  agreedMatter: string;
-  leadDept: string;
-  supportingDepts: string[];
-  completionTier?: '短期' | '中期' | '中长期' | '长期';
-  agreedCompletionTime: string;
-  deliverable?: string;
-  feedbackFrequency: '月度' | '季度';
-  status: '未启动' | '推进中' | '已办结';
-  lastFeedbackDate: string;
-  progressHistory?: ProgressPhase[];
-}
-
-interface LedgerItem {
-  id: string;
-  issue: number;
-  meetingDate: string;
-  reportedDiscipline: string;
-  reporter: string;
-  agreedMattersCount: number;
-  progress: string;
-  overallStatus: string;
-  lastUpdated: string;
-  attachments?: string[];
-}
+import { ProgressPhase, TrackingItem, LedgerItem } from '../src/types/discipline';
+import { DEPARTMENTS, FREQUENCIES, STATUSES } from '../src/data/disciplineConstants';
+import { getMockTrackingItems } from '../src/data/mockDisciplineData';
 
 interface DisciplineLedgerDetailProps {
   item: LedgerItem;
   onBack: () => void;
 }
-
-const DEPARTMENTS = ['医务处', '护理部', '人事处', '财务处', '信息中心', '后勤保障处', '科技处', '教育处'];
-const FREQUENCIES: Array<TrackingItem['feedbackFrequency']> = ['月度', '季度'];
-const STATUSES: Array<TrackingItem['status']> = ['未启动', '推进中', '已办结'];
 
 export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ item, onBack }) => {
   const [ledgerAttachments, setLedgerAttachments] = useState<string[]>(item.attachments || ['2026年度学科建设汇报PPT.pptx', '科室发展规划现状调研报告.pdf', '本周重点工作推进记录.docx', '外部专家初审意见汇总.pdf']);
@@ -79,322 +39,7 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
   };
 
   const [trackingData, setTrackingData] = useState<TrackingItem[]>(() => {
-    const baseItems: TrackingItem[] = [
-      {
-        id: '1',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-01`,
-        agreedMatter: '开展心血管介入手术新技术准入，提升三四级手术占比',
-        leadDept: '医务处',
-        supportingDepts: ['科技处', '人事处'],
-        completionTier: '短期',
-        agreedCompletionTime: '2026-08-30',
-        deliverable: '新技术准入报告、手术记录汇总',
-        feedbackFrequency: '月度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-28',
-        progressHistory: [
-          { id: 'p1', date: '2026-04-15', content: '初步完成新技术准入目录梳理，并上报医务处。', reporter: '王建国', status: '推进中' },
-          { id: 'p2', date: '2026-05-28', content: '首批3项技术已通过伦理委员会初审，正在准备科室论证材料。', reporter: '李晓明', status: '推进中' }
-        ]
-      },
-      {
-        id: '2',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-02`,
-        agreedMatter: '引进2名海外高层次人才，完善学科梯队建设',
-        leadDept: '人事处',
-        supportingDepts: ['信息中心'],
-        completionTier: '长期',
-        agreedCompletionTime: '2027-05-30',
-        deliverable: '入职合同、简历存档',
-        feedbackFrequency: '季度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-20'
-      }
-    ];
-
-    if (item.reportedDiscipline === '生物信息医学中心') {
-      const bioItems: TrackingItem[] = [
-        {
-          id: 'bio-1',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-03`,
-          agreedMatter: '生物信息资源公共服务平台二期建设启动',
-          leadDept: '信息中心',
-          supportingDepts: ['科技处'],
-          completionTier: '中长期',
-          agreedCompletionTime: '2026-12-30',
-          deliverable: '平台架构设计说明书',
-          feedbackFrequency: '月度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-25'
-        },
-        {
-          id: 'bio-2',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-04`,
-          agreedMatter: '与北京大学联合开展肿瘤精准医疗大数据分析项目',
-          leadDept: '科技处',
-          supportingDepts: ['医务处'],
-          completionTier: '长期',
-          agreedCompletionTime: '2027-06-15',
-          deliverable: '联合研究协议、季度进展报告',
-          feedbackFrequency: '季度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-28'
-        },
-        {
-          id: 'bio-3',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-05`,
-          agreedMatter: '全院生物样本库信息化系统对接联调',
-          leadDept: '信息中心',
-          supportingDepts: ['后勤保障处'],
-          completionTier: '短期',
-          agreedCompletionTime: '2026-07-20',
-          deliverable: '接口调试报告',
-          feedbackFrequency: '月度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-29'
-        },
-        {
-          id: 'bio-4',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-06`,
-          agreedMatter: '生物信息专业技术人才专项岗贴方案报批',
-          leadDept: '人事处',
-          supportingDepts: ['财务处'],
-          completionTier: '短期',
-          agreedCompletionTime: '2026-06-30',
-          deliverable: '方案正式批复文件',
-          feedbackFrequency: '月度',
-          status: '已办结',
-          lastFeedbackDate: '2026-05-30'
-        },
-        {
-          id: 'bio-5',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-07`,
-          agreedMatter: '高性能计算集群扩容及安全加固',
-          leadDept: '信息中心',
-          supportingDepts: ['科技处'],
-          completionTier: '中期',
-          agreedCompletionTime: '2026-09-15',
-          deliverable: '验收测试报告',
-          feedbackFrequency: '月度',
-          status: '未启动',
-          lastFeedbackDate: '2026-05-20'
-        },
-        {
-          id: 'bio-6',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-08`,
-          agreedMatter: '多组学数据临床转化应用试点（心内科/肾内科）',
-          leadDept: '医务处',
-          supportingDepts: ['信息中心'],
-          completionTier: '长期',
-          agreedCompletionTime: '2027-12-31',
-          deliverable: '临床应用指南草案',
-          feedbackFrequency: '季度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-28'
-        },
-        {
-          id: 'bio-7',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-09`,
-          agreedMatter: '年度生物信息核心算法专利申报（不少于5项）',
-          leadDept: '科技处',
-          supportingDepts: ['财务处', '信息中心'],
-          completionTier: '中期',
-          agreedCompletionTime: '2026-11-20',
-          deliverable: '专利受理通知书',
-          feedbackFrequency: '季度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-22'
-        },
-        {
-          id: 'bio-8',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-10`,
-          agreedMatter: '学科实验室生物安全专项审计',
-          leadDept: '医务处',
-          supportingDepts: ['后勤保障处'],
-          completionTier: '短期',
-          agreedCompletionTime: '2026-07-15',
-          deliverable: '整改报告、审计合格确认书',
-          feedbackFrequency: '月度',
-          status: '已办结',
-          lastFeedbackDate: '2026-05-25'
-        },
-        {
-          id: 'bio-9',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-11`,
-          agreedMatter: '海外生物信息学专家客座讲学交流活动',
-          leadDept: '教育处',
-          supportingDepts: ['科技处', '人事处'],
-          completionTier: '短期',
-          agreedCompletionTime: '2026-09-10',
-          deliverable: '讲座总结、专家签到表',
-          feedbackFrequency: '月度',
-          status: '未启动',
-          lastFeedbackDate: '2026-05-10'
-        },
-        {
-          id: 'bio-10',
-          issue: item.issue,
-          discipline: item.reportedDiscipline,
-          itemNo: `${item.issue}-12`,
-          agreedMatter: '中心官网英文版上线及海外宣传推广',
-          leadDept: '信息中心',
-          supportingDepts: ['信息中心'],
-          completionTier: '中期',
-          agreedCompletionTime: '2026-10-15',
-          deliverable: '网站访问量统计报告',
-          feedbackFrequency: '月度',
-          status: '推进中',
-          lastFeedbackDate: '2026-05-28'
-        }
-      ];
-      return [...baseItems, ...bioItems];
-    }
-
-    const otherItems: TrackingItem[] = [
-      {
-        id: '3',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-03`,
-        agreedMatter: '完成新病区装修改造及医疗设备采购',
-        leadDept: '后勤保障处',
-        supportingDepts: ['财务处', '信息中心'],
-        completionTier: '中长期',
-        agreedCompletionTime: '2026-12-15',
-        deliverable: '验收报告、设备固定资产清单',
-        feedbackFrequency: '月度',
-        status: '已办结',
-        lastFeedbackDate: '2026-05-25'
-      },
-      {
-        id: '4',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-04`,
-        agreedMatter: '智慧医疗HIS系统数据中台API接口开放',
-        leadDept: '信息中心',
-        supportingDepts: ['科技处'],
-        completionTier: '短期',
-        agreedCompletionTime: '2026-06-15',
-        deliverable: 'API文技术档、接口测试报告',
-        feedbackFrequency: '月度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-30'
-      },
-      {
-        id: '5',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-05`,
-        agreedMatter: '申报3项国家自然科学基金重点项目',
-        leadDept: '科技处',
-        supportingDepts: ['财务处'],
-        completionTier: '中期',
-        agreedCompletionTime: '2026-10-30',
-        deliverable: '项目申报书副本',
-        feedbackFrequency: '季度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-15'
-      },
-      {
-        id: '6',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-06`,
-        agreedMatter: '学科专项绩效考核办法修订',
-        leadDept: '人事处',
-        supportingDepts: ['财务处', '医务处'],
-        completionTier: '短期',
-        agreedCompletionTime: '2026-07-20',
-        deliverable: '正式印发文件',
-        feedbackFrequency: '月度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-22'
-      },
-      {
-        id: '7',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-07`,
-        agreedMatter: '学科门诊诊间支付功能上线',
-        leadDept: '信息中心',
-        supportingDepts: ['财务处', '医务处'],
-        completionTier: '短期',
-        agreedCompletionTime: '2026-06-30',
-        deliverable: '上线确认书',
-        feedbackFrequency: '月度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-28'
-      },
-      {
-        id: '8',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-08`,
-        agreedMatter: '学科带头人任期考核及评估',
-        leadDept: '人事处',
-        supportingDepts: ['科技处'],
-        completionTier: '中长期',
-        agreedCompletionTime: '2026-11-15',
-        deliverable: '考核报告汇总',
-        feedbackFrequency: '季度',
-        status: '推进中',
-        lastFeedbackDate: '2026-05-10'
-      },
-      {
-        id: '9',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-09`,
-        agreedMatter: '临床医学实验中心共享平台使用率提升工程',
-        leadDept: '科技处',
-        supportingDepts: ['信息中心'],
-        completionTier: '中期',
-        agreedCompletionTime: '2026-10-30',
-        deliverable: '季度使用率分析报表',
-        feedbackFrequency: '季度',
-        status: '未启动',
-        lastFeedbackDate: '2026-05-15'
-      },
-      {
-        id: '10',
-        issue: item.issue,
-        discipline: item.reportedDiscipline,
-        itemNo: `${item.issue}-10`,
-        agreedMatter: '学科发展专项经费年度使用审计',
-        leadDept: '财务处',
-        supportingDepts: ['审计处'],
-        completionTier: '短期',
-        agreedCompletionTime: '2026-07-15',
-        deliverable: '专项审计报告',
-        feedbackFrequency: '月度',
-        status: '已办结',
-        lastFeedbackDate: '2026-05-28'
-      }
-    ];
-    return [...baseItems, ...otherItems];
+    return getMockTrackingItems(item.issue, item.reportedDiscipline);
   });
 
   const [showAddTrackModal, setShowAddTrackModal] = useState(false);
@@ -407,8 +52,9 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
     leadDept: DEPARTMENTS[0],
     supportingDepts: [] as string[],
     agreedCompletionTime: new Date().toISOString().split('T')[0],
-    feedbackFrequency: FREQUENCIES[0],
-    status: STATUSES[0]
+    feedbackFrequency: FREQUENCIES[0] as TrackingItem['feedbackFrequency'],
+    status: STATUSES[0] as TrackingItem['status'],
+    isRevoked: false
   });
 
   // Report Drawer State
@@ -416,7 +62,7 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
   const [activeReportItem, setActiveReportItem] = useState<TrackingItem | null>(null);
   const [reportForm, setReportForm] = useState({
     progressContent: '',
-    status: STATUSES[0],
+    status: STATUSES[0] as TrackingItem['status'],
     achievementName: '',
     isFileUploaded: false
   });
@@ -553,7 +199,8 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
       supportingDepts: [],
       agreedCompletionTime: new Date().toISOString().split('T')[0],
       feedbackFrequency: FREQUENCIES[0],
-      status: STATUSES[0]
+      status: STATUSES[0],
+      isRevoked: false
     });
   };
 
@@ -565,7 +212,8 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
       supportingDepts: [...task.supportingDepts],
       agreedCompletionTime: task.agreedCompletionTime,
       feedbackFrequency: task.feedbackFrequency,
-      status: task.status
+      status: task.status,
+      isRevoked: !!task.isRevoked
     });
     setShowEditTrackModal(true);
   };
@@ -793,28 +441,28 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
                   <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap text-right">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-50">
                 {trackingData.map((task) => (
-                  <tr key={task.id} className="hover:bg-indigo-50/10 transition-colors group">
+                  <tr key={task.id} className={`transition-colors group ${task.isRevoked ? 'bg-gray-50/50' : 'hover:bg-indigo-50/10'}`}>
                     <td className="px-6 py-5">
-                      <div className="w-14 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-xs font-black text-gray-600 font-mono group-hover:bg-white transition-colors">
+                      <div className={`w-14 h-8 rounded-lg flex items-center justify-center text-xs font-black font-mono transition-colors ${task.isRevoked ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 text-gray-600 group-hover:bg-white'}`}>
                         {task.itemNo}
                       </div>
                     </td>
                     <td className="px-6 py-5 max-w-sm">
-                      <div className="text-sm font-bold text-gray-800 leading-relaxed">
+                      <div className={`text-sm font-bold leading-relaxed transition-all ${task.isRevoked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                         {task.agreedMatter}
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className="text-xs font-black px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
+                      <span className={`text-xs font-black px-2 py-1 rounded-lg border transition-colors ${task.isRevoked ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
                         {task.leadDept}
                       </span>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-wrap gap-1">
                         {task.supportingDepts.map(dept => (
-                          <span key={dept} className="text-[10px] font-bold text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">
+                          <span key={dept} className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors ${task.isRevoked ? 'bg-gray-50 text-gray-300 border-gray-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                             {dept}
                           </span>
                         ))}
@@ -823,31 +471,33 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
                     <td className="px-6 py-5">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-gray-900 font-mono">{task.agreedCompletionTime}</span>
+                          <span className={`text-sm font-bold font-mono transition-colors ${task.isRevoked ? 'text-gray-400' : 'text-gray-900'}`}>{task.agreedCompletionTime}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                          <Clock size={10} />
-                          剩余 12 天
-                        </div>
+                        {!task.isRevoked && (
+                          <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                            <Clock size={10} />
+                            剩余 12 天
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-black border uppercase tracking-tight ${getStatusColor(task.status)}`}>
-                        {task.status}
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-black border uppercase tracking-tight transition-colors ${task.isRevoked ? 'bg-gray-100 text-gray-400 border-gray-200' : getStatusColor(task.status)}`}>
+                        {task.isRevoked ? '已作废' : task.status}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex flex-col items-end gap-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors ${task.isRevoked ? 'bg-gray-50 text-gray-300 border-gray-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                             {task.feedbackFrequency}
                           </span>
-                          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50">
-                            <span className="text-[10px] font-bold text-indigo-600">
+                          <div className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded border transition-colors ${task.isRevoked ? 'bg-gray-50 border-gray-100' : 'border-indigo-100 bg-indigo-50'}`}>
+                            <span className={`text-[10px] font-bold transition-colors ${task.isRevoked ? 'text-gray-400' : 'text-indigo-600'}`}>
                               {task.lastFeedbackDate}
                             </span>
                             {task.progressHistory && task.progressHistory.some(p => p.attachments && p.attachments.length > 0) && (
-                              <div className="text-indigo-400">
+                              <div className={task.isRevoked ? 'text-gray-300' : 'text-indigo-400'}>
                                 <FileText size={10} strokeWidth={3} />
                               </div>
                             )}
@@ -864,20 +514,23 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
                           编辑
                         </button>
                         <button 
-                          onClick={() => handleOpenReport(task)}
-                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                          onClick={() => !task.isRevoked && handleOpenReport(task)}
+                          disabled={task.isRevoked}
+                          className={`text-xs font-bold transition-colors ${task.isRevoked ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600 hover:text-indigo-700'}`}
                         >
                           填报
                         </button>
                         <button 
-                          onClick={() => handleOpenAudit(task)}
-                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                          onClick={() => !task.isRevoked && handleOpenAudit(task)}
+                          disabled={task.isRevoked}
+                          className={`text-xs font-bold transition-colors ${task.isRevoked ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600 hover:text-indigo-700'}`}
                         >
                           审核
                         </button>
                         <button 
-                          onClick={() => handleOpenReview(task)}
-                          className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                          onClick={() => !task.isRevoked && handleOpenReview(task)}
+                          disabled={task.isRevoked}
+                          className={`text-xs font-bold transition-colors ${task.isRevoked ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600 hover:text-indigo-700'}`}
                         >
                           评阅
                         </button>
@@ -1090,7 +743,16 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
               </div>
 
               <div className="p-8 overflow-y-auto custom-scrollbar space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                {trackFormData.isRevoked && (
+                  <div className="flex items-center gap-3 p-4 bg-rose-50 rounded-2xl border border-rose-100 animate-in fade-in slide-in-from-top-2">
+                    <AlertCircle className="text-rose-500" size={18} />
+                    <div>
+                      <p className="text-[10px] font-bold text-rose-500">点击保存操作撤销后该事项将无法进行后续填报、审核及评阅操作。如需继续推进，请点击下方“恢复”。</p>
+                    </div>
+                  </div>
+                )}
+                <div className={`space-y-6 transition-all duration-300 ${trackFormData.isRevoked ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                  <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">期数-科室</label>
                     <div className="px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-bold text-gray-400 italic">
@@ -1214,26 +876,16 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
                   </div>
                 </div>
               </div>
+            </div>
 
               <div className="px-8 py-5 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between sticky bottom-0">
                   <button 
                     onClick={() => {
-                        // Revoke logic: reset to original values
-                        const original = trackingData.find(t => t.id === editingTrackId);
-                        if (original) {
-                            setTrackFormData({
-                                agreedMatter: original.agreedMatter,
-                                leadDept: original.leadDept,
-                                supportingDepts: [...original.supportingDepts],
-                                agreedCompletionTime: original.agreedCompletionTime,
-                                feedbackFrequency: original.feedbackFrequency,
-                                status: original.status
-                            });
-                        }
+                        setTrackFormData({...trackFormData, isRevoked: !trackFormData.isRevoked});
                     }}
-                    className="px-4 py-2 text-rose-500 text-sm font-bold hover:bg-rose-50 rounded-xl transition-all border border-transparent hover:border-rose-100"
+                    className={`px-4 py-2 text-sm font-bold rounded-xl transition-all border border-transparent shadow-sm ${trackFormData.isRevoked ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-rose-50 text-rose-500 hover:bg-rose-100 hover:border-rose-100'}`}
                   >
-                    撤销
+                    {trackFormData.isRevoked ? '恢复' : '撤销'}
                   </button>
                   <div className="flex items-center gap-3">
                     <button 

@@ -557,11 +557,6 @@ export const IndicatorComponentEditor: React.FC<IndicatorComponentEditorProps> =
           >
             <ChevronLeft size={20} />
           </button>
-          <div className="h-4 w-px bg-gray-200"></div>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 text-sm">指标分析 / 分析组件 /</span>
-            <span className="text-gray-800 font-medium text-sm">未命名组件</span>
-          </div>
         </div>
         <div className="flex items-center gap-3">
           <button className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors">

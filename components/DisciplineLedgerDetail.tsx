@@ -114,7 +114,7 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
       t.id === activeAuditItem.id 
         ? { 
             ...t, 
-            status: action === 'pass' ? '已办结' : '推进中',
+            status: action === 'pass' ? t.status : '推进中' as TrackingItem['status'],
             lastFeedbackDate: new Date().toISOString().split('T')[0] 
           }
         : t
@@ -234,6 +234,8 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
       case '推进中': return 'text-indigo-600 bg-indigo-50 border-indigo-100';
       case '已办结': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
       case '未启动': return 'text-slate-400 bg-slate-50 border-slate-100';
+      case '具备条件后办理': return 'text-amber-600 bg-amber-50 border-amber-100';
+      case '不具备办理条件': return 'text-rose-600 bg-rose-50 border-rose-100';
       default: return 'text-gray-400 bg-gray-50';
     }
   };
@@ -559,6 +561,14 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
               <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                 未启动: {trackingData.filter(t => t.status === '未启动').length}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                条件后办: {trackingData.filter(t => t.status === '具备条件后办理').length}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                无法办结: {trackingData.filter(t => t.status === '不具备办理条件').length}
               </div>
             </div>
           </div>
@@ -1116,7 +1126,8 @@ export const DisciplineLedgerDetail: React.FC<DisciplineLedgerDetailProps> = ({ 
               <div className="space-y-3 mb-8">
                 {[
                   { value: '已办结' as const, label: '已办结', desc: '事项已按要求完整履行并达成目标' },
-                  { value: '推进中' as const, label: '推进中', desc: '事项正在按计划执行中，尚未最终办结' }
+                  { value: '具备条件后办理' as const, label: '具备条件后办理', desc: '当前核心条件缺失，待条件契合后闭环' },
+                  { value: '不具备办理条件' as const, label: '不具备办理条件', desc: '因客观不可抗力或政策变动，无法继续执行' }
                 ].map((option) => (
                   <button
                     key={option.value}

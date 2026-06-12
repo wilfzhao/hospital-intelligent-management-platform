@@ -4,7 +4,7 @@ export interface ProgressPhase {
   date: string;
   content: string;
   reporter: string;
-  status: '未启动' | '推进中' | '已办结';
+  status: '未启动' | '推进中' | '已办结' | '具备条件后办理' | '不具备办理条件';
   attachments?: string[];
 }
 
@@ -20,7 +20,7 @@ export interface TrackingItem {
   agreedCompletionTime: string;
   deliverable?: string;
   feedbackFrequency: '月度' | '季度';
-  status: '未启动' | '推进中' | '已办结';
+  status: '未启动' | '推进中' | '已办结' | '具备条件后办理' | '不具备办理条件';
   isRevoked?: boolean;
   lastFeedbackDate: string;
   progressHistory?: ProgressPhase[];

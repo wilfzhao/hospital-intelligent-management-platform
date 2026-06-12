@@ -20,4 +20,4 @@ export const DEPARTMENTS = ['医务处', '护理部', '人事处', '财务处', 
 
 export const FREQUENCIES = ['月度', '季度'] as const;
 
-export const STATUSES = ['未启动', '推进中', '已办结'] as const;
+export const STATUSES = ['未启动', '推进中', '已办结', '具备条件后办理', '不具备办理条件'] as const;
